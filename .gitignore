@@ -1,0 +1,18 @@
+# Roblox Studio temporary files
+*.rbxl.lock
+
+# Backups
+backups/
+
+# Rojo build outputs
+build/
+dist/
+
+# OS/editor junk
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# Logs
+*.log
