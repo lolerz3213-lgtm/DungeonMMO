@@ -19,6 +19,10 @@
             "$className": "StarterPlayer",
             "$ignoreUnknownInstances": true,
 
+            "$properties": {
+                "EnableMouseLockOption": false
+            },
+
             "StarterPlayerScripts": {
                 "$className": "StarterPlayerScripts",
                 "$ignoreUnknownInstances": true,
