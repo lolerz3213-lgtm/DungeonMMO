@@ -1,3 +1,15 @@
+local ReplicatedStorage = game:GetService(
+    "ReplicatedStorage"
+)
+
+local shared_folder = ReplicatedStorage
+    :WaitForChild("Combat")
+    :WaitForChild("Shared")
+
+local CombatConfig = require(
+    shared_folder:WaitForChild("CombatConfig")
+)
+
 local DamageService = {}
 
 export type DamageContext = {
@@ -73,6 +85,16 @@ function DamageService.apply_damage(
     end
 
     humanoid:TakeDamage(damage)
+
+    if CombatConfig.DEBUG.PRINT_DAMAGE then
+        print(
+            string.format(
+                "[Damage] %s -%.1f HP",
+                context.target.Name,
+                damage
+            )
+        )
+    end
 
     return damage
 end

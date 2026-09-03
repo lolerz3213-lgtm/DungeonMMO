@@ -1,6 +1,7 @@
 local CollectionService = game:GetService(
     "CollectionService"
 )
+local Debris = game:GetService("Debris")
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService(
     "ReplicatedStorage"
@@ -186,9 +187,6 @@ end
 --[[
 Builds an obstruction ray that ignores all combat characters.
 
-Characters are not treated as dungeon walls. The ray therefore ignores
-the attacker, tagged NPC targets, and current player characters.
-
 Args:
     attacker_character (Model): Attacker Model.
 
@@ -269,11 +267,45 @@ end
 
 
 --[[
-Collects newly accepted targets for one server melee sample.
+Creates a short-lived non-queryable visualization of one melee box.
 
-This function performs target acquisition only. The supplied
-`already_hit` table is shared across all samples in one swing so each
-target can be accepted only once.
+Args:
+    hitbox_cframe (CFrame): World transform of the sampled box.
+    hitbox_size (Vector3): Dimensions of the sampled box.
+
+Returns:
+    None.
+]]
+local function show_debug_hitbox(
+    hitbox_cframe: CFrame,
+    hitbox_size: Vector3
+)
+    if not CombatConfig.DEBUG.SHOW_MELEE_HITBOX then
+        return
+    end
+
+    local part = Instance.new("Part")
+
+    part.Name = "MeleeHitboxDebug"
+    part.Anchored = true
+    part.CanCollide = false
+    part.CanQuery = false
+    part.CanTouch = false
+    part.Size = hitbox_size
+    part.CFrame = hitbox_cframe
+    part.Transparency = 0.72
+    part.Material = Enum.Material.Neon
+    part.Parent = Workspace
+
+    Debris:AddItem(
+        part,
+        0.08
+    )
+end
+
+
+--[[
+Collects newly accepted targets for one server melee sample.
 
 Args:
     context (MeleeSwingContext): Authoritative melee swing information.
@@ -310,6 +342,11 @@ function MeleeHitService.collect_targets(
             0,
             -hitbox.FORWARD_OFFSET
         )
+
+    show_debug_hitbox(
+        hitbox_cframe,
+        hitbox.SIZE
+    )
 
     local parts = Workspace:GetPartBoundsInBox(
         hitbox_cframe,
@@ -371,6 +408,15 @@ function MeleeHitService.collect_targets(
             targets,
             target_model
         )
+
+        if CombatConfig.DEBUG.PRINT_MELEE_HITS then
+            print(
+                string.format(
+                    "[MeleeHit] %s accepted",
+                    target_model.Name
+                )
+            )
+        end
     end
 
     return targets
@@ -383,14 +429,29 @@ Applies damage to every newly accepted target from one sample.
 Args:
     context (MeleeSwingContext): Authoritative melee swing information.
     already_hit ({[Model]: boolean}): Shared per-swing deduplication.
+    sample_index (number): One-based sample index.
+    sample_count (number): Total sample count for the Active window.
 
 Returns:
     None.
 ]]
 local function process_sample(
     context: MeleeSwingContext,
-    already_hit: {[Model]: boolean}
+    already_hit: {[Model]: boolean},
+    sample_index: number,
+    sample_count: number
 )
+    if CombatConfig.DEBUG.PRINT_MELEE_HITS then
+        print(
+            string.format(
+                "[MeleeHit] %s sample %d/%d",
+                context.attack_id,
+                sample_index,
+                sample_count
+            )
+        )
+    end
+
     local targets =
         MeleeHitService.collect_targets(
             context,
@@ -419,11 +480,6 @@ end
 
 --[[
 Runs repeated server melee samples across one Active attack window.
-
-The first sample is processed immediately. Remaining samples are
-scheduled strictly inside the Active duration. All samples share one
-deduplication table, so an NPC can be damaged only once per swing while
-multiple different NPCs can still be cleaved.
 
 Args:
     context (MeleeSwingContext): Authoritative melee swing information.
@@ -454,7 +510,9 @@ function MeleeHitService.begin_active_window(
 
     process_sample(
         context,
-        already_hit
+        already_hit,
+        1,
+        sample_count
     )
 
     if sample_count <= 1 then
@@ -474,7 +532,9 @@ function MeleeHitService.begin_active_window(
             function()
                 process_sample(
                     context,
-                    already_hit
+                    already_hit,
+                    sample_index,
+                    sample_count
                 )
             end
         )

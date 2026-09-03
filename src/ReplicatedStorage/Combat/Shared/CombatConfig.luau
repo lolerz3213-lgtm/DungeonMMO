@@ -162,6 +162,9 @@ local CombatConfig = {
     },
     DEBUG = {
         STATE_GUI_NAME = "CombatDebugGui",
+        SHOW_MELEE_HITBOX = true,
+        PRINT_MELEE_HITS = true,
+        PRINT_DAMAGE = true,
     },
 }
 
