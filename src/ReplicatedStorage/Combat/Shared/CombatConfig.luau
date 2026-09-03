@@ -58,6 +58,11 @@ local CombatConfig = {
                 FORWARD_STEP_STUDS = 1.20,
                 REACH_STUDS = 6.0,
                 ARC_DEGREES = 90,
+            HITBOX = {
+                SIZE = Vector3.new(12, 5, 6),
+                FORWARD_OFFSET = 3,
+                SAMPLE_COUNT = 4,
+            },
                 POWER_MULTIPLIER = 1.00,
                 MOVEMENT_SCALE = {
                     WIND_UP = 0.65,
@@ -74,6 +79,11 @@ local CombatConfig = {
                 FORWARD_STEP_STUDS = 1.40,
                 REACH_STUDS = 6.2,
                 ARC_DEGREES = 100,
+            HITBOX = {
+                SIZE = Vector3.new(15, 5, 6.2),
+                FORWARD_OFFSET = 3.1,
+                SAMPLE_COUNT = 4,
+            },
                 POWER_MULTIPLIER = 1.05,
                 MOVEMENT_SCALE = {
                     WIND_UP = 0.65,
@@ -90,6 +100,11 @@ local CombatConfig = {
                 FORWARD_STEP_STUDS = 1.80,
                 REACH_STUDS = 6.5,
                 ARC_DEGREES = 110,
+            HITBOX = {
+                SIZE = Vector3.new(18.6, 5, 6.5),
+                FORWARD_OFFSET = 3.25,
+                SAMPLE_COUNT = 4,
+            },
                 POWER_MULTIPLIER = 1.35,
                 MOVEMENT_SCALE = {
                     WIND_UP = 0.65,
