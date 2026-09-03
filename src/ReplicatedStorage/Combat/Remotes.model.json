@@ -1,0 +1,13 @@
+{
+    "ClassName": "Folder",
+    "Children": [
+        {
+            "Name": "AttackRequest",
+            "ClassName": "RemoteEvent"
+        },
+        {
+            "Name": "CombatStateChanged",
+            "ClassName": "RemoteEvent"
+        }
+    ]
+}
