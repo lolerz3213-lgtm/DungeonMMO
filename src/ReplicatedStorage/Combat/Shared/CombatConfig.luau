@@ -101,6 +101,7 @@ local CombatConfig = {
     },
 
     PROTOTYPE_WEAPON = {
+        BASE_DAMAGE = 10,
         TOOL_NAME = "PrototypeSword",
         HANDLE_NAME = "Handle",
         BLADE_NAME = "Blade",
