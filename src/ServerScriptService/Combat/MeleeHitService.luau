@@ -19,6 +19,11 @@ local CombatTargetRules = require(
         "CombatTargetRules"
     )
 )
+local DamageService = require(
+    script.Parent:WaitForChild(
+        "DamageService"
+    )
+)
 
 local MeleeHitService = {}
 
@@ -90,7 +95,7 @@ end
 
 
 --[[
-Checks whether a target lies inside the configured planar reach and arc.
+Checks whether a target lies inside configured planar reach and arc.
 
 Args:
     root (BasePart): Attacker HumanoidRootPart.
@@ -228,7 +233,7 @@ end
 
 
 --[[
-Returns whether solid level geometry blocks the attacker-to-target line.
+Returns whether solid level geometry blocks attacker-to-target line.
 
 Args:
     attacker_root (BasePart): Attacker HumanoidRootPart.
@@ -266,9 +271,9 @@ end
 --[[
 Collects newly accepted targets for one server melee sample.
 
-This function performs target acquisition only. It does not calculate
-or apply damage. The supplied `already_hit` table is shared across all
-samples in one swing so each target can be accepted only once.
+This function performs target acquisition only. The supplied
+`already_hit` table is shared across all samples in one swing so each
+target can be accepted only once.
 
 Args:
     context (MeleeSwingContext): Authoritative melee swing information.
@@ -369,6 +374,111 @@ function MeleeHitService.collect_targets(
     end
 
     return targets
+end
+
+
+--[[
+Applies damage to every newly accepted target from one sample.
+
+Args:
+    context (MeleeSwingContext): Authoritative melee swing information.
+    already_hit ({[Model]: boolean}): Shared per-swing deduplication.
+
+Returns:
+    None.
+]]
+local function process_sample(
+    context: MeleeSwingContext,
+    already_hit: {[Model]: boolean}
+)
+    local targets =
+        MeleeHitService.collect_targets(
+            context,
+            already_hit
+        )
+
+    for _, target in targets do
+        DamageService.apply_damage({
+            attacker = context.attacker,
+            attacker_character =
+                context.character,
+            target = target,
+            source_kind = "Melee",
+            source_id =
+                CombatConfig.PROTOTYPE_WEAPON
+                    .TOOL_NAME,
+            attack_id = context.attack_id,
+            base_damage = context.base_damage,
+            multiplier =
+                context.attack_definition
+                    .POWER_MULTIPLIER,
+        })
+    end
+end
+
+
+--[[
+Runs repeated server melee samples across one Active attack window.
+
+The first sample is processed immediately. Remaining samples are
+scheduled strictly inside the Active duration. All samples share one
+deduplication table, so an NPC can be damaged only once per swing while
+multiple different NPCs can still be cleaved.
+
+Args:
+    context (MeleeSwingContext): Authoritative melee swing information.
+
+Returns:
+    None.
+]]
+function MeleeHitService.begin_active_window(
+    context: MeleeSwingContext
+)
+    local attack_definition =
+        context.attack_definition
+    local hitbox = attack_definition.HITBOX
+
+    if not hitbox then
+        return
+    end
+
+    local sample_count = math.max(
+        1,
+        math.floor(hitbox.SAMPLE_COUNT or 1)
+    )
+    local active_seconds = math.max(
+        0,
+        attack_definition.ACTIVE_SECONDS or 0
+    )
+    local already_hit: {[Model]: boolean} = {}
+
+    process_sample(
+        context,
+        already_hit
+    )
+
+    if sample_count <= 1 then
+        return
+    end
+
+    local sample_interval =
+        active_seconds / sample_count
+
+    for sample_index = 2, sample_count do
+        local delay_seconds =
+            (sample_index - 1)
+            * sample_interval
+
+        task.delay(
+            delay_seconds,
+            function()
+                process_sample(
+                    context,
+                    already_hit
+                )
+            end
+        )
+    end
 end
 
 
