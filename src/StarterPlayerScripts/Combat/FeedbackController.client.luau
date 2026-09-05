@@ -18,6 +18,9 @@ local CombatConfig = require(
 local CombatTypes = require(
     shared_folder:WaitForChild("CombatTypes")
 )
+local SkillDefinitions = require(
+    shared_folder:WaitForChild("SkillDefinitions")
+)
 local ClientCombatController = require(
     script.Parent:WaitForChild("ClientCombatController")
 )
@@ -613,15 +616,23 @@ local function on_local_state_changed(
             .. attack_text
     end
 
+    local is_active_skill = SkillDefinitions.is_valid(attack_id)
+
     if blade_trail then
         blade_trail.Enabled =
             state_name == State.ACTIVE
+            and not is_active_skill
     end
 
     if state_name == State.WIND_UP
-        and attack_id ~= "" then
+        and attack_id ~= ""
+        and not is_active_skill then
         play_attack_animation(attack_id)
-    elseif state_name == State.LOCOMOTION
+    elseif (
+        state_name == State.LOCOMOTION
+        or state_name == State.BLOCKING
+        or state_name == State.DODGING
+    )
         and current_attack_track
         and current_attack_track.IsPlaying then
         current_attack_track:Stop(0.05)

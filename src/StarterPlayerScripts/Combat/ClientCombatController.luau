@@ -16,6 +16,9 @@ local CombatTypes = require(
 local StateRules = require(
     shared_folder:WaitForChild("StateRules")
 )
+local SkillDefinitions = require(
+    shared_folder:WaitForChild("SkillDefinitions")
+)
 
 local attack_request = remotes_folder:WaitForChild(
     CombatConfig.REMOTES.ATTACK_REQUEST
@@ -33,6 +36,7 @@ local server_state_changed = Instance.new("BindableEvent")
 local state_name = State.LOCOMOTION
 local state_started_at = os.clock()
 local current_attack_id: string? = nil
+local current_skill_id: string? = nil
 local next_attack_id = BasicAttack.ATTACK_ORDER[1]
 local queued_attack = false
 local combo_expires_at = 0
@@ -56,7 +60,7 @@ local function set_local_state(next_state: string)
 
     local_state_changed:Fire(
         state_name,
-        current_attack_id or ""
+        current_attack_id or current_skill_id or ""
     )
 end
 
@@ -205,6 +209,7 @@ start_predicted_attack = function(attack_id: string)
 
     sequence_id += 1
     current_attack_id = attack_id
+    current_skill_id = nil
     queued_attack = false
 
     local expected_sequence_id = sequence_id
@@ -234,6 +239,7 @@ local function reset_prediction()
     state_name = State.LOCOMOTION
     state_started_at = os.clock()
     current_attack_id = nil
+    current_skill_id = nil
     next_attack_id = BasicAttack.ATTACK_ORDER[1]
     queued_attack = false
     combo_expires_at = 0
@@ -349,6 +355,80 @@ state_changed_remote.OnClientEvent:Connect(function(
     server_attack_id: string,
     server_timestamp: number
 )
+    local server_is_defending =
+        server_state_name == State.BLOCKING
+        or server_state_name == State.DODGING
+        or server_state_name == State.GUARD_BREAK
+    local local_is_defending =
+        state_name == State.BLOCKING
+        or state_name == State.DODGING
+        or state_name == State.GUARD_BREAK
+    local server_skill = SkillDefinitions.get(server_attack_id)
+    local server_is_skill_state = server_skill ~= nil
+        and (
+            server_state_name == State.WIND_UP
+            or server_state_name == State.ACTIVE
+            or server_state_name == State.RECOVERY
+            or server_state_name == State.MENDING
+        )
+
+    if server_state_name == State.DEAD then
+        sequence_id += 1
+        state_name = State.DEAD
+        state_started_at = os.clock()
+        current_attack_id = nil
+        current_skill_id = nil
+        queued_attack = false
+        next_attack_id = BasicAttack.ATTACK_ORDER[1]
+        combo_expires_at = 0
+
+        local_state_changed:Fire(
+            state_name,
+            ""
+        )
+    elseif server_is_skill_state then
+        sequence_id += 1
+        state_name = server_state_name
+        state_started_at = os.clock()
+        current_attack_id = nil
+        current_skill_id = server_attack_id
+        queued_attack = false
+
+        local_state_changed:Fire(
+            state_name,
+            current_skill_id
+        )
+    elseif server_is_defending then
+        sequence_id += 1
+        state_name = server_state_name
+        state_started_at = os.clock()
+        current_attack_id = nil
+        current_skill_id = nil
+        queued_attack = false
+
+        local_state_changed:Fire(
+            state_name,
+            ""
+        )
+    elseif server_state_name == State.LOCOMOTION
+        and (
+            local_is_defending
+            or current_skill_id ~= nil
+            or state_name == State.DEAD
+        ) then
+        sequence_id += 1
+        state_name = State.LOCOMOTION
+        state_started_at = os.clock()
+        current_attack_id = nil
+        current_skill_id = nil
+        queued_attack = false
+
+        local_state_changed:Fire(
+            state_name,
+            ""
+        )
+    end
+
     server_state_changed:Fire(
         server_state_name,
         server_attack_id,

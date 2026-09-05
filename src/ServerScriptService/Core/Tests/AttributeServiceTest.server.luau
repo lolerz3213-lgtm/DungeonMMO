@@ -1,0 +1,23 @@
+--!strict
+local ServerScriptService=game:GetService("ServerScriptService")
+local Core=ServerScriptService:WaitForChild("Core")
+local Adapters=Core:WaitForChild("Adapters")
+local Services=Core:WaitForChild("Services")
+local InMemoryProfileAdapter=require(Adapters:WaitForChild("InMemoryProfileAdapter"))
+local ProfileService=require(Services:WaitForChild("ProfileService"))
+local AttributeService=require(Services:WaitForChild("AttributeService"))
+local n=0
+local function check(v:boolean,m:string) n+=1 if not v then error("[Attribute Service Tests] "..m,2) end end
+local profiles=ProfileService.new(InMemoryProfileAdapter.new()); assert(profiles:load(9201))
+assert(profiles:mutate(9201,function(profile) profile.Characters.Slot1.Level=5; profile.Characters.Slot1.Progression.AttributePointEntitlement=4 end))
+local service=AttributeService.new(profiles)
+local ok=service:commit(9201,{Strength=7,Dexterity=5,Vitality=5,Intellect=5,Spirit=5})
+check(ok.ok and ok.available_points==2,"valid spend must commit atomically")
+local bad=service:commit(9201,{Strength=99,Dexterity=5,Vitality=5,Intellect=5,Spirit=5})
+local c=assert(profiles:get_character(9201,1))
+check(bad.ok==false and c.Progression.Attributes.Strength==7,"overspend must reject without partial mutation")
+check(service:commit(9201,{Strength=6,Dexterity=5,Vitality=5,Intellect=5,Spirit=5}).ok==false,"normal commit cannot lower allocated attributes")
+local rr=service:respec(9201); c=assert(profiles:get_character(9201,1))
+check(rr.ok and c.Progression.Attributes.Strength==5 and c.Progression.RespecCounters.Attributes==1,"attribute respec must reset stats and increment only attribute counter")
+check(c.Progression.RespecCounters.Skills==0,"attribute respec must not increment skill counter")
+print(string.format("[Attribute Service Tests] PASS: %d assertions.",n))

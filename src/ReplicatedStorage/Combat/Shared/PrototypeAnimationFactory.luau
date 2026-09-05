@@ -575,6 +575,62 @@ end
 
 
 --[[
+Builds a small source-controlled right-arm sword carry overlay.
+
+This is used only as a clean-build fallback when the Studio-only AnimSaves
+source collection is unavailable. The left arm branch is removed so shield
+presentation remains free to control that arm.
+
+Args:
+    target_name (string): Name assigned to the generated sequence.
+
+Returns:
+    KeyframeSequence: Looping Action-priority right-arm carry clip.
+]]
+function PrototypeAnimationFactory.create_carry_sequence(
+    target_name: string
+): KeyframeSequence
+    local carry_pose: PoseMap = {
+        UpperTorso = CFrame.identity,
+        RightUpperArm = CFrame.Angles(
+            math.rad(-5),
+            0,
+            math.rad(9)
+        ),
+        RightLowerArm = CFrame.Angles(
+            math.rad(-4),
+            0,
+            math.rad(3)
+        ),
+        RightHand = CFrame.Angles(
+            0,
+            0,
+            math.rad(3)
+        ),
+        LeftUpperArm = CFrame.identity,
+    }
+
+    local sequence = Instance.new("KeyframeSequence")
+
+    sequence.Name = target_name
+    sequence.Loop = true
+    sequence.Priority = Enum.AnimationPriority.Action
+
+    add_keyframe(sequence, 0, carry_pose)
+    add_keyframe(sequence, 1, carry_pose)
+
+    for _, descendant in sequence:GetDescendants() do
+        if descendant:IsA("Pose")
+            and descendant.Name == "LeftUpperArm" then
+            descendant:Destroy()
+        end
+    end
+
+    return sequence
+end
+
+
+--[[
 Returns the expected duration for a generated sequence.
 
 Args:

@@ -6,7 +6,19 @@
             "ClassName": "RemoteEvent"
         },
         {
+            "Name": "DefenseRequest",
+            "ClassName": "RemoteEvent"
+        },
+        {
+            "Name": "SkillRequest",
+            "ClassName": "RemoteEvent"
+        },
+        {
             "Name": "CombatStateChanged",
+            "ClassName": "RemoteEvent"
+        },
+        {
+            "Name": "CombatValidationEvent",
             "ClassName": "RemoteEvent"
         }
     ]

@@ -3,6 +3,11 @@ export type StateName =
     | "WindUp"
     | "Active"
     | "Recovery"
+    | "Blocking"
+    | "Dodging"
+    | "GuardBreak"
+    | "Mending"
+    | "Dead"
 
 export type MovementScale = {
     WIND_UP: number,
@@ -27,6 +32,11 @@ local State = table.freeze({
     WIND_UP = "WindUp",
     ACTIVE = "Active",
     RECOVERY = "Recovery",
+    BLOCKING = "Blocking",
+    DODGING = "Dodging",
+    GUARD_BREAK = "GuardBreak",
+    MENDING = "Mending",
+    DEAD = "Dead",
 })
 
 local CombatTypes = table.freeze({

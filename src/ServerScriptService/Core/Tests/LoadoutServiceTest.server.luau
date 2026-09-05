@@ -1,0 +1,22 @@
+--!strict
+local ServerScriptService=game:GetService("ServerScriptService")
+local Core=ServerScriptService:WaitForChild("Core")
+local Adapters=Core:WaitForChild("Adapters")
+local Services=Core:WaitForChild("Services")
+local InMemoryProfileAdapter=require(Adapters:WaitForChild("InMemoryProfileAdapter"))
+local ProfileService=require(Services:WaitForChild("ProfileService"))
+local LoadoutService=require(Services:WaitForChild("LoadoutService"))
+local n=0
+local function check(v:boolean,m:string) n+=1 if not v then error("[Loadout Service Tests] "..m,2) end end
+local profiles=ProfileService.new(InMemoryProfileAdapter.new()); assert(profiles:load(9401))
+local service=LoadoutService.new(profiles)
+local c=assert(profiles:get_character(9401,1))
+check(c.Progression.Loadout[1]=="ShieldBash" and c.Progression.Loadout[2]=="Mend","starter loadout must be present")
+assert(profiles:mutate(9401,function(profile) local s=profile.Characters.Slot1.Progression.Skills; s.ArcSlash={Known=true,StarterGranted=false,PurchasedRank=1,Proficiency=0} end))
+local equipped=service:auto_equip_first_free(9401,"ArcSlash"); c=assert(profiles:get_character(9401,1))
+check(equipped==true and c.Progression.Loadout[3]=="ArcSlash","new learned skill must fill first free slot")
+local invalid=service:set(9401,{"Mend","Mend"},"Base"); c=assert(profiles:get_character(9401,1))
+check(invalid.ok==false and c.Progression.Loadout[1]=="ShieldBash","invalid duplicate request must preserve prior loadout")
+local active=service:set(9401,{"Mend","ShieldBash","ArcSlash"},"DungeonActive")
+check(active.ok==false and active.reason=="LoadoutLockedDuringEncounter","active encounter must reject swapping")
+print(string.format("[Loadout Service Tests] PASS: %d assertions.",n))

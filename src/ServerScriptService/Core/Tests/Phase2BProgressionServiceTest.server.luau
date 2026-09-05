@@ -1,0 +1,22 @@
+--!strict
+local ServerScriptService=game:GetService("ServerScriptService")
+local Core=ServerScriptService:WaitForChild("Core")
+local Adapters=Core:WaitForChild("Adapters")
+local Services=Core:WaitForChild("Services")
+local InMemoryProfileAdapter=require(Adapters:WaitForChild("InMemoryProfileAdapter"))
+local ProfileService=require(Services:WaitForChild("ProfileService"))
+local ProgressionService=require(Services:WaitForChild("ProgressionService"))
+local n=0
+local function check(v:boolean,m:string) n+=1 if not v then error("[Phase 2B Progression Service Tests] "..m,2) end end
+local profiles=ProfileService.new(InMemoryProfileAdapter.new()); assert(profiles:load(9101))
+local progression=ProgressionService.new(profiles)
+local r=progression:grant_xp(9101,100)
+local c=assert(profiles:get_character(9101,1))
+check(r.ok and c.Level==2 and c.Progression.AttributePointEntitlement==1 and c.Progression.SkillPointEntitlement==1, "Level 2 must grant exactly one AP/SP entitlement")
+local huge=progression:grant_xp(9101,1000000); c=assert(profiles:get_character(9101,1))
+check(huge.ok and c.Level==10, "XP must stop at prototype Level 10 cap")
+check(c.XP==0, "excess XP at cap must be discarded")
+check(c.Progression.AttributePointEntitlement==9 and c.Progression.SkillPointEntitlement==9, "Level 10 entitlement must be 9/9")
+local again=ProgressionService.apply_xp_to_character(c,100)
+check(again.ok and c.Level==10 and c.Progression.SkillPointEntitlement==9, "grant at cap must not create extra entitlement")
+print(string.format("[Phase 2B Progression Service Tests] PASS: %d assertions.",n))

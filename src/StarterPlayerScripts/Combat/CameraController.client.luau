@@ -14,25 +14,34 @@ local shared_folder = ReplicatedStorage
 local CombatConfig = require(
     shared_folder:WaitForChild("CombatConfig")
 )
+local InputMappingConfig = require(
+    shared_folder:WaitForChild("InputMappingConfig")
+)
 
 local VIEW_LOCK_CONFIG = CombatConfig.VIEW_LOCK
+local Gamepad = InputMappingConfig.GAMEPAD
 
-local view_lock_enabled = false
+local existing_state = player:GetAttribute(
+    VIEW_LOCK_CONFIG.STATE_ATTRIBUTE
+)
+local view_lock_enabled = existing_state == true
+
+if existing_state == nil then
+    player:SetAttribute(
+        VIEW_LOCK_CONFIG.STATE_ATTRIBUTE,
+        false
+    )
+end
 
 local current_humanoid: Humanoid? = nil
 local current_root_part: BasePart? = nil
 
 
---[[
-Applies the current View Lock state to the active character.
-
-Args:
-    None.
-
-Returns:
-    None.
-]]
 local function apply_view_lock_state()
+    if not view_lock_enabled then
+        UserInputService.MouseBehavior = Enum.MouseBehavior.Default
+    end
+
     if not current_humanoid then
         return
     end
@@ -40,27 +49,22 @@ local function apply_view_lock_state()
     current_humanoid.AutoRotate = not view_lock_enabled
 
     if view_lock_enabled then
-        current_humanoid.CameraOffset =
-            VIEW_LOCK_CONFIG.CAMERA_OFFSET
+        current_humanoid.CameraOffset = VIEW_LOCK_CONFIG.CAMERA_OFFSET
     else
         current_humanoid.CameraOffset = Vector3.zero
-        UserInputService.MouseBehavior =
-            Enum.MouseBehavior.Default
     end
 end
 
 
---[[
-Changes whether custom combat View Lock is enabled.
-
-Args:
-    enabled (boolean): True to enable View Lock.
-
-Returns:
-    None.
-]]
 local function set_view_lock_enabled(enabled: boolean)
     view_lock_enabled = enabled
+
+    if player:GetAttribute(VIEW_LOCK_CONFIG.STATE_ATTRIBUTE) ~= enabled then
+        player:SetAttribute(
+            VIEW_LOCK_CONFIG.STATE_ATTRIBUTE,
+            enabled
+        )
+    end
 
     apply_view_lock_state()
 
@@ -72,84 +76,48 @@ local function set_view_lock_enabled(enabled: boolean)
 end
 
 
---[[
-Handles the Left Shift View Lock action.
-
-Args:
-    action_name (string): ContextActionService action identifier.
-    input_state (Enum.UserInputState): Current action input state.
-    input_object (InputObject): Input event that triggered the action.
-
-Returns:
-    Enum.ContextActionResult: Whether this action consumes the input.
-]]
 local function on_toggle_view_lock(
     _action_name: string,
     input_state: Enum.UserInputState,
     _input_object: InputObject
 ): Enum.ContextActionResult
-    if input_state ~= Enum.UserInputState.Begin then
-        return Enum.ContextActionResult.Sink
+    if input_state == Enum.UserInputState.Begin then
+        set_view_lock_enabled(not view_lock_enabled)
     end
-
-    set_view_lock_enabled(not view_lock_enabled)
 
     return Enum.ContextActionResult.Sink
 end
 
 
---[[
-Stores the character components required by View Lock.
-
-Args:
-    character (Model): Newly spawned local player character.
-
-Returns:
-    None.
-]]
 local function on_character_added(character: Model)
-    current_humanoid = character:WaitForChild(
-        "Humanoid"
-    ) :: Humanoid
-
+    current_humanoid = character:WaitForChild("Humanoid") :: Humanoid
     current_root_part = character:WaitForChild(
         "HumanoidRootPart"
     ) :: BasePart
+
+    current_humanoid.Died:Connect(function()
+        set_view_lock_enabled(false)
+    end)
 
     apply_view_lock_state()
 end
 
 
---[[
-Clears references when the local character is removed.
-
-Args:
-    character (Model): Character being removed.
-
-Returns:
-    None.
-]]
 local function on_character_removing(_character: Model)
     current_humanoid = nil
     current_root_part = nil
 end
 
 
---[[
-Synchronises character yaw with camera yaw while View Lock is active.
-
-Args:
-    delta_time (number): Time elapsed since the previous render frame.
-
-Returns:
-    None.
-]]
 local function update_view_lock(_delta_time: number)
-    if not view_lock_enabled then
+    if not view_lock_enabled or not current_root_part then
         return
     end
 
-    if not current_root_part then
+    local character = current_root_part.Parent
+
+    if character
+        and character:GetAttribute("CombatState") == "Dodging" then
         return
     end
 
@@ -159,28 +127,24 @@ local function update_view_lock(_delta_time: number)
         return
     end
 
-    UserInputService.MouseBehavior =
-        Enum.MouseBehavior.LockCenter
+    UserInputService.MouseBehavior = Enum.MouseBehavior.LockCenter
 
     local look_vector = camera.CFrame.LookVector
-
     local horizontal_look = Vector3.new(
         look_vector.X,
         0,
         look_vector.Z
     )
 
-    if horizontal_look.Magnitude <
-        VIEW_LOCK_CONFIG.MIN_LOOK_MAGNITUDE then
+    if horizontal_look.Magnitude < VIEW_LOCK_CONFIG.MIN_LOOK_MAGNITUDE then
         return
     end
 
-    local facing_direction = horizontal_look.Unit
     local root_position = current_root_part.Position
 
     current_root_part.CFrame = CFrame.lookAt(
         root_position,
-        root_position + facing_direction
+        root_position + horizontal_look.Unit
     )
 end
 
@@ -189,8 +153,21 @@ ContextActionService:BindAction(
     VIEW_LOCK_CONFIG.ACTION_NAME,
     on_toggle_view_lock,
     false,
-    VIEW_LOCK_CONFIG.TOGGLE_KEY
+    VIEW_LOCK_CONFIG.TOGGLE_KEY,
+    Gamepad.VIEW_LOCK
 )
+
+player:GetAttributeChangedSignal(
+    VIEW_LOCK_CONFIG.STATE_ATTRIBUTE
+):Connect(function()
+    local requested = player:GetAttribute(
+        VIEW_LOCK_CONFIG.STATE_ATTRIBUTE
+    ) == true
+
+    if requested ~= view_lock_enabled then
+        set_view_lock_enabled(requested)
+    end
+end)
 
 RunService:BindToRenderStep(
     "CombatViewLockFacing",

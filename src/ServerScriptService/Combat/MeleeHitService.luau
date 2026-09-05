@@ -34,6 +34,12 @@ export type MeleeSwingContext = {
     attack_id: string,
     attack_definition: any,
     base_damage: number,
+    sequence_id: number?,
+    is_cancelled: (() -> boolean)?,
+    on_target: ((Model) -> ())?,
+    on_candidate_rejected: ((Model, string) -> ())?,
+    on_target_accepted: ((Model) -> ())?,
+    on_window_cancelled: (() -> ())?,
 }
 
 
@@ -106,11 +112,11 @@ Args:
 Returns:
     boolean: True when the target is inside reach and arc.
 ]]
-local function is_inside_attack_arc(
+local function get_geometry_rejection_reason(
     root: BasePart,
     target_position: Vector3,
     attack_definition: any
-): boolean
+): string?
     local attacker_position = root.Position
 
     local offset = Vector3.new(
@@ -122,11 +128,11 @@ local function is_inside_attack_arc(
     local distance = offset.Magnitude
 
     if distance <= 1e-6 then
-        return true
+        return nil
     end
 
     if distance > attack_definition.REACH_STUDS then
-        return false
+        return "Range"
     end
 
     local look = root.CFrame.LookVector
@@ -137,7 +143,7 @@ local function is_inside_attack_arc(
     )
 
     if forward.Magnitude <= 1e-6 then
-        return false
+        return "Arc"
     end
 
     forward = forward.Unit
@@ -155,7 +161,22 @@ local function is_inside_attack_arc(
     local half_arc =
         attack_definition.ARC_DEGREES / 2
 
-    return angle <= half_arc
+    if angle > half_arc then
+        return "Arc"
+    end
+
+    return nil
+end
+
+
+local function report_rejection(
+    context: MeleeSwingContext,
+    target_model: Model,
+    reason: string
+)
+    if context.on_candidate_rejected then
+        context.on_candidate_rejected(target_model, reason)
+    end
 end
 
 
@@ -376,6 +397,7 @@ function MeleeHitService.collect_targets(
             )
 
         if not valid then
+            report_rejection(context, target_model, "InvalidTarget")
             continue
         end
 
@@ -383,14 +405,18 @@ function MeleeHitService.collect_targets(
             get_target_position(target_model)
 
         if not target_position then
+            report_rejection(context, target_model, "NoPosition")
             continue
         end
 
-        if not is_inside_attack_arc(
+        local geometry_rejection = get_geometry_rejection_reason(
             root,
             target_position,
             attack_definition
-        ) then
+        )
+
+        if geometry_rejection then
+            report_rejection(context, target_model, geometry_rejection)
             continue
         end
 
@@ -399,6 +425,7 @@ function MeleeHitService.collect_targets(
             target_position,
             character
         ) then
+            report_rejection(context, target_model, "Obstructed")
             continue
         end
 
@@ -408,6 +435,10 @@ function MeleeHitService.collect_targets(
             targets,
             target_model
         )
+
+        if context.on_target_accepted then
+            context.on_target_accepted(target_model)
+        end
 
         if CombatConfig.DEBUG.PRINT_MELEE_HITS then
             print(
@@ -439,8 +470,21 @@ local function process_sample(
     context: MeleeSwingContext,
     already_hit: {[Model]: boolean},
     sample_index: number,
-    sample_count: number
+    sample_count: number,
+    cancellation_state: {reported: boolean}
 )
+    if context.is_cancelled and context.is_cancelled() then
+        if not cancellation_state.reported then
+            cancellation_state.reported = true
+
+            if context.on_window_cancelled then
+                context.on_window_cancelled()
+            end
+        end
+
+        return
+    end
+
     if CombatConfig.DEBUG.PRINT_MELEE_HITS then
         print(
             string.format(
@@ -459,20 +503,21 @@ local function process_sample(
         )
 
     for _, target in targets do
+        if context.on_target then
+            context.on_target(target)
+            continue
+        end
+
         DamageService.apply_damage({
             attacker = context.attacker,
-            attacker_character =
-                context.character,
+            attacker_character = context.character,
             target = target,
             source_kind = "Melee",
-            source_id =
-                CombatConfig.PROTOTYPE_WEAPON
-                    .TOOL_NAME,
+            source_id = CombatConfig.PROTOTYPE_WEAPON.TOOL_NAME,
             attack_id = context.attack_id,
             base_damage = context.base_damage,
-            multiplier =
-                context.attack_definition
-                    .POWER_MULTIPLIER,
+            multiplier = context.attack_definition.POWER_MULTIPLIER,
+            sequence_id = context.sequence_id,
         })
     end
 end
@@ -507,12 +552,14 @@ function MeleeHitService.begin_active_window(
         attack_definition.ACTIVE_SECONDS or 0
     )
     local already_hit: {[Model]: boolean} = {}
+    local cancellation_state = {reported = false}
 
     process_sample(
         context,
         already_hit,
         1,
-        sample_count
+        sample_count,
+        cancellation_state
     )
 
     if sample_count <= 1 then
@@ -534,7 +581,8 @@ function MeleeHitService.begin_active_window(
                     context,
                     already_hit,
                     sample_index,
-                    sample_count
+                    sample_count,
+                    cancellation_state
                 )
             end
         )

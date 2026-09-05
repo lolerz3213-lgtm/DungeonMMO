@@ -1,0 +1,28 @@
+{
+  "name": "DungeonMMO_Base",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "$ignoreUnknownInstances": true,
+      "Core": {"$path": "src/ReplicatedStorage/Core"}
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$ignoreUnknownInstances": true,
+      "Core": {"$path": "src/ServerScriptService/Core"},
+      "Base": {"$path": "src/ServerScriptService/Base"}
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "$ignoreUnknownInstances": true,
+      "$properties": {"EnableMouseLockOption": false},
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$ignoreUnknownInstances": true,
+        "Core": {"$path": "src/StarterPlayerScripts/Core"},
+        "Base": {"$path": "src/StarterPlayerScripts/Base"}
+      }
+    }
+  }
+}

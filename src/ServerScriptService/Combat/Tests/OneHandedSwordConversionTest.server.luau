@@ -268,8 +268,6 @@ if imported then
     for _, name in {
         "Slice1",
         "Slice2",
-        "Slice3",
-        "Slice4",
         "Slice5",
         "SwordCarry",
     } do

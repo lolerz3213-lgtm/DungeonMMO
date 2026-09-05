@@ -5,17 +5,51 @@ local State = CombatTypes.State
 local ALLOWED_TRANSITIONS = table.freeze({
     [State.LOCOMOTION] = table.freeze({
         [State.WIND_UP] = true,
+        [State.BLOCKING] = true,
+        [State.DODGING] = true,
+        [State.GUARD_BREAK] = true,
+        [State.MENDING] = true,
+        [State.DEAD] = true,
     }),
     [State.WIND_UP] = table.freeze({
         [State.ACTIVE] = true,
+        [State.BLOCKING] = true,
+        [State.DODGING] = true,
+        [State.DEAD] = true,
     }),
     [State.ACTIVE] = table.freeze({
         [State.RECOVERY] = true,
+        [State.BLOCKING] = true,
+        [State.DODGING] = true,
+        [State.DEAD] = true,
     }),
     [State.RECOVERY] = table.freeze({
         [State.LOCOMOTION] = true,
         [State.WIND_UP] = true,
+        [State.BLOCKING] = true,
+        [State.DODGING] = true,
+        [State.DEAD] = true,
     }),
+    [State.BLOCKING] = table.freeze({
+        [State.LOCOMOTION] = true,
+        [State.GUARD_BREAK] = true,
+        [State.DEAD] = true,
+    }),
+    [State.DODGING] = table.freeze({
+        [State.LOCOMOTION] = true,
+        [State.DEAD] = true,
+    }),
+    [State.GUARD_BREAK] = table.freeze({
+        [State.LOCOMOTION] = true,
+        [State.DEAD] = true,
+    }),
+    [State.MENDING] = table.freeze({
+        [State.LOCOMOTION] = true,
+        [State.BLOCKING] = true,
+        [State.DODGING] = true,
+        [State.DEAD] = true,
+    }),
+    [State.DEAD] = table.freeze({}),
 })
 
 local BUFFER_BOUNDARY_EPSILON = 1e-9

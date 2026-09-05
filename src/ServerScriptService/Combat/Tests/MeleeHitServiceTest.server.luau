@@ -280,6 +280,115 @@ assert_true(
     "All accepted cleave targets must deduplicate."
 )
 
+local SkillDefinitions = require(
+    shared_folder:WaitForChild("SkillDefinitions")
+)
+
+local shield_bash_definition = SkillDefinitions.get("ShieldBash")
+assert_true(
+    shield_bash_definition ~= nil,
+    "Shield Bash definition must exist for cone tests."
+)
+
+local bash_origin = TEST_ORIGIN + Vector3.new(30, 0, 0)
+local bash_attacker = create_combat_model(
+    "ShieldBashConeAttacker",
+    bash_origin,
+    false
+)
+
+local inside_angle = math.rad(55)
+local outside_angle = math.rad(65)
+local cone_test_distance = 4
+
+local inside_target = create_combat_model(
+    "ShieldBashConeInside",
+    bash_origin + Vector3.new(
+        math.sin(inside_angle) * cone_test_distance,
+        0,
+        -math.cos(inside_angle) * cone_test_distance
+    ),
+    true
+)
+
+local outside_target = create_combat_model(
+    "ShieldBashConeOutside",
+    bash_origin + Vector3.new(
+        math.sin(outside_angle) * cone_test_distance,
+        0,
+        -math.cos(outside_angle) * cone_test_distance
+    ),
+    true
+)
+
+local bash_context = {
+    attacker = nil,
+    character = bash_attacker,
+    attack_id = "ShieldBash",
+    attack_definition = shield_bash_definition,
+    base_damage = 0,
+}
+
+local bash_targets = MeleeHitService.collect_targets(
+    bash_context,
+    {}
+)
+
+assert_true(
+    contains_target(bash_targets, inside_target),
+    "Shield Bash must accept a target 55 degrees off centre."
+)
+
+assert_true(
+    not contains_target(bash_targets, outside_target),
+    "Shield Bash must reject a target 65 degrees off centre."
+)
+
+local reach_inside = create_combat_model(
+    "ShieldBashReachInside",
+    bash_origin + Vector3.new(0, 0, -5.8),
+    true
+)
+local reach_outside = create_combat_model(
+    "ShieldBashReachOutside",
+    bash_origin + Vector3.new(0, 0, -6.2),
+    true
+)
+
+local reach_targets = MeleeHitService.collect_targets(
+    bash_context,
+    {}
+)
+
+assert_true(
+    contains_target(reach_targets, reach_inside),
+    "Shield Bash must accept a frontal target at 5.8 studs."
+)
+assert_true(
+    not contains_target(reach_targets, reach_outside),
+    "Shield Bash must reject a frontal target beyond 6 studs."
+)
+
+local callback_count = 0
+local callback_context = {
+    attacker = nil,
+    character = attacker,
+    attack_id = "ShieldBashTest",
+    attack_definition = attack_definition,
+    base_damage = 0,
+    on_target = function(_target: Model)
+        callback_count += 1
+    end,
+}
+
+MeleeHitService.begin_active_window(callback_context)
+task.wait(attack_definition.ACTIVE_SECONDS + 0.05)
+
+assert_true(
+    callback_count == 3,
+    "Optional target callback must run once per accepted target."
+)
+
 for _, instance in {
     attacker,
     front,
@@ -289,6 +398,11 @@ for _, instance in {
     behind,
     blocked,
     wall,
+    bash_attacker,
+    inside_target,
+    outside_target,
+    reach_inside,
+    reach_outside,
 } do
     instance:Destroy()
 end

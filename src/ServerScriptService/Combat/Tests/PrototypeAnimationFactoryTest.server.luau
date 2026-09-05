@@ -177,6 +177,46 @@ for _, attack_id in BasicAttack.ATTACK_ORDER do
     )
 end
 
+
+local carry =
+    PrototypeAnimationFactory.create_carry_sequence(
+        "SwordCarry"
+    )
+
+assert_true(
+    carry:IsA("KeyframeSequence"),
+    "Fallback carry must create a KeyframeSequence."
+)
+assert_true(
+    carry.Name == "SwordCarry",
+    "Fallback carry must keep the requested clip name."
+)
+assert_true(
+    carry.Loop == true,
+    "Fallback carry must loop."
+)
+assert_true(
+    carry.Priority == Enum.AnimationPriority.Action,
+    "Fallback carry must use Action priority."
+)
+local carry_keyframes = carry:GetKeyframes()
+local carry_first_keyframe = carry_keyframes[1]
+
+assert_true(
+    carry_first_keyframe ~= nil,
+    "Fallback carry must contain at least one keyframe."
+)
+assert_true(
+    not contains_pose(carry_first_keyframe, "LeftUpperArm"),
+    "Fallback carry must leave the shield arm free."
+)
+assert_true(
+    contains_pose(carry_first_keyframe, "RightUpperArm"),
+    "Fallback carry must retain the sword arm."
+)
+
+carry:Destroy()
+
 print(
     string.format(
         "[Combat Animation Tests] PASS: %d assertions.",

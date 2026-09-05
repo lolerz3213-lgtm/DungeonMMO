@@ -1,33 +1,31 @@
 {
-    "name": "DungeonMMO",
-    "tree": {
-        "$className": "DataModel",
-
-        "ReplicatedStorage": {
-            "$className": "ReplicatedStorage",
-            "$ignoreUnknownInstances": true,
-            "$path": "src/ReplicatedStorage"
-        },
-
-        "ServerScriptService": {
-            "$className": "ServerScriptService",
-            "$ignoreUnknownInstances": true,
-            "$path": "src/ServerScriptService"
-        },
-
-        "StarterPlayer": {
-            "$className": "StarterPlayer",
-            "$ignoreUnknownInstances": true,
-
-            "$properties": {
-                "EnableMouseLockOption": false
-            },
-
-            "StarterPlayerScripts": {
-                "$className": "StarterPlayerScripts",
-                "$ignoreUnknownInstances": true,
-                "$path": "src/StarterPlayerScripts"
-            }
-        }
+  "name": "DungeonMMO_Dungeon",
+  "tree": {
+    "$className": "DataModel",
+    "ReplicatedStorage": {
+      "$className": "ReplicatedStorage",
+      "$ignoreUnknownInstances": true,
+      "Core": {"$path": "src/ReplicatedStorage/Core"},
+      "Combat": {"$path": "src/ReplicatedStorage/Combat"}
+    },
+    "ServerScriptService": {
+      "$className": "ServerScriptService",
+      "$ignoreUnknownInstances": true,
+      "Core": {"$path": "src/ServerScriptService/Core"},
+      "Combat": {"$path": "src/ServerScriptService/Combat"},
+      "Dungeon": {"$path": "src/ServerScriptService/Dungeon"}
+    },
+    "StarterPlayer": {
+      "$className": "StarterPlayer",
+      "$ignoreUnknownInstances": true,
+      "$properties": {"EnableMouseLockOption": false},
+      "StarterPlayerScripts": {
+        "$className": "StarterPlayerScripts",
+        "$ignoreUnknownInstances": true,
+        "Core": {"$path": "src/StarterPlayerScripts/Core"},
+        "Combat": {"$path": "src/StarterPlayerScripts/Combat"},
+        "Dungeon": {"$path": "src/StarterPlayerScripts/Dungeon"}
+      }
     }
+  }
 }

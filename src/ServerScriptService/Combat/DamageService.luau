@@ -1,3 +1,4 @@
+local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService(
     "ReplicatedStorage"
 )
@@ -8,6 +9,9 @@ local shared_folder = ReplicatedStorage
 
 local CombatConfig = require(
     shared_folder:WaitForChild("CombatConfig")
+)
+local CombatValidationService = require(
+    script.Parent:WaitForChild("CombatValidationService")
 )
 
 local DamageService = {}
@@ -21,6 +25,7 @@ export type DamageContext = {
     attack_id: string?,
     base_damage: number,
     multiplier: number,
+    sequence_id: number?,
 }
 
 
@@ -85,6 +90,25 @@ function DamageService.apply_damage(
     end
 
     humanoid:TakeDamage(damage)
+
+    local observer = context.attacker
+
+    if not observer then
+        observer = Players:GetPlayerFromCharacter(context.target)
+    end
+
+    CombatValidationService.emit(
+        observer,
+        "DAMAGE",
+        "APPLIED",
+        string.format(
+            "%s %.1fHP -> %s",
+            context.attack_id or context.source_id,
+            damage,
+            context.target.Name
+        ),
+        context.sequence_id
+    )
 
     if CombatConfig.DEBUG.PRINT_DAMAGE then
         print(

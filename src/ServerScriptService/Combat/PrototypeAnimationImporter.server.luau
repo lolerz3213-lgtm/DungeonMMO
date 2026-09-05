@@ -16,6 +16,11 @@ local OneHandedAnimationConverter = require(
         "OneHandedAnimationConverter"
     )
 )
+local PrototypeAnimationFactory = require(
+    shared_folder:WaitForChild(
+        "PrototypeAnimationFactory"
+    )
+)
 
 local BasicAttack = CombatConfig.BASIC_ATTACK
 
@@ -202,17 +207,81 @@ local function import_carry_clip(
 end
 
 
+--[[
+Creates source-controlled prototype clips when the Studio-only AnimSaves
+collection is unavailable (for example in a fresh Rojo build).
+
+The normal playable Dungeon place still prefers AnimSaves when present, so
+this fallback does not replace the accepted imported presentation.
+
+Args:
+    destination (Folder): Empty PrototypeAnimations folder.
+
+Returns:
+    number: Number of attack clips generated.
+]]
+local function create_fallback_clips(
+    destination: Folder
+): number
+    local clip_names = {
+        Slash1 = "Slice1",
+        Slash2 = "Slice2",
+        Finisher = "Slice5",
+    }
+    local attack_count = 0
+
+    for _, attack_id in BasicAttack.ATTACK_ORDER do
+        local attack_definition =
+            BasicAttack.ATTACKS[attack_id]
+        local source =
+            PrototypeAnimationFactory.create_sequence(
+                attack_id,
+                attack_definition
+            )
+        local converted =
+            OneHandedAnimationConverter.convert_attack(
+                source,
+                clip_names[attack_id],
+                get_attack_duration(attack_definition)
+            )
+
+        source:Destroy()
+        converted.Parent = destination
+        attack_count += 1
+    end
+
+    local carry =
+        PrototypeAnimationFactory.create_carry_sequence(
+            "SwordCarry"
+        )
+
+    carry.Parent = destination
+
+    return attack_count
+end
+
+
 local source_folder = find_source_folder()
+local destination = create_destination()
 
 if not source_folder then
+    local fallback_attack_count =
+        create_fallback_clips(destination)
+
     warn(
-        "[Combat Prototype] R15 Sword Animations "
-            .. "AnimSaves folder was not found."
+        "[Combat Prototype] AnimSaves folder was not found. "
+            .. "Using source-controlled fallback animations."
+    )
+    print(
+        string.format(
+            "[Combat Prototype] Generated %d fallback attacks "
+                .. "and sword carry overlay.",
+            fallback_attack_count
+        )
     )
     return
 end
 
-local destination = create_destination()
 local attack_count = import_attack_clips(
     source_folder,
     destination

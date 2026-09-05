@@ -1,0 +1,13 @@
+{
+  "ClassName": "Folder",
+  "Children": [
+    {"Name": "ProfileSnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "InventorySnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonEntryRequest", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonEntryResult", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonStateChanged", "ClassName": "RemoteEvent"},
+    {"Name": "ReviveRequest", "ClassName": "RemoteEvent"},
+    {"Name": "ReviveStateChanged", "ClassName": "RemoteEvent"},
+    {"Name": "ReturnRequest", "ClassName": "RemoteEvent"}
+  ]
+}
