@@ -7,14 +7,15 @@ function UiStateRules.for_state(state_name: string, payload: any?): any
     local paid_offer = data.paid_offer
     local free_available = data.free_available == true
     local death_state = state_name == "ReviveChoice"
+        or state_name == "Reviving"
         or state_name == "Spectating"
     local paid_available = death_state
         and not free_available
         and type(paid_offer) == "table"
     local revive_action = nil
-    if death_state and free_available then
+    if state_name == "ReviveChoice" and free_available then
         revive_action = "Free"
-    elseif paid_available then
+    elseif paid_available and state_name ~= "Reviving" then
         revive_action = "Paid"
     end
 

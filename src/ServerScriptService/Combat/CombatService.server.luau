@@ -1161,23 +1161,20 @@ local function handle_attack_request(player: Player)
 end
 
 
---[[
-Returns whether a skill id is equipped in the prototype hotbar loadout.
-
-Args:
-    skill_id (string): Server-recognised skill identifier.
-
-Returns:
-    boolean: True when the skill is equipped in one prototype slot.
-]]
-local function is_skill_equipped(skill_id: string): boolean
-    for slot = 1, HotbarConfig.SLOT_COUNT do
-        if HotbarConfig.get_skill_for_slot(slot) == skill_id then
-            return true
+--[[Returns server-observed weapon tags for the currently equipped Tool.]]
+local function get_equipped_weapon_tags(player: Player): {[string]: boolean}
+    local tags: {[string]: boolean} = {}
+    local character = player.Character
+    if not character then return tags end
+    for _, child in ipairs(character:GetChildren()) do
+        if child:IsA("Tool") then
+            if child:GetAttribute("WeaponTagOneHandedSword") == true
+                or child.Name == "PrototypeSword" then
+                tags.OneHandedSword = true
+            end
         end
     end
-
-    return false
+    return tags
 end
 
 
@@ -1216,6 +1213,36 @@ local function apply_shield_bash_target(
     StaggerService.apply(target, skill_definition.STAGGER_SECONDS)
     DungeonProgressionBridge.award_damage(player, skill_definition.ID, target, applied_damage, 1)
     DungeonProgressionBridge.award_control(player, skill_definition.ID, target, "Stagger", not already_staggered)
+end
+
+
+--[[Applies one server-authoritative Arc Slash target hit.]]
+local function apply_arc_slash_target(
+    player: Player,
+    character: Model,
+    skill_definition: any,
+    target: Model,
+    sequence_id: number,
+    target_index: number
+)
+    local applied_damage = DamageService.apply_damage({
+        attacker = player,
+        attacker_character = character,
+        target = target,
+        source_kind = "Skill",
+        source_id = skill_definition.ID,
+        attack_id = nil,
+        base_damage = skill_definition.BASE_DAMAGE,
+        multiplier = ProgressionRuntimeState.get_physical_multiplier(player.UserId),
+        sequence_id = sequence_id,
+    })
+    DungeonProgressionBridge.award_damage(
+        player,
+        skill_definition.ID,
+        target,
+        applied_damage,
+        target_index
+    )
 end
 
 
@@ -1341,15 +1368,30 @@ local function enter_skill_active(
                     State.ACTIVE
                 )
             end,
-            on_target = function(target: Model)
-                apply_shield_bash_target(
-                    player,
-                    character,
-                    skill_definition,
-                    target,
-                    sequence_id
-                )
-            end,
+            on_target = (function()
+                local target_index = 0
+                return function(target: Model)
+                    target_index += 1
+                    if skill_definition.ID == "ArcSlash" then
+                        apply_arc_slash_target(
+                            player,
+                            character,
+                            skill_definition,
+                            target,
+                            sequence_id,
+                            target_index
+                        )
+                    else
+                        apply_shield_bash_target(
+                            player,
+                            character,
+                            skill_definition,
+                            target,
+                            sequence_id
+                        )
+                    end
+                end
+            end)(),
             on_candidate_rejected = function(target: Model, reason: string)
                 CombatValidationService.emit(
                     player,
@@ -1650,16 +1692,32 @@ local function handle_skill_request(
         return
     end
 
-    local skill_definition = SkillDefinitions.get(requested_skill_id)
+    local base_definition = SkillDefinitions.get(requested_skill_id)
+    if not base_definition then
+        CombatValidationService.emit(player, "SKILL", "REJECT", "UnknownSkill", record.sequence_id)
+        return
+    end
 
-    if not skill_definition or not is_skill_equipped(requested_skill_id) then
+    local usable, unusable_reason = ProgressionRuntimeState.is_skill_usable(
+        player.UserId,
+        requested_skill_id,
+        get_equipped_weapon_tags(player)
+    )
+    if not usable then
         CombatValidationService.emit(
             player,
             "SKILL",
             "REJECT",
-            "UnknownOrUnequipped",
+            unusable_reason or "SkillUnavailable",
             record.sequence_id
         )
+        return
+    end
+
+    local rank = ProgressionRuntimeState.get_skill_rank(player.UserId, requested_skill_id)
+    local skill_definition = SkillDefinitions.get_for_rank(requested_skill_id, rank)
+    if not skill_definition then
+        CombatValidationService.emit(player, "SKILL", "REJECT", "RankDefinitionMissing", record.sequence_id)
         return
     end
 

@@ -18,17 +18,38 @@ local RobloxTeleportAdapter = require(Adapters:WaitForChild("RobloxTeleportAdapt
 local TestFailureSwitches = require(Core:WaitForChild("TestFailureSwitches"))
 local BaseReconnectRouting = require(Base:WaitForChild("BaseReconnectRouting"))
 local BaseReturnAdmissionRules = require(Base:WaitForChild("BaseReturnAdmissionRules"))
+local BaseProgressionController = require(Base:WaitForChild("BaseProgressionController"))
 
 local remotes = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Remotes")
 local entry_request = remotes:WaitForChild("DungeonEntryRequest") :: RemoteEvent
 local entry_result = remotes:WaitForChild("DungeonEntryResult") :: RemoteEvent
 local profile_snapshot = remotes:WaitForChild("ProfileSnapshot") :: RemoteEvent
 local inventory_snapshot = remotes:WaitForChild("InventorySnapshot") :: RemoteEvent
+local progression_snapshot = remotes:WaitForChild("ProgressionSnapshot") :: RemoteEvent
+local progression_action_result = remotes:WaitForChild("ProgressionActionResult") :: RemoteEvent
+local attribute_commit_request = remotes:WaitForChild("AttributeCommitRequest") :: RemoteEvent
+local skill_learn_request = remotes:WaitForChild("SkillLearnRequest") :: RemoteEvent
+local skill_rank_request = remotes:WaitForChild("SkillRankRequest") :: RemoteEvent
+local attribute_respec_request = remotes:WaitForChild("AttributeRespecRequest") :: RemoteEvent
+local skill_respec_request = remotes:WaitForChild("SkillRespecRequest") :: RemoteEvent
+local loadout_request = remotes:WaitForChild("LoadoutRequest") :: RemoteEvent
 
 local runtime = RuntimeServices.new("Base")
 local profiles = runtime.ProfileService
 local leases = runtime.LeaseService
 local sessions = runtime.SessionService
+local inventory = runtime.InventoryService
+local attributes = runtime.AttributeService
+local loadout = runtime.LoadoutService
+local skills = runtime.SkillProgressionService
+local progression_controller = BaseProgressionController.new({
+    context = "Base",
+    profiles = profiles,
+    inventory = inventory,
+    attributes = attributes,
+    loadout = loadout,
+    skills = skills,
+})
 local force_outbound_failure = TestFailureSwitches.is_enabled(
     TestFailureSwitches.OUTBOUND_ATTRIBUTE
 )
@@ -51,6 +72,10 @@ local ENTRY_RATE_LIMIT_SECONDS = 2
 local AUTOSAVE_SECONDS = 30
 local LEASE_RENEW_SECONDS = 15
 
+local function send_progression(player: Player)
+    progression_snapshot:FireClient(player, progression_controller:build_snapshot(player.UserId))
+end
+
 local function send_profile(player: Player)
     local character = profiles:get_character(player.UserId, 1)
     if not character then
@@ -63,6 +88,7 @@ local function send_profile(player: Player)
         Gold = character.Gold,
     })
     inventory_snapshot:FireClient(player, character.Inventory)
+    send_progression(player)
 end
 
 local function send_entry_result(player: Player, result: any)
@@ -224,6 +250,53 @@ end)
 
 profile_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
     if action == "Request" and loaded_users[player.UserId] then send_profile(player) end
+end)
+
+progression_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
+    if action == "Request" and loaded_users[player.UserId] then send_progression(player) end
+end)
+
+local function finish_progression_action(player: Player, action: string, result: any)
+    local payload = {action = action, ok = result and result.ok == true, reason = result and result.reason or nil}
+    progression_action_result:FireClient(player, payload)
+    if payload.ok then
+        ProgressionRuntimeState.apply_max_health(player)
+        send_profile(player)
+    end
+end
+
+attribute_commit_request.OnServerEvent:Connect(function(player: Player, desired: any)
+    if not loaded_users[player.UserId] then return end
+    finish_progression_action(player, "AttributeCommit", progression_controller:commit_attributes(player.UserId, desired))
+end)
+skill_learn_request.OnServerEvent:Connect(function(player: Player, skill_id: any)
+    if not loaded_users[player.UserId] or type(skill_id) ~= "string" then return end
+    finish_progression_action(player, "SkillLearn", progression_controller:learn_skill(player.UserId, skill_id))
+end)
+skill_rank_request.OnServerEvent:Connect(function(player: Player, skill_id: any)
+    if not loaded_users[player.UserId] or type(skill_id) ~= "string" then return end
+    finish_progression_action(player, "SkillRank", progression_controller:purchase_rank(player.UserId, skill_id))
+end)
+attribute_respec_request.OnServerEvent:Connect(function(player: Player)
+    if not loaded_users[player.UserId] then return end
+    finish_progression_action(player, "AttributeRespec", progression_controller:respec_attributes(player.UserId))
+end)
+skill_respec_request.OnServerEvent:Connect(function(player: Player)
+    if not loaded_users[player.UserId] then return end
+    finish_progression_action(player, "SkillRespec", progression_controller:respec_skills(player.UserId))
+end)
+loadout_request.OnServerEvent:Connect(function(player: Player, first: any, second: any)
+    if not loaded_users[player.UserId] then return end
+    local result:any
+    if type(first)=="string" then
+        result=progression_controller:move_skill_to_slot(player.UserId,first,second)
+    elseif type(first)=="table" and second==nil then
+        -- Backwards-compatible path for older clients; new clients use atomic move-to-slot.
+        result=progression_controller:set_loadout(player.UserId,first)
+    else
+        result={ok=false,reason="InvalidLoadoutRequest"}
+    end
+    finish_progression_action(player,"Loadout",result)
 end)
 
 local function connect_prompt()

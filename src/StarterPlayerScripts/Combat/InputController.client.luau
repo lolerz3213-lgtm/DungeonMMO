@@ -100,7 +100,7 @@ ContextActionService:BindAction(
     Gamepad.DODGE
 )
 
-for slot = 1, HotbarConfig.SLOT_COUNT do
+for slot = 1, HotbarConfig.ACTIVE_SLOT_COUNT do
     local action_name = HotbarConfig.get_action_name(slot)
     local keyboard_key = HotbarConfig.get_default_key(slot)
     local gamepad_key = HotbarConfig.get_default_gamepad_key(slot)

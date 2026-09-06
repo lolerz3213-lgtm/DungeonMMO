@@ -44,6 +44,7 @@ function RuntimeServices.new(place_kind: string): any
     local profiles = ProfileService.new(profile_adapter, leases)
     local sessions = DungeonSessionService.new(session_map)
     local progression = ProgressionService.new(profiles)
+    ProgressionService.bind_default(progression)
     local inventory = InventoryService.new(profiles)
     local rewards = RewardService.new(profiles, progression, inventory, sessions)
     local attributes = AttributeService.new(profiles)

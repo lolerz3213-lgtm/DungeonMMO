@@ -1,4 +1,5 @@
 local SLOT_COUNT = 8
+local ACTIVE_SLOT_COUNT = 6
 
 local DEFAULT_KEYS = table.freeze({
     [1] = Enum.KeyCode.One,
@@ -101,6 +102,7 @@ end
 
 return table.freeze({
     SLOT_COUNT = SLOT_COUNT,
+    ACTIVE_SLOT_COUNT = ACTIVE_SLOT_COUNT,
     DEFAULT_KEYS = DEFAULT_KEYS,
     DEFAULT_GAMEPAD_KEYS = DEFAULT_GAMEPAD_KEYS,
     ACTION_NAMES = ACTION_NAMES,

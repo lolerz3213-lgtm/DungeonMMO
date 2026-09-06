@@ -42,7 +42,11 @@ end
 
 assert_true(
     HotbarConfig.SLOT_COUNT == 8,
-    "Hotbar must expose exactly eight active-skill slots."
+    "Hotbar architecture must retain capacity for eight future active-skill slots."
+)
+assert_true(
+    HotbarConfig.ACTIVE_SLOT_COUNT == 6,
+    "Phase 2B must expose exactly six active-skill slots."
 )
 
 local expected_keys = {

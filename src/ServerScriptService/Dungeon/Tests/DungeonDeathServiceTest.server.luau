@@ -30,12 +30,16 @@ function fake_sessions:set_member_mode(_session_id: string, user_id: number, mod
     session.Members[tostring(user_id)].Mode = mode
     return {ok = true, session = session}
 end
+function fake_sessions:set_member_completion_eligibility(_session_id: string, user_id: number, eligible: boolean): any
+    session.Members[tostring(user_id)].CompletionEligibleBeforeDeath = eligible
+    return {ok = true, session = session}
+end
 function fake_sessions:consume_free_revive(_session_id: string, user_id: number): any
     local member = session.Members[tostring(user_id)]
     if member.FreeReviveUsed then return {ok = false, reason = "FreeReviveAlreadyUsed", session = session} end
     if member.Mode ~= "Dead" and member.Mode ~= "Spectating" then return {ok = false, reason = "MemberNotDead", session = session} end
     member.FreeReviveUsed = true
-    member.Mode = "Active"
+    member.Mode = "Reviving"
     session.WipeDecisionEndsAt = nil
     return {ok = true, session = session}
 end
@@ -63,6 +67,12 @@ local states = {}
 local function emit_state(user_id: number, state_payload: any)
     states[user_id] = state_payload
 end
+local scheduled_delay: number? = nil
+local scheduled_callback: (() -> ())? = nil
+local function schedule(delay_seconds: number, callback: () -> ())
+    scheduled_delay = delay_seconds
+    scheduled_callback = callback
+end
 
 local player: any = {UserId = 101, Name = "Solo"}
 local deaths = DungeonDeathService.new(
@@ -71,6 +81,7 @@ local deaths = DungeonDeathService.new(
     "session-death",
     {
         clock = function() return now end,
+        schedule = schedule,
         spawn_player = spawn_player,
         emit_state = emit_state,
         paid_offer_provider = function(_user_id: number) return {price = 9, paid_number = 1} end,
@@ -78,43 +89,49 @@ local deaths = DungeonDeathService.new(
 )
 
 local died = deaths:on_player_died(player, CFrame.new(12, 3, -20))
-check(died.ok == true, "First death must be accepted.")
-check(session.Members["101"].Mode == "Dead", "First death with free revive remaining must enter Dead mode.")
-check(session.WipeDecisionEndsAt == now + 30, "Solo death must open exactly a 30-second wipe window.")
-check(states[101].free_available == true, "First death state must offer the free revive.")
+check(died.ok == true and died.automatic_free_revive == true, "First death must enter the automatic free-revive flow.")
+check(session.Members["101"].FreeReviveUsed == true, "First death must consume the free revive immediately.")
+check(session.Members["101"].Mode == "Reviving", "First death with free revive remaining must enter Reviving mode.")
+check(session.Members["101"].CompletionEligibleBeforeDeath == true, "Forced Reviving must remember pre-death completion eligibility.")
+check(session.WipeDecisionEndsAt == nil, "Forced Reviving must not open the wipe deadline while the revive is pending.")
+check(states[101].free_available == false, "A consumed automatic free revive must no longer be presented as available.")
+check(states[101].revive_at == now + 3, "Reviving presentation must expose the three-second revive deadline.")
+check(scheduled_delay == 3 and scheduled_callback ~= nil, "Automatic revive must schedule exactly one three-second callback.")
+local stale_free = deaths:request_free_revive(player)
+check(stale_free.ok == false and stale_free.reason == "AutomaticFreeRevive", "Manual free-revive requests must be rejected after auto-consumption.")
 
-now = 1029
-local free = deaths:request_free_revive(player)
-check(free.ok == true, "Free revive at second 29 must succeed.")
-check(session.Members["101"].FreeReviveUsed == true, "Free revive must be consumed exactly once.")
-check(session.Members["101"].Mode == "Active", "Successful free revive must restore Active mode.")
+local callback = scheduled_callback
+if not callback then error("[Dungeon Death/Revive Tests] Automatic revive callback was not scheduled.") end
+callback()
+check(session.Members["101"].Mode == "Active", "Automatic free revive must restore Active mode after the countdown.")
 check(
-    #spawns == 1
-        and spawns[1].cframe.Position == Vector3.new(5, 3, -112),
-    "Free revive must return to the active checkpoint."
+    #spawns == 1 and spawns[1].cframe.Position == Vector3.new(5, 3, -112),
+    "Automatic free revive must return to the active checkpoint."
 )
-check(session.WipeDecisionEndsAt == nil, "A successful revive must clear the wipe deadline.")
+check(session.WipeDecisionEndsAt == nil, "Successful automatic revive must leave the wipe deadline clear.")
 
 local second_death = deaths:on_player_died(player, CFrame.new(20, 3, -25))
 check(second_death.ok == true and session.Members["101"].Mode == "Spectating", "Death after free revive is used must enter Spectating mode.")
 check(states[101].free_available == false and states[101].paid_offer.price == 9, "Second death must offer current paid tier instead of another free revive.")
+check(session.WipeDecisionEndsAt == now + 30, "Solo Spectating after the free revive must open the 30-second wipe window.")
 
--- Product/Robux revives follow the same checkpoint rule as free revives.
-session.Members["101"].Mode = "Active"
+local paid_request = deaths:request_paid_revive(player)
+check(paid_request.ok == false and paid_request.reason == "PaidPurchaseRequired", "Later death must expose the paid revive purchase gate.")
 local paid_spawn = deaths:complete_paid_revive(player)
 check(paid_spawn.ok == true, "Granted paid revive must respawn successfully.")
 check(
-    #spawns == 2
-        and spawns[2].cframe.Position == Vector3.new(5, 3, -112),
+    #spawns == 2 and spawns[2].cframe.Position == Vector3.new(5, 3, -112),
     "Paid revive must return to the active checkpoint."
 )
+check(session.WipeDecisionEndsAt == nil, "Successful paid revive must clear the wipe deadline.")
+
 local third_death = deaths:on_player_died(player, CFrame.new(30, 3, -30))
 check(third_death.ok == true and session.Members["101"].Mode == "Spectating", "Death after paid revive must return to Spectating and reopen the wipe window.")
 
-now = 1058
+now = 1029
 local before_expiry = deaths:tick(now)
-check(before_expiry.failed == false and session.State == "Active", "Wipe must remain active at second 29.")
-now = 1059
+check(before_expiry.failed == false and session.State == "Active", "Wipe must remain active before its deadline.")
+now = 1030
 local expiry = deaths:tick(now)
 check(expiry.failed == true and session.State == "Failed", "Wipe deadline expiry must mark the run Failed.")
 
@@ -129,6 +146,7 @@ session = {
 }
 local party_deaths = DungeonDeathService.new(fake_sessions, fake_checkpoint, "session-party", {
     clock = function() return now end,
+    schedule = schedule,
     spawn_player = spawn_player,
     emit_state = emit_state,
     paid_offer_provider = function(_user_id: number) return {price = 9, paid_number = 1} end,

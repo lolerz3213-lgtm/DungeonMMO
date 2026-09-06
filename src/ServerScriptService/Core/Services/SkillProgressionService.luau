@@ -77,4 +77,26 @@ function SkillProgressionService:respec_skills(user_id:number):any
     local c=self._profiles:get_character(user_id); if c then ProgressionRuntimeState.set_character(user_id,c) end
     return {ok=true,available_sp=self:get_available_sp(user_id),respec_count=c and c.Progression.RespecCounters.Skills or nil}
 end
+
+function SkillProgressionService:grant_arc_slash_first_clear(user_id:number,transaction_id:string):any
+    if type(transaction_id)~="string" or transaction_id=="" then return {ok=false,reason="InvalidTransactionId"} end
+    local result:any=nil
+    local ok,err=self._profiles:mutate(user_id,function(profile:any)
+        local c=profile.Characters["Slot"..tostring(profile.Account.SelectedCharacterSlot)]
+        local rewards=c.Progression.OneTimeRewards
+        if type(rewards)~="table" then rewards={}; c.Progression.OneTimeRewards=rewards end
+        if rewards.ArcSlashFirstClear==true then
+            result={ok=true,already_applied=true,item_id="arc_slash_book_bound",transaction_id=transaction_id}
+            return
+        end
+        local added=InventoryService.apply_item_to_character(c,"arc_slash_book_bound",1)
+        if not added.ok then error(added.reason or "ArcSlashBookGrantFailed") end
+        rewards.ArcSlashFirstClear=true
+        result={ok=true,already_applied=false,item_id="arc_slash_book_bound",transaction_id=transaction_id,total_quantity=added.total_quantity}
+    end)
+    if not ok then return {ok=false,reason=err or "ProfileMutationFailed"} end
+    local c=self._profiles:get_character(user_id)
+    if c then ProgressionRuntimeState.set_character(user_id,c) end
+    return result
+end
 return table.freeze(SkillProgressionService)

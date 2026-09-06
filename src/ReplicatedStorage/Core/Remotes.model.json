@@ -1,13 +1,73 @@
 {
   "ClassName": "Folder",
   "Children": [
-    {"Name": "ProfileSnapshot", "ClassName": "RemoteEvent"},
-    {"Name": "InventorySnapshot", "ClassName": "RemoteEvent"},
-    {"Name": "DungeonEntryRequest", "ClassName": "RemoteEvent"},
-    {"Name": "DungeonEntryResult", "ClassName": "RemoteEvent"},
-    {"Name": "DungeonStateChanged", "ClassName": "RemoteEvent"},
-    {"Name": "ReviveRequest", "ClassName": "RemoteEvent"},
-    {"Name": "ReviveStateChanged", "ClassName": "RemoteEvent"},
-    {"Name": "ReturnRequest", "ClassName": "RemoteEvent"}
+    {
+      "Name": "ProfileSnapshot",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "InventorySnapshot",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ProgressionSnapshot",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ProgressionActionResult",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "AttributeCommitRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "SkillLearnRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "SkillRankRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "AttributeRespecRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "SkillRespecRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "LoadoutRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "DungeonEntryRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "DungeonEntryResult",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "DungeonStateChanged",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ReviveRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ReviveStateChanged",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ReturnRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
+      "Name": "ProgressionDebugRequest",
+      "ClassName": "RemoteEvent"
+    }
   ]
 }

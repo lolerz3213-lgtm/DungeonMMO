@@ -11,6 +11,7 @@ local shared_folder = combat_folder:WaitForChild("Shared")
 local CombatConfig = require(shared_folder:WaitForChild("CombatConfig"))
 local CombatTypes = require(shared_folder:WaitForChild("CombatTypes"))
 local HotbarConfig = require(shared_folder:WaitForChild("HotbarConfig"))
+local ProgressionClientState = require(script.Parent.Parent:WaitForChild("Core"):WaitForChild("ProgressionClientState"))
 local ClientCombatController = require(
     script.Parent:WaitForChild("ClientCombatController")
 )
@@ -67,7 +68,11 @@ function CombatInputActions.request_skill_slot(slot: number): boolean
         return false
     end
 
-    local skill_id = HotbarConfig.get_skill_for_slot(slot)
+    if slot < 1 or slot > HotbarConfig.ACTIVE_SLOT_COUNT then
+        return false
+    end
+
+    local skill_id = ProgressionClientState.get_skill_for_slot(slot)
 
     if not skill_id then
         return false

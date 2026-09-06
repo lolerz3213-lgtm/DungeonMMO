@@ -266,6 +266,7 @@ function PrototypeWeaponFactory.create_tool(): Tool
     tool.Enabled = true
     tool.Grip = HILT_GRIP
     tool.ToolTip = "Prototype sword"
+    tool:SetAttribute("WeaponTagOneHandedSword", true)
 
     local handle = create_hilt_handle(tool)
 

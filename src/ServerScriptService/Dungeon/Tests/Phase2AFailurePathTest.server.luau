@@ -142,7 +142,7 @@ function death_sessions:consume_free_revive(
         return {ok = false, reason = "FreeReviveAlreadyUsed"}
     end
     member.FreeReviveUsed = true
-    member.Mode = "Active"
+    member.Mode = "Reviving"
     death_session.WipeDecisionEndsAt = nil
     return {ok = true, session = death_session}
 end
@@ -173,6 +173,8 @@ function checkpoint_service:get_active_checkpoint(): any
 end
 
 local spawned = {}
+local scheduled_delay: number? = nil
+local scheduled_callback: (() -> ())? = nil
 local death_service = DungeonDeathService.new(
     death_sessions,
     checkpoint_service,
@@ -180,6 +182,10 @@ local death_service = DungeonDeathService.new(
     {
         clock = function()
             return now
+        end,
+        schedule = function(delay_seconds: number, callback: () -> ())
+            scheduled_delay = delay_seconds
+            scheduled_callback = callback
         end,
         spawn_player = function(_player: any, cframe: CFrame): boolean
             table.insert(spawned, cframe)
@@ -191,19 +197,25 @@ local death_service = DungeonDeathService.new(
     }
 )
 local death_player: any = {UserId = 201}
+local first_death = death_service:on_player_died(death_player, CFrame.new())
 check(
-    death_service:on_player_died(death_player, CFrame.new()).ok,
-    "First death must enter the revive decision flow."
+    first_death.ok
+        and death_session.Members["201"].Mode == "Reviving"
+        and death_session.Members["201"].FreeReviveUsed == true,
+    "First death must atomically consume the free revive and enter forced Reviving."
 )
-now = 1029
 check(
-    death_service:request_free_revive(death_player).ok,
-    "Revive at second 29 must resume the run."
+    scheduled_delay == 3 and scheduled_callback ~= nil,
+    "First death must schedule its automatic checkpoint respawn after three seconds."
 )
+local auto_callback = scheduled_callback
+if not auto_callback then error("[Phase2A Failure Path Tests] Automatic revive callback was not scheduled.") end
+auto_callback()
 check(
     #spawned == 1
-        and spawned[1].Position == latest_checkpoint.CFrame.Position,
-    "Free revive must use the latest room-start checkpoint."
+        and spawned[1].Position == latest_checkpoint.CFrame.Position
+        and death_session.Members["201"].Mode == "Active",
+    "Automatic free revive must use the latest room-start checkpoint."
 )
 check(
     death_service:on_player_died(death_player, CFrame.new()).ok,

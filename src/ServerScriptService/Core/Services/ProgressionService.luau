@@ -4,6 +4,7 @@ local ServerScriptService=game:GetService("ServerScriptService")
 local ProgressionConfig=require(ReplicatedStorage:WaitForChild("Core"):WaitForChild("Shared"):WaitForChild("ProgressionConfig"))
 local ProgressionRuntimeState=require(ServerScriptService:WaitForChild("Core"):WaitForChild("Services"):WaitForChild("ProgressionRuntimeState"))
 local ProgressionService={}; ProgressionService.__index=ProgressionService
+local default_service:any=nil
 local function integer(v:any):boolean return type(v)=="number" and v==v and v>-math.huge and v<math.huge and v%1==0 end
 local function invalid(reason:string):any return {ok=false,reason=reason,xp_granted=0,levels_gained=0} end
 local function sync_entitlement(character:any)
@@ -26,7 +27,27 @@ function ProgressionService.apply_xp_to_character(character:any,amount:number):a
     sync_entitlement(character)
     return {ok=true,reason=nil,xp_granted=amount,old_level=old,new_level=character.Level,levels_gained=gained,carried_xp=character.XP,at_cap=character.Level>=ProgressionConfig.MAX_LEVEL}
 end
+function ProgressionService.bind_default(service:any) default_service=service end
+function ProgressionService.get_default():any return default_service end
 function ProgressionService.new(profile_service:any):any assert(profile_service,"ProgressionService requires ProfileService."); return setmetatable({_profiles=profile_service},ProgressionService) end
+function ProgressionService:set_level_for_test(user_id:number,target_level:number,environment:string):any
+    if environment~="DEV" and environment~="TEST" then return {ok=false,reason="DebugCommandDisabled"} end
+    if not integer(target_level) or target_level<1 or target_level>ProgressionConfig.MAX_LEVEL then return {ok=false,reason="InvalidLevel"} end
+    local result:any=nil
+    local ok,err=self._profiles:mutate(user_id,function(profile:any)
+        local character=profile.Characters["Slot"..tostring(profile.Account.SelectedCharacterSlot)]
+        if not character then error("Selected character slot is missing") end
+        character.Level=target_level
+        character.XP=0
+        local entitlement=ProgressionConfig.level_entitlement(target_level)
+        character.Progression.AttributePointEntitlement=math.max(tonumber(character.Progression.AttributePointEntitlement) or 0,entitlement)
+        character.Progression.SkillPointEntitlement=math.max(tonumber(character.Progression.SkillPointEntitlement) or 0,entitlement)
+        result={ok=true,new_level=target_level,attribute_entitlement=character.Progression.AttributePointEntitlement,skill_entitlement=character.Progression.SkillPointEntitlement}
+    end)
+    if not ok then return {ok=false,reason=err or "ProfileMutationFailed"} end
+    local character=self._profiles:get_character(user_id); if character then ProgressionRuntimeState.set_character(user_id,character) end
+    return result
+end
 function ProgressionService:grant_xp(user_id:number,amount:number):any
     if not integer(amount) or amount<=0 then return invalid("InvalidXPAmount") end
     local result:any=nil

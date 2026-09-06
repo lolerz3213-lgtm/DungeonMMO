@@ -13,16 +13,17 @@ end
 
 local session = {
     State = "Active",
-    MemberUserIds = {101, 102, 103, 104},
+    MemberUserIds = {101, 102, 103, 104, 105},
     Members = {
         ["101"] = {UserId = 101, Connected = true, Mode = "Active"},
         ["102"] = {UserId = 102, Connected = true, Mode = "Spectating"},
         ["103"] = {UserId = 103, Connected = true, Mode = "Dead"},
         ["104"] = {UserId = 104, Connected = false, Mode = "Active"},
+        ["105"] = {UserId = 105, Connected = true, Mode = "Reviving", CompletionEligibleBeforeDeath = true},
     },
 }
-local snapshot = Rules.build_snapshot(session, {101, 102, 103, 104, 999})
-check(#snapshot == 1 and snapshot[1] == 101, "Only connected Active members may enter completion snapshot.")
+local snapshot = Rules.build_snapshot(session, {101, 102, 103, 104, 105, 999})
+check(#snapshot == 2 and snapshot[1] == 101 and snapshot[2] == 105, "Connected Active members and forced eligible Reviving members may enter completion snapshot.")
 local ok_mutate = pcall(function() snapshot[2] = 999 end)
 check(ok_mutate == false, "Completion snapshot must be immutable.")
 

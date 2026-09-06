@@ -26,10 +26,14 @@ function CompletionEligibilityRules.build_snapshot(session: any, connected_user_
     local recipients = {}
     for _, user_id in ipairs(session.MemberUserIds or {}) do
         local member = session.Members[tostring(user_id)]
+        local eligible_mode = member and (
+            member.Mode == "Active"
+            or (member.Mode == "Reviving" and member.CompletionEligibleBeforeDeath == true)
+        )
         if connected[user_id] == true
             and member
             and member.Connected == true
-            and member.Mode == "Active"
+            and eligible_mode
         then
             table.insert(recipients, user_id)
         end

@@ -34,4 +34,9 @@ local unknown = DungeonRecoveryRules.from_checkpoint("NotARealCheckpoint")
 check(unknown.spawn_checkpoint_id == "Entrance", "Unknown checkpoints must fail safe to Entrance.")
 check(unknown.valid_checkpoint == false, "Unknown checkpoints must be flagged invalid.")
 
+local reconnect_reviving = DungeonRecoveryRules.member_mode_on_reconnect({Mode = "Reviving", FreeReviveUsed = true})
+check(reconnect_reviving == "Active", "Interrupted forced revive must recover as Active at the persisted checkpoint without restoring the consumed free revive.")
+local reconnect_spectating = DungeonRecoveryRules.member_mode_on_reconnect({Mode = "Spectating", FreeReviveUsed = true})
+check(reconnect_spectating == "Spectating", "Reconnect must not convert a later paid-revive decision state into Active.")
+
 print(string.format("[Dungeon Recovery Rules Tests] PASS: %d assertions.", assertions))

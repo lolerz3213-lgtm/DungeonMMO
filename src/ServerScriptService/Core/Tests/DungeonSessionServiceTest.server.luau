@@ -53,7 +53,7 @@ assert(refreshed.ExpiresAt > connected_expiry, "Connected session refresh must e
 assert(sessions:set_member_mode(solo.SessionId, 42, "Dead").ok)
 local free_revive = sessions:consume_free_revive(solo.SessionId, 42)
 assert(free_revive.ok and free_revive.session.Members["42"].FreeReviveUsed == true, "Free revive must be consumed atomically once.")
-assert(free_revive.session.Members["42"].Mode == "Active", "Free revive consumption must restore Active member mode.")
+assert(free_revive.session.Members["42"].Mode == "Reviving", "Free revive consumption must enter the forced Reviving transition state.")
 assert(sessions:set_member_mode(solo.SessionId, 42, "Spectating").ok)
 assert(not sessions:consume_free_revive(solo.SessionId, 42).ok, "Free revive cannot be consumed twice.")
 local paid_once = sessions:grant_paid_revive_once(solo.SessionId, 42, "purchase-a")

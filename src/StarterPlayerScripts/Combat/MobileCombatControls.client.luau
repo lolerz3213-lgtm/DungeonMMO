@@ -14,7 +14,9 @@ local shared_folder = ReplicatedStorage
     :WaitForChild("Shared")
 
 local CombatTypes = require(shared_folder:WaitForChild("CombatTypes"))
-local HotbarConfig = require(shared_folder:WaitForChild("HotbarConfig"))
+local ProgressionClientState = require(
+    script.Parent.Parent:WaitForChild("Core"):WaitForChild("ProgressionClientState")
+)
 local InputMappingConfig = require(
     shared_folder:WaitForChild("InputMappingConfig")
 )
@@ -121,7 +123,7 @@ layout.Padding = UDim.new(0, Mobile.SKILL_BUTTON_GAP)
 layout.Parent = skill_bar
 
 for slot = 1, Mobile.SKILL_SLOT_COUNT do
-    local skill_id = HotbarConfig.get_skill_for_slot(slot)
+    local skill_id = ProgressionClientState.get_skill_for_slot(slot)
     local definition = skill_id and SkillDefinitions.get(skill_id)
     local label = tostring(slot)
 
@@ -186,7 +188,7 @@ end)
 
 local function begin_skill_cooldown(skill_id: string)
     for slot = 1, Mobile.SKILL_SLOT_COUNT do
-        if HotbarConfig.get_skill_for_slot(slot) == skill_id then
+        if ProgressionClientState.get_skill_for_slot(slot) == skill_id then
             local definition = SkillDefinitions.get(skill_id)
 
             if definition then
@@ -223,7 +225,7 @@ local function refresh_controls()
     local now = os.clock()
 
     for slot, button in skill_buttons do
-        local skill_id = HotbarConfig.get_skill_for_slot(slot)
+        local skill_id = ProgressionClientState.get_skill_for_slot(slot)
         local cooldown_end = cooldown_ends[slot] or 0
         local remaining = math.max(0, cooldown_end - now)
         local enabled = skill_id ~= nil

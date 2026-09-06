@@ -9,13 +9,14 @@ local function result(ok: boolean, reason: string?, extra: any?): any
     return out
 end
 
-function CompletionService.new(session_service: any, reward_service: any, profile_service: any, reward_definition: any): any
+function CompletionService.new(session_service: any, reward_service: any, profile_service: any, reward_definition: any, skill_progression_service: any?): any
     assert(session_service and reward_service and profile_service, "CompletionService dependencies are required")
     local self = setmetatable({}, CompletionService)
     self._sessions = session_service
     self._rewards = reward_service
     self._profiles = profile_service
     self._reward_definition = reward_definition
+    self._skills = skill_progression_service
     return self
 end
 
@@ -35,6 +36,16 @@ function CompletionService:commit(session_id: string): any
         local granted = self._rewards:grant_completion(session_id, 1, user_id, self._reward_definition)
         if not granted or granted.ok ~= true then
             return result(false, if granted then granted.reason else "RewardGrantFailed", {member_results = member_results})
+        end
+        if self._skills then
+            local book = self._skills:grant_arc_slash_first_clear(
+                user_id,
+                session_id .. ":ArcSlashFirstClear"
+            )
+            if not book or book.ok ~= true then
+                return result(false, if book then book.reason else "ArcSlashBookGrantFailed", {member_results = member_results})
+            end
+            granted.arc_slash_book = book
         end
         member_results[tostring(user_id)] = granted
     end

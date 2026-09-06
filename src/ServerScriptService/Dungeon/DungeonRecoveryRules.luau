@@ -58,4 +58,14 @@ function DungeonRecoveryRules.from_checkpoint(checkpoint_id: any): any
     return PLANS[checkpoint_id] or INVALID_PLAN
 end
 
+function DungeonRecoveryRules.member_mode_on_reconnect(member: any): string
+    if type(member) ~= "table" then return "Active" end
+    local mode = if type(member.Mode) == "string" then member.Mode else "Active"
+    if mode == "Reviving" and member.FreeReviveUsed == true then
+        return "Active"
+    end
+    return mode
+end
+
+
 return table.freeze(DungeonRecoveryRules)

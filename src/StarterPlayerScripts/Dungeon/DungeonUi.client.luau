@@ -137,6 +137,8 @@ return_button.Selectable = true
 return_button.Parent = complete_panel
 
 local wipe_ends_at: number? = nil
+local revive_at: number? = nil
+local current_member_mode: string? = nil
 local revive_server_time = 0
 local revive_received_at = 0
 local return_at: number? = nil
@@ -173,29 +175,34 @@ revive_state.OnClientEvent:Connect(function(payload)
         return
     end
     local mode = payload.member_mode
-    local state_name = if mode == "Dead"
-    then "ReviveChoice"
-    else tostring(mode)
+    current_member_mode = if type(mode) == "string" then mode else nil
+    local state_name = if mode == "Dead" then "ReviveChoice" else tostring(mode)
     local projected = UiStateRules.for_state(state_name, payload)
-    if projected.force_view_lock_off == true then
-        force_view_lock_off()
-    end
-    revive_panel.Visible = mode == "Dead" or mode == "Spectating"
+    if projected.force_view_lock_off == true then force_view_lock_off() end
+    revive_panel.Visible = mode == "Dead" or mode == "Reviving" or mode == "Spectating"
     local offer = payload.paid_offer
-    if payload.free_available == true then
+    if mode == "Reviving" then
+        revive_title.Text = "REVIVING"
+        revive_action = nil
+        revive_button.Text = "Free Revive Consumed"
+        revive_button.Active = false
+        revive_button.AutoButtonColor = false
+    elseif payload.free_available == true then
+        revive_title.Text = "DEFEATED"
         revive_action = "Free"
         revive_button.Text = "Free Revive"
         revive_button.Active = true
         revive_button.AutoButtonColor = true
     elseif type(offer) == "table" then
+        revive_title.Text = "DEFEATED"
         revive_action = "Paid"
         revive_button.Text = if RunService:IsStudio()
             then string.format("Sim Revive (%d R$)", offer.price or 0)
             else string.format("Revive (%d R$)", offer.price or 0)
-        revive_button.Active = RunService:IsStudio()
-            or offer.live_enabled == true
+        revive_button.Active = RunService:IsStudio() or offer.live_enabled == true
         revive_button.AutoButtonColor = revive_button.Active
     else
+        revive_title.Text = "DEFEATED"
         revive_action = nil
         revive_button.Text = "Revive unavailable"
         revive_button.Active = false
@@ -204,6 +211,7 @@ revive_state.OnClientEvent:Connect(function(payload)
     lobby_button.Active = true
     lobby_button.AutoButtonColor = true
     wipe_ends_at = payload.wipe_ends_at
+    revive_at = payload.revive_at
     revive_server_time = payload.server_time or 0
     revive_received_at = os.clock()
 end)
@@ -256,12 +264,12 @@ dungeon_state.OnClientEvent:Connect(function(payload)
 end)
 
 RunService.RenderStepped:Connect(function()
-    if revive_panel.Visible and type(wipe_ends_at) == "number" then
+    if revive_panel.Visible and current_member_mode == "Reviving" and type(revive_at) == "number" then
         local now = revive_server_time + (os.clock() - revive_received_at)
-        revive_timer.Text = string.format(
-            "Revive window: %ds",
-            math.max(0, math.ceil(wipe_ends_at - now))
-        )
+        revive_timer.Text = string.format("Reviving... %d", math.max(1, math.ceil(revive_at - now)))
+    elseif revive_panel.Visible and type(wipe_ends_at) == "number" then
+        local now = revive_server_time + (os.clock() - revive_received_at)
+        revive_timer.Text = string.format("Revive window: %ds", math.max(0, math.ceil(wipe_ends_at - now)))
     elseif revive_panel.Visible then
         revive_timer.Text = "Party still fighting — revive when ready"
     end

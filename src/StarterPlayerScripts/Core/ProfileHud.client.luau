@@ -9,8 +9,11 @@ local shared = core:WaitForChild("Shared")
 local remotes = core:WaitForChild("Remotes")
 local ProgressionConfig = require(shared:WaitForChild("ProgressionConfig"))
 local ItemDefinitions = require(shared:WaitForChild("ItemDefinitions"))
+local ProgressionHudRules = require(shared:WaitForChild("ProgressionHudRules"))
 local profile_snapshot = remotes:WaitForChild("ProfileSnapshot") :: RemoteEvent
 local inventory_snapshot = remotes:WaitForChild("InventorySnapshot") :: RemoteEvent
+local progression_snapshot = remotes:WaitForChild("ProgressionSnapshot") :: RemoteEvent
+local ProgressionClientState = require(script.Parent:WaitForChild("ProgressionClientState"))
 
 local gui = Instance.new("ScreenGui")
 gui.Name = "ProfileHud"
@@ -27,7 +30,23 @@ summary.BackgroundTransparency = 0.18
 summary.TextColor3 = Color3.fromRGB(245, 245, 245)
 summary.TextXAlignment = Enum.TextXAlignment.Left
 summary.TextScaled = true
-summary.Text = "Level 1 | XP 0/100 | Gold 0"
+summary.Text = "Level 1 | XP 0/100 | Gold 0 | AP 0 | SP 0"
+local last_level=1
+local last_xp=0
+local last_gold=0
+local last_ap=0
+local last_sp=0
+local function render_summary()
+    local required=ProgressionConfig.get_required_xp(last_level)
+    summary.Text=ProgressionHudRules.format_summary(
+        last_level,
+        last_xp,
+        last_gold,
+        last_ap,
+        last_sp,
+        required
+    )
+end
 summary.Parent = gui
 
 local inventory = Instance.new("TextLabel")
@@ -46,11 +65,21 @@ inventory.Parent = gui
 
 profile_snapshot.OnClientEvent:Connect(function(payload)
     if type(payload) ~= "table" then return end
-    local level = tonumber(payload.Level) or 1
-    local xp = tonumber(payload.XP) or 0
-    local gold = tonumber(payload.Gold) or 0
-    local required = ProgressionConfig.get_required_xp(level)
-    summary.Text = string.format("Level %d | XP %d/%d | Gold %d", level, xp, required, gold)
+    last_level = tonumber(payload.Level) or 1
+    last_xp = tonumber(payload.XP) or 0
+    last_gold = tonumber(payload.Gold) or 0
+    render_summary()
+end)
+
+progression_snapshot.OnClientEvent:Connect(function(payload)
+    if type(payload) ~= "table" then return end
+    ProgressionClientState.apply_snapshot(payload)
+    last_level = tonumber(payload.Level) or last_level
+    last_xp = tonumber(payload.XP) or last_xp
+    last_gold = tonumber(payload.Gold) or last_gold
+    last_ap = tonumber(payload.APAvailable) or 0
+    last_sp = tonumber(payload.SPAvailable) or 0
+    render_summary()
 end)
 
 inventory_snapshot.OnClientEvent:Connect(function(entries)
@@ -73,4 +102,7 @@ inventory_snapshot.OnClientEvent:Connect(function(entries)
 end)
 
 -- Request a fresh server snapshot so joining clients cannot miss an early PlayerAdded push.
-task.defer(function() profile_snapshot:FireServer("Request") end)
+task.defer(function()
+    profile_snapshot:FireServer("Request")
+    progression_snapshot:FireServer("Request")
+end)

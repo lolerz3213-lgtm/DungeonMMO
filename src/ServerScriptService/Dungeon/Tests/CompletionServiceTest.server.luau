@@ -27,6 +27,12 @@ function fake_rewards:grant_completion(session_id: string, slot: number, user_id
 end
 local saves = {}
 local fail_user: number? = nil
+local book_calls = {}
+local fake_skills: any = {}
+function fake_skills:grant_arc_slash_first_clear(user_id: number, transaction_id: string)
+    table.insert(book_calls, {user_id = user_id, transaction_id = transaction_id})
+    return {ok = true, already_applied = false, item_id = "arc_slash_book_bound"}
+end
 local fake_profiles: any = {}
 function fake_profiles:save(user_id: number, _reason: string)
     table.insert(saves, user_id)
@@ -34,21 +40,25 @@ function fake_profiles:save(user_id: number, _reason: string)
     return true, nil
 end
 
-local service = CompletionService.new(fake_sessions, fake_rewards, fake_profiles, {Gold = 50, LootTable = {}})
+local service = CompletionService.new(fake_sessions, fake_rewards, fake_profiles, {Gold = 50, LootTable = {}}, fake_skills)
 local result = service:commit("s1")
 check(result.ok == true, "Completion commit must succeed for valid locked recipients.")
 check(#reward_calls == 2 and reward_calls[1] == 101 and reward_calls[2] == 102, "Only snapshot recipients may receive completion rewards.")
 check(#saves == 2, "Every rewarded profile must cross the save barrier before return opens.")
 check(session.CompletionRewardsCommitted == true, "Session must record completion rewards committed only after saves succeed.")
 check(result.member_results["101"].gold_granted == 50, "Completion result must expose per-member Gold.")
+check(#book_calls == 2 and book_calls[1].user_id == 101 and book_calls[2].user_id == 102, "Every completion recipient must receive the one-time Arc Slash book grant attempt before the save barrier.")
+check(result.member_results["101"].arc_slash_book.item_id == "arc_slash_book_bound", "Completion result must expose the Arc Slash book outcome for presentation and diagnostics.")
 
 local before = #reward_calls
 local repeated = service:commit("s1")
 check(repeated.ok == true and repeated.already_applied == true, "Repeated commit must reuse committed session result.")
 check(#reward_calls == before, "Repeated commit must not issue new reward grants.")
+check(#book_calls == 2, "Repeated committed session must not issue new Arc Slash book grants.")
 
 session = {SessionId = "s2", State = "Complete", CompletionRecipients = {101, 102}, CompletionRewardsCommitted = false}
 reward_calls = {}
+book_calls = {}
 saves = {}
 fail_user = 102
 local failed = service:commit("s2")

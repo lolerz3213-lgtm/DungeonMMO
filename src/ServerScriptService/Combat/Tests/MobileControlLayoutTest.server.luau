@@ -10,7 +10,7 @@ assert(mobile.CORE_ACTIONS.Attack ~= nil)
 assert(mobile.CORE_ACTIONS.Block ~= nil)
 assert(mobile.CORE_ACTIONS.Dodge ~= nil)
 assert(mobile.CORE_ACTIONS.ViewLock ~= nil)
-assert(mobile.SKILL_SLOT_COUNT == 8)
+assert(mobile.SKILL_SLOT_COUNT == 6)
 assert(mobile.BLOCK_IS_HOLD == true)
 assert(mobile.MIN_TOUCH_TARGET_PIXELS >= 48)
 

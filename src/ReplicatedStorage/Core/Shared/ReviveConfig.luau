@@ -1,6 +1,7 @@
 --!strict
 return table.freeze({
     FREE_REVIVES_PER_RUN = 1,
+    FREE_REVIVE_DELAY_SECONDS = 3,
     PAID_PRICES = table.freeze({9, 49, 99, 199}),
     PAID_PRICE_5_PLUS = 399,
     WIPE_DECISION_SECONDS = 30,

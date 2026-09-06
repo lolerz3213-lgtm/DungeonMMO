@@ -46,6 +46,36 @@ prompt.MaxActivationDistance = 12
 prompt.RequiresLineOfSight = false
 prompt.Parent = portal
 
+local trainer = Instance.new("Part")
+trainer.Name = "ProgressionTrainer"
+trainer.Size = Vector3.new(6, 7, 4)
+trainer.Anchored = true
+trainer.Position = Vector3.new(18, 3.5, 6)
+trainer.Material = Enum.Material.SmoothPlastic
+trainer.Parent = root
+
+local trainer_prompt = Instance.new("ProximityPrompt")
+trainer_prompt.Name = "ProgressionTrainerPrompt"
+trainer_prompt.ActionText = "Train"
+trainer_prompt.ObjectText = "Progression Trainer"
+trainer_prompt.HoldDuration = 0.15
+trainer_prompt.MaxActivationDistance = 10
+trainer_prompt.RequiresLineOfSight = false
+trainer_prompt.Parent = trainer
+
+local trainer_billboard = Instance.new("BillboardGui")
+trainer_billboard.Name = "TrainerLabel"
+trainer_billboard.Size = UDim2.fromOffset(220, 48)
+trainer_billboard.StudsOffset = Vector3.new(0, 5, 0)
+trainer_billboard.AlwaysOnTop = true
+trainer_billboard.Parent = trainer
+local trainer_label = Instance.new("TextLabel")
+trainer_label.Size = UDim2.fromScale(1, 1)
+trainer_label.BackgroundTransparency = 0.25
+trainer_label.TextScaled = true
+trainer_label.Text = "PROGRESSION TRAINER"
+trainer_label.Parent = trainer_billboard
+
 local billboard = Instance.new("BillboardGui")
 billboard.Name = "DungeonLabel"
 billboard.Size = UDim2.fromOffset(280, 72)

@@ -52,6 +52,20 @@ check(
     "First death must force View Lock off on the client."
 )
 
+
+local reviving = Rules.for_state("Reviving", {
+    free_available = false,
+    revive_at = 1234,
+})
+check(
+    reviving.show_revive == true and reviving.revive_action == nil,
+    "Forced Reviving state must show countdown presentation without a manual revive action."
+)
+check(
+    reviving.force_view_lock_off == true,
+    "Forced Reviving state must keep View Lock disabled."
+)
+
 local spectator = Rules.for_state("Spectating", {
     free_available = false,
     paid_offer = {

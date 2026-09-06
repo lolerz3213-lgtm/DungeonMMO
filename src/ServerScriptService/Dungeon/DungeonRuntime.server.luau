@@ -18,6 +18,8 @@ local SharedCombat = ReplicatedStorage:WaitForChild("Combat"):WaitForChild("Shar
 
 local DungeonDefinitions = require(SharedCore:WaitForChild("DungeonDefinitions"))
 local CombatConfig = require(SharedCombat:WaitForChild("CombatConfig"))
+local SkillProgressionConfig = require(SharedCore:WaitForChild("SkillProgressionConfig"))
+local SkillProgressionDefinitions = require(SharedCore:WaitForChild("SkillProgressionDefinitions"))
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
 local RevivePurchaseService = require(Services:WaitForChild("RevivePurchaseService"))
@@ -52,6 +54,9 @@ local revive_request = remotes:WaitForChild("ReviveRequest") :: RemoteEvent
 local revive_state = remotes:WaitForChild("ReviveStateChanged") :: RemoteEvent
 local profile_snapshot = remotes:WaitForChild("ProfileSnapshot") :: RemoteEvent
 local inventory_snapshot = remotes:WaitForChild("InventorySnapshot") :: RemoteEvent
+local progression_snapshot = remotes:WaitForChild("ProgressionSnapshot") :: RemoteEvent
+local progression_action_result = remotes:WaitForChild("ProgressionActionResult") :: RemoteEvent
+local loadout_request = remotes:WaitForChild("LoadoutRequest") :: RemoteEvent
 local return_request = remotes:WaitForChild("ReturnRequest") :: RemoteEvent
 
 local runtime = RuntimeServices.new("Dungeon")
@@ -60,6 +65,10 @@ local leases = runtime.LeaseService
 local sessions = runtime.SessionService
 local rewards = runtime.RewardService
 local proficiency = runtime.ProficiencyService
+local inventory = runtime.InventoryService
+local attributes = runtime.AttributeService
+local loadout = runtime.LoadoutService
+local skills = runtime.SkillProgressionService
 
 local dungeon_root = Workspace:WaitForChild("DungeonRuntime", 10)
 assert(dungeon_root, "DungeonRuntime greybox was not created")
@@ -152,11 +161,47 @@ local function send_objective(text: string, state_name: string?)
     print("[Dungeon Runtime] " .. text)
 end
 
+local function build_progression_snapshot(user_id: number): any
+    local c = profiles:get_character(user_id, 1)
+    if not c then return {} end
+    local skill_payload: any = {}
+    for skill_id, definition in pairs(SkillProgressionDefinitions.all()) do
+        local state = c.Progression.Skills[skill_id]
+        local known = type(state) == "table" and state.Known == true
+        local rank = if known then math.max(0, math.floor(tonumber(state.PurchasedRank) or 0)) else 0
+        local proficiency_value = if type(state) == "table" then math.max(0, tonumber(state.Proficiency) or 0) else 0
+        local target_rank = rank + 1
+        skill_payload[skill_id] = {
+            Id = skill_id, Known = known, Rank = rank, MaxRank = definition.MaxRank, Tier = definition.Tier,
+            Proficiency = proficiency_value,
+            NextThreshold = if target_rank <= definition.MaxRank then SkillProgressionConfig.get_threshold(definition.Tier, target_rank) else nil,
+            NextCost = if target_rank <= definition.MaxRank then SkillProgressionConfig.get_rank_cost(definition.Tier, target_rank) else nil,
+            WeaponTags = definition.WeaponTags,
+            BookOwned = if skill_id == "ArcSlash" then inventory.count_item(c, "arc_slash_book_bound") > 0 else false,
+        }
+    end
+    return {
+        Level = c.Level, XP = c.XP, Gold = c.Gold,
+        APAvailable = attributes.get_available_points(c),
+        SPAvailable = skills.get_available_sp_for_character(c),
+        Attributes = c.Progression.Attributes,
+        Skills = skill_payload,
+        Loadout = c.Progression.Loadout,
+        RespecCounters = c.Progression.RespecCounters,
+        OneTimeRewards = c.Progression.OneTimeRewards,
+    }
+end
+
+local function send_progression(player: Player)
+    progression_snapshot:FireClient(player, build_progression_snapshot(player.UserId))
+end
+
 local function send_profile(player: Player)
     local character = profiles:get_character(player.UserId, 1)
     if not character then return end
     profile_snapshot:FireClient(player, {Slot = 1, Level = character.Level, XP = character.XP, Gold = character.Gold})
     inventory_snapshot:FireClient(player, character.Inventory)
+    send_progression(player)
 end
 
 local function set_character_encounter(player: Player, encounter_id: string)
@@ -583,7 +628,8 @@ local function initialize_session_services(session: any): (any?, boolean)
         sessions,
         rewards,
         profiles,
-        DungeonDefinitions.TEST_DUNGEON.CompletionReward
+        DungeonDefinitions.TEST_DUNGEON.CompletionReward,
+        skills
     )
     return_service = ReturnPortalService.new(sessions, coordinator, {
         is_studio = RunService:IsStudio(),
@@ -727,6 +773,20 @@ local function admit_player(player: Player)
         player:Kick("Session connection failed: " .. tostring(connected.reason))
         return
     end
+    if reconnecting then
+        local latest_session = sessions:get(session.SessionId)
+        local latest_member = latest_session and latest_session.Members[tostring(player.UserId)]
+        local recovery_mode = DungeonRecoveryRules.member_mode_on_reconnect(latest_member)
+        if latest_member and latest_member.Mode ~= recovery_mode then
+            local normalized = sessions:set_member_mode(session.SessionId, player.UserId, recovery_mode)
+            if not normalized.ok then
+                profiles:release(player.UserId, "DungeonAdmissionFailed")
+                player:Kick("Session recovery failed: " .. tostring(normalized.reason))
+                return
+            end
+        end
+        if encounter_service then encounter_service:mark_member_mode(player.UserId, recovery_mode) end
+    end
     loaded_users[player.UserId] = true
     local loaded_character = profiles:get_character(player.UserId, 1)
     if loaded_character then ProgressionRuntimeState.set_character(player.UserId, loaded_character) end
@@ -838,6 +898,21 @@ end)
 
 profile_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
     if action == "Request" and loaded_users[player.UserId] then send_profile(player) end
+end)
+
+progression_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
+    if action == "Request" and loaded_users[player.UserId] then send_progression(player) end
+end)
+
+loadout_request.OnServerEvent:Connect(function(player: Player, slots: any)
+    if not loaded_users[player.UserId] then return end
+    local context = "DungeonClear"
+    if encounter_service and current_encounter_id ~= "" and not encounter_service:is_clear(current_encounter_id) then
+        context = "DungeonActive"
+    end
+    local result = loadout:set(player.UserId, slots, context)
+    progression_action_result:FireClient(player, {action = "Loadout", ok = result.ok == true, reason = result.reason})
+    if result.ok then send_progression(player) end
 end)
 
 revive_request.OnServerEvent:Connect(function(player: Player, action: any)

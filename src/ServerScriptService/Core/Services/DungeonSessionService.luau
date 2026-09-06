@@ -18,6 +18,7 @@ DungeonSessionService.TERMINAL_TTL_SECONDS = 1200
 local VALID_MEMBER_MODES: {[string]: boolean} = table.freeze({
     Active = true,
     Dead = true,
+    Reviving = true,
     Spectating = true,
 })
 
@@ -381,6 +382,24 @@ function DungeonSessionService:set_member_mode(session_id: string, user_id: numb
 end
 
 
+
+function DungeonSessionService:set_member_completion_eligibility(
+    session_id: string,
+    user_id: number,
+    eligible: boolean
+): any
+    return self:_update(session_id, function(session: any, now: number)
+        if type(session) ~= "table" then
+            return {State = "Expired", SessionId = session_id, Members = {}, UpdatedAt = now, ExpiresAt = now}, operation(false, "SessionNotFound")
+        end
+        local member = session.Members[member_key(user_id)]
+        if not member then return session, operation(false, "NotMember") end
+        member.CompletionEligibleBeforeDeath = eligible == true
+        session.UpdatedAt = now
+        return session, operation(true, nil)
+    end)
+end
+
 function DungeonSessionService:consume_free_revive(session_id: string, user_id: number): any
     return self:_update(session_id, function(session: any, now: number)
         if type(session) ~= "table" then
@@ -401,7 +420,7 @@ function DungeonSessionService:consume_free_revive(session_id: string, user_id: 
         end
 
         member.FreeReviveUsed = true
-        member.Mode = "Active"
+        member.Mode = "Reviving"
         session.WipeDecisionEndsAt = nil
         session.UpdatedAt = now
         return session, operation(true, nil)
