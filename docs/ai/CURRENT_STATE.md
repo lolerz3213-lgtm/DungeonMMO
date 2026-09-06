@@ -1,28 +1,27 @@
 # DungeonMMO Current Engineering State
 
 **State date:** 6 September 2026
-**Canonical roadmap:** Version 1.21
+**Canonical roadmap:** Version 1.22
 **Current phase:** Phase 2 - Vertical Slice
-**Current gate:** Phase 2B.B - Gameplay + Base Progression
-**Gate status:** INSTALLED / NOT ACCEPTED
+**Current gate:** Phase 2B.C - Persistence + Published Acceptance
+**Gate 2B.B status:** ACCEPTED
+**Gate 2B.C status:** NOT STARTED
 
-## Accepted baseline
+## Accepted baselines
 
 - Phase 1 combat: ACCEPTED.
 - Phase 2A core Base-to-Dungeon slice: ACCEPTED.
 - Phase 2B.A Progression Foundation: ACCEPTED.
-- Accepted `main` checkpoint:
+- Phase 2B.B Gameplay + Base Progression: ACCEPTED.
+- Previous accepted `main` baseline:
   `24dee751b87d831abe22cd046dd3b9934c566a56`.
+- Accepted Gate 2B.B gameplay source candidate:
+  `0d86755ccbbd70b3f3b2a8e124247cc4097a71df`
+  (`wip: preserve loadout gap fix before dungeon art prototype`) on
+  `wip/phase-2b-b-pre-ai-continuity`.
 
-## Current verified checkpoint
-
-- Branch: `wip/phase-2b-b-pre-ai-continuity`.
-- HEAD: `ebf9740` (`fix: refresh progression HUD after authoritative mutations`).
-- Committed and pushed; repository clean at the start of this task (Git verified).
-- HUD defect: FIXED AND VERIFIED in a fresh Base build, visually confirmed in
-  Studio by the user. Level 10 immediate update PASS; ProgressionHudRulesTest
-  PASS; no red Studio errors; Base and Dungeon builds PASS; diff check PASS.
-- Gate 2B.B remains NOT ACCEPTED. Gate 2B.C has not started.
+The close-out documentation must be reviewed and committed deliberately before
+`main` is fast-forwarded to the accepted Gate 2B.B state.
 
 ## Experience composition
 
@@ -36,126 +35,68 @@
 - Published environment: TEST.
 - Live paid revives: disabled.
 
-## Working Gate 2B.B content
+## Gate 2B.B accepted evidence
 
-Gate 2B.B adds:
+### Base combined acceptance
 
-- Arc Slash as a real rank-aware physical skill;
-- six active skill slots;
-- Character -> Skills loadout management;
-- generic Base Progression Trainer;
-- Attribute/SP/rank/respec interaction;
-- Captain first-clear bound Arc Slash Skill Book;
-- DEV/TEST progression command bridge;
-- first-death automatic three-second free revive.
+Fresh Base Studio validation passed:
 
-## Confirmed temporary test route
+- Profile HUD immediately matched the authoritative Level 10 mutation.
+- HUD and Progression Trainer agreed at Level 10 with AP/SP entitlement 9/9.
+- Attribute multi-point preview cancelled without saving.
+- Attribute Confirm committed atomically and reduced available AP correctly.
+- Shield Bash and Mend proficiency thresholds enabled the expected Rank 2
+  purchases and SP costs.
+- Six active slots preserved intentional empty gaps.
+- Selected-skill placement into later slots, moves, replacement, uniqueness,
+  selection clearing and no-op slot clicks without selection all worked.
+- Attribute TEST respec restored entitlement and incremented only its counter.
+- Skill TEST respec refunded allocated SP while preserving starter knowledge and
+  saved proficiency and incremented only its counter.
+- No red runtime errors were reported.
 
-The current validation build reports LegacyChatService. Do not spend time
-trying to make `/level` or `/prof` TextChatCommand routes work for this gate.
+### Six-slot gap root cause and fix
 
-Use the DEV/TEST Client Command Bar bridge while Play is running.
+The authoritative profile was correct, but sparse numeric RemoteEvent arrays
+lost entries after an intentional nil gap. Shared `LoadoutSnapshot.encode`
+produces six dense wire entries and represents empty slots as `false`.
+Persistent profiles and service mutations remain sparse. Base and Dungeon
+snapshot builders use the shared encoder.
 
-Level 10:
+### Dungeon combined acceptance
 
-```lua
-game:GetService("ReplicatedStorage").Core.Remotes.ProgressionDebugRequest:FireServer(
-    "level",
-    10
-)
-```
+Fresh Dungeon Studio validation passed:
 
-Shield Bash proficiency Rank 2 threshold:
+- relevant Gate 2B.B and accepted regression families reported PASS;
+- no red runtime errors were reported;
+- first death automatically consumed the free revive, entered forced Reviving,
+  and returned after approximately three seconds at the latest checkpoint with
+  restored HP/Stamina;
+- second death returned to the normal defeated flow instead of another
+  automatic free revive;
+- Marauder Captain first-clear reward succeeded;
+- a fresh progression snapshot reported:
+  `ArcSlash BookOwned = true` and `ArcSlash FirstClear = true`.
 
-```lua
-game:GetService("ReplicatedStorage").Core.Remotes.ProgressionDebugRequest:FireServer(
-    "prof",
-    "ShieldBash",
-    150
-)
-```
+## Separate environment-art branch
 
-Mend proficiency Rank 2 threshold:
-
-```lua
-game:GetService("ReplicatedStorage").Core.Remotes.ProgressionDebugRequest:FireServer(
-    "prof",
-    "Mend",
-    100
-)
-```
-
-## Open defects
-
-### Six-slot gap placement
-
-Reproduction:
-
-- Slot 1 occupied.
-- Slot 2 intentionally empty.
-- Select a learned skill.
-- Click target Slot 3.
-
-Current result: the selected skill is not reliably placed into Slot 3.
-
-Required temporary UX:
-
-- click a learned skill to select it;
-- click any target Slot 1-6;
-- move the selected skill from any previous slot;
-- replace/remove the destination occupant;
-- never duplicate the selected skill;
-- preserve intentional empty slots;
-- do nothing when a slot is clicked without a selected skill;
-- clear selection after successful placement;
-- refresh immediately.
+`art/dungeon-environment-prototype` is not the gameplay branch. Before returning
+to gameplay, its uncommitted `docs/ai/TEST_MATRIX.md` change was preserved in a
+timestamped recovery copy and Git stash. Do not pop that stash onto the gameplay
+branch and do not mix environment-art work into Gate 2B.C.
 
 ## Exact next engineering action
 
-Reproduce six-slot gap placement in Studio, trace the authoritative ownership
-boundary, add regression coverage, apply the smallest fix, and validate all six
-slots, moves, replacement, uniqueness, gaps and invalid requests. Build both
-Places and visually verify a fresh Base build and Output. Keep changes uncommitted.
-Do not publish, accept Gate 2B.B, or start Gate 2B.C.
-
-## Six-slot gap placement WIP (6 September 2026)
-
-- Branch `wip/phase-2b-b-pre-ai-continuity`; HEAD remains `ebf9740`.
-  Task started clean. Reconciliation and loadout changes are uncommitted.
-- Pre-fix Studio reproduction PASS: Skills -> Mend -> Slot 3 reported success,
-  but Slot 3 displayed empty while Slot 2 was empty. A temporary server probe
-  confirmed authoritative Slot 1 ShieldBash / Slot 3 Mend; a real client snapshot
-  listener received only Slot 1. Sparse numeric RemoteEvent arrays lost the tail.
-- Regression RED before fix: Base snapshot's empty Slot 2 was nil instead of an
-  explicit wire entry, despite authoritative Mend at Slot 3.
-- Fix: shared LoadoutSnapshot.encode produces six dense wire entries, using false
-  for empty slots. Base controller and Dungeon snapshot builder use it. Persisted
-  profiles and service mutations retain sparse nil slots; existing client rendering
-  already treats false as empty. No client optimism or service rewrite.
-- Dungeon's legacy-only loadout handler now dispatches skill ID + target slot to
-  move_to_slot, retaining the encounter lock and legacy table validation.
-- Changed source: ReplicatedStorage/Core/Shared/LoadoutSnapshot.luau (new);
-  ServerScriptService/Base/BaseProgressionController.luau;
-  ServerScriptService/Dungeon/DungeonRuntime.server.luau;
-  Base/Tests/BaseProgressionControllerTest.server.luau and
-  Core/Tests/LoadoutServiceTest.server.luau under ServerScriptService.
-- Studio source regression PASS: Base controller 16 assertions; loadout service
-  28 assertions. Includes slots 1-6, move/replace/no duplicates, Slot 3 after empty
-  Slot 2, invalid 0/-1/7/fraction/string/boolean/infinities/NaN/nil, DungeonClear
-  moves and DungeonActive rejection. New source was executed in a temporary Play
-  session; this is not fresh-build visual evidence. Play stopped afterwards.
-- Fresh Base and Dungeon Rojo builds PASS:
-  `C:\Users\Remko\AppData\Local\Temp\DungeonMMO_Loadout_20260906_135433`.
-- Fresh Base Studio visuals and fresh Output: PENDING. File launch did not change
-  the MCP-connected older Base. User asked to open the fresh Base and connect MCP.
-- Exact next action: verify new LoadoutSnapshot exists in fresh Base Edit model,
-  start Play, run actual Skills clicks and inspect snapshots for all six slots,
-  moves/replacement/selection clearing/invalid requests; capture visual evidence
-  and inspect fresh Output, stop Play, then final diff check and Git status.
-- Gate 2B.B remains NOT ACCEPTED; Gate 2B.C not started. No commit/push/publish.
-- Final source/diff review and git diff --check PASS. Final status: eight modified
-  tracked files (four continuity docs, two runtime/controller files, two tests)
-  and one untracked LoadoutSnapshot.luau. No staging, commit or push.
-- No red errors observed in the temporary Studio source-test session Output;
-  fresh-build Output remains unverified. MCP confirmed the older Base still had
-  no LoadoutSnapshot in Edit after the file-launch attempt and handoff request.
+1. Complete this Gate 2B.B documentation close-out, review the exact Git diff,
+   make the deliberate acceptance checkpoint, push it, then fast-forward
+   `main` to that accepted content without merging the art branch.
+2. Begin Gate 2B.C / Task 9 by creating
+   `docs/testing/phase2b-published-test-checklist.md`.
+3. Build both Places and run the complete Studio regression suite.
+4. Reconfirm TEST environment, Base Dungeon Place ID, forced teleport-failure
+   switches false/absent, and live paid revives/progression Robux products
+   disabled.
+5. Run the published TEST Base -> Dungeon -> Base -> leave -> rejoin proof for
+   the complete Phase 2B progression state, reconnect/idempotency and duplicate
+   protection.
+6. Mark Phase 2B functionally complete only after the user accepts Gate 2B.C.

@@ -2,14 +2,18 @@
 
 The canonical long-form roadmap currently stored here is:
 
-`DungeonMMO_Roadmap_v1_21.docx`
+`DungeonMMO_Roadmap_v1_22.docx`
 
-Version: **1.21**
+Version: **1.22**
 Last updated: **6 September 2026**
 
 SHA-256:
 
-`5eb09b87fc5f63063c90a618d563bb9290f755680cff81ba34a70dc6145fe920`
+`ba7f56571fc0b7cb46274fb72ff5568bb1bfb11e86600f466cb2e666f2aeba00`
+
+Version 1.22 records Phase 2B Gate 2B.B as ACCEPTED and makes Gate 2B.C / Task 9
+- published cross-Place progression persistence and final Phase 2B acceptance -
+the active gameplay gate.
 
 `docs/ai/CURRENT_STATE.md` is the fast engineering-status layer. It does not
 replace the canonical roadmap's LOCKED/WORKING/LATER/OPEN design decisions.

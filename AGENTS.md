@@ -11,8 +11,8 @@ Before modifying source:
 2. Read `docs/ai/HANDOFF.md`.
 3. Read `docs/ai/TEST_MATRIX.md`.
 4. Read `docs/ai/AUTOMATION.md`.
-5. Treat `docs/roadmap/DungeonMMO_Roadmap_v1_21.docx` as the canonical
-   long-form design source for version 1.21.
+5. Treat `docs/roadmap/DungeonMMO_Roadmap_v1_22.docx` as the canonical
+   long-form design source for version 1.22.
 6. Inspect:
    - `git branch --show-current`
    - `git log -1 --oneline`
@@ -24,11 +24,11 @@ the mismatch. Do not guess which state is correct.
 
 ## Current accepted boundary
 
-- Phase 1 combat is accepted.
-- Phase 2A is accepted.
-- Phase 2B Gate 2B.A is accepted.
-- Phase 2B Gate 2B.B is installed but NOT accepted.
-- Gate 2B.C has not started.
+- Phase 1 combat: ACCEPTED.
+- Phase 2A: ACCEPTED.
+- Phase 2B Gate 2B.A: ACCEPTED.
+- Phase 2B Gate 2B.B: ACCEPTED.
+- Gate 2B.C is the active and final Phase 2B gate.
 
 Do not reopen accepted architecture merely for cosmetic polish unless a real
 regression or readability blocker is demonstrated.
@@ -40,7 +40,8 @@ regression or readability blocker is demonstrated.
 - Never run `git reset --hard`, `git clean`, destructive checkout, force push,
   history rewrite, or any operation that discards local work without explicit
   user approval.
-- A WIP/recovery commit does not mean a gameplay gate is accepted.
+- A WIP/recovery commit does not imply acceptance until the complete gate has
+  passed; Gate 2B.B has now passed its complete acceptance check.
 - Installers and patches must not stage, commit, or push automatically.
 - Review exact diffs before deliberate commits.
 
@@ -55,8 +56,8 @@ regression or readability blocker is demonstrated.
 - LF-to-CRLF Git warnings on Windows are informational unless Git reports an
   actual whitespace error.
 - Preserve and run relevant accepted regression families.
-- Gate 2B.B may be marked accepted only after its complete Base + Dungeon
-  acceptance checklist passes.
+- Gate 2B.C acceptance requires the published TEST cross-Place proof in the
+  canonical Task 9 checklist, not only Studio-local evidence.
 
 ## Roblox authority and environment rules
 
@@ -76,15 +77,24 @@ TEST-only debug hooks must remain rejected or disabled in PROD.
 
 ## Scope discipline
 
-The active work is Gate 2B.B. The only known current defects are:
+The active gameplay work is Gate 2B.C / Task 9: Cross-Place Progression
+Persistence and final Phase 2B acceptance.
 
-1. The top-left Profile HUD does not immediately reflect the DEV/TEST level
-   mutation until the Progression Trainer is opened.
-2. Character -> Skills placement fails when placing a selected skill into a
-   later slot after an intentional empty gap.
+Exact scope:
 
-Fix those at their real ownership boundaries. Do not begin 2B.C or unrelated
-presentation work first.
+1. add the published TEST progression checklist;
+2. run fresh Base and Dungeon regression builds;
+3. run the private published TEST Base -> Dungeon -> Base -> leave -> rejoin
+   progression proof;
+4. verify reconnect/idempotency and duplicate protection;
+5. freeze Phase 2B only after user acceptance.
+
+Do not begin the first real race/base-class definitions before Gate 2B.C is
+accepted.
+
+`art/dungeon-environment-prototype` is a separate environment-art branch. Do
+not perform gameplay/progression work there, merge it into Gate 2B.C, or pop
+its preserved stash onto the gameplay branch.
 
 ## Handoff discipline
 
