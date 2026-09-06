@@ -14,16 +14,15 @@
 - Accepted `main` checkpoint:
   `24dee751b87d831abe22cd046dd3b9934c566a56`.
 
-## Current WIP checkpoint
+## Current verified checkpoint
 
-- Branch: `wip/phase-2b-b-pre-ai-continuity`
-- Repository HEAD before the uncommitted formatting fix: `8ca139d`
-  (`chore: add AI development continuity layer`).
-- WIP commit: `c5e2a59`
-- Commit purpose:
-  `wip: preserve Phase 2B.B before AI continuity setup`
-- This WIP checkpoint is a recovery point only. It does NOT mean Gate 2B.B is
-  accepted.
+- Branch: `wip/phase-2b-b-pre-ai-continuity`.
+- HEAD: `ebf9740` (`fix: refresh progression HUD after authoritative mutations`).
+- Committed and pushed; repository clean at the start of this task (Git verified).
+- HUD defect: FIXED AND VERIFIED in a fresh Base build, visually confirmed in
+  Studio by the user. Level 10 immediate update PASS; ProgressionHudRulesTest
+  PASS; no red Studio errors; Base and Dungeon builds PASS; diff check PASS.
+- Gate 2B.B remains NOT ACCEPTED. Gate 2B.C has not started.
 
 ## Experience composition
 
@@ -88,29 +87,7 @@ game:GetService("ReplicatedStorage").Core.Remotes.ProgressionDebugRequest:FireSe
 
 ## Open defects
 
-### Controlled formatting fix checkpoint
-
-The prior Base Studio smoke test failed ProgressionHudRulesTest with
-"level cap must show XP MAX without formatting nil." Source inspection confirmed
-an extra `xp` argument in the XP MAX branch shifted Gold/AP/SP values. The
-uncommitted fix removes only that argument; the existing test is unchanged.
-Both Rojo projects build successfully. Fresh Studio runtime verification is
-pending manual opening of the new Base build:
-`C:\Users\Remko\AppData\Local\Temp\DungeonMMO_ProgressionHudFix_20260906_122919\Base.rbxl`.
-The older open build is not evidence for the fix. Studio was confirmed in Edit.
-Gate 2B.B remains NOT ACCEPTED. After verifying this fix, the next major target
-remains the stale Profile HUD, followed by six-slot gap placement.
-
-### 1. Profile HUD refresh
-
-After the Level 10 DEV/TEST mutation, the generic Progression Trainer shows
-Level 10 and AP/SP entitlement 9/9, but the normal top-left Profile HUD remains
-at Level 1 until the trainer is opened.
-
-Required behaviour: the Profile HUD refreshes immediately from authoritative
-progression state. Opening the trainer must not be the refresh mechanism.
-
-### 2. Six-slot gap placement
+### Six-slot gap placement
 
 Reproduction:
 
@@ -133,56 +110,52 @@ Required temporary UX:
 - clear selection after successful placement;
 - refresh immediately.
 
-## Exact next engineering actions
+## Exact next engineering action
 
-1. Keep the WIP branch/checkpoint recoverable.
-2. Reproduce and diagnose the Profile HUD refresh path:
-   server progression mutation -> client snapshot/event -> ProfileHud.
-3. Fix the authoritative refresh boundary.
-4. Re-run the Base HUD/trainer agreement check.
-5. Reproduce the exact loadout gap case.
-6. Diagnose slot data/serialization without compacting empty slots.
-7. Fix exact-target-slot placement.
-8. Run the full Base portion of Gate 2B.B.
-9. Only when Base is clean, run the Dungeon portion of Gate 2B.B.
-10. Mark 2B.B accepted only when the complete gate passes.
-11. Update the roadmap and create a new accepted Git checkpoint.
-12. Begin Gate 2B.C only after step 11.
+Reproduce six-slot gap placement in Studio, trace the authoritative ownership
+boundary, add regression coverage, apply the smallest fix, and validate all six
+slots, moves, replacement, uniqueness, gaps and invalid requests. Build both
+Places and visually verify a fresh Base build and Output. Keep changes uncommitted.
+Do not publish, accept Gate 2B.B, or start Gate 2B.C.
 
-## Profile HUD stale-state fix checkpoint (6 September 2026)
+## Six-slot gap placement WIP (6 September 2026)
 
-- Branch: `wip/phase-2b-b-pre-ai-continuity`; HEAD: `8ca139d`.
-  All changes remain uncommitted; Gate 2B.B remains NOT ACCEPTED.
-- Preserved all pre-existing changes: four docs/ai files and the XP MAX
-  formatting fix in ProgressionHudRules.luau.
-- Reproduced in connected DungeonMMO_AI_Continuity_Base.rbxl before editing:
-  DEV level command reported Level 10 and AP/SP 9/9 on the server while
-  ProfileHud.Summary and the captured viewport still displayed Level 1/AP 0/SP 0.
-- Root cause: ProgressionService:set_level_for_test mutates the profile and
-  ProgressionRuntimeState but never notifies the Place snapshot publisher.
-  Trainer opening requests ProgressionSnapshot, masking the missing push.
-  ProfileHud already applies received snapshots to ProgressionClientState and
-  renders the authoritative Level/XP/Gold/AP/SP payload correctly.
-- Added a per-service change callback after successful level/XP mutations.
-  BaseRuntime and DungeonRuntime connect it to their existing send_progression
-  publisher for the affected loaded player. No client polling or Trainer change.
-- Source files changed: Core/Services/ProgressionService.luau,
-  Base/BaseRuntime.server.luau, Dungeon/DungeonRuntime.server.luau, and
-  Core/Tests/Phase2BProgressionServiceTest.server.luau under ServerScriptService.
-  Regression assertions cover post-mutation notification, rejection without
-  notification, and XP notification. New assertions have NOT run in Studio yet.
-- Fresh Base and Dungeon Rojo builds succeeded in
-  `C:\Users\Remko\AppData\Local\Temp\DungeonMMO_ProfileHud_20260906_125733`.
-- Fresh runtime verification is PENDING. Launching the fresh Base file did not
-  expose it through MCP. Computer-use input was rejected by automatic approval
-  review: "Computer Use was not approved to use Roblox Studio". MCP provides no
-  local-file opening command. No fresh-build visual PASS is claimed.
-- Pre-fix Output contained the known ProgressionHudRulesTest XP MAX error;
-  the other reported Base test families passed. Fresh-build red errors unknown.
-- Play was stopped through MCP. No commit, push, publish, DataStore or
-  monetisation changes were performed. Source git diff --check passed.
-- Exact next action: open the fresh Base.rbxl from the directory above and
-  connect it to Studio MCP; verify loaded source, start Play, fire DEV level 10,
-  verify Profile HUD Level 10/AP 9/SP 9 immediately with Trainer closed, inspect
-  Output and regression results, stop Play, and update this evidence.
-  Six-slot gap placement remains untouched; full gate acceptance remains pending.
+- Branch `wip/phase-2b-b-pre-ai-continuity`; HEAD remains `ebf9740`.
+  Task started clean. Reconciliation and loadout changes are uncommitted.
+- Pre-fix Studio reproduction PASS: Skills -> Mend -> Slot 3 reported success,
+  but Slot 3 displayed empty while Slot 2 was empty. A temporary server probe
+  confirmed authoritative Slot 1 ShieldBash / Slot 3 Mend; a real client snapshot
+  listener received only Slot 1. Sparse numeric RemoteEvent arrays lost the tail.
+- Regression RED before fix: Base snapshot's empty Slot 2 was nil instead of an
+  explicit wire entry, despite authoritative Mend at Slot 3.
+- Fix: shared LoadoutSnapshot.encode produces six dense wire entries, using false
+  for empty slots. Base controller and Dungeon snapshot builder use it. Persisted
+  profiles and service mutations retain sparse nil slots; existing client rendering
+  already treats false as empty. No client optimism or service rewrite.
+- Dungeon's legacy-only loadout handler now dispatches skill ID + target slot to
+  move_to_slot, retaining the encounter lock and legacy table validation.
+- Changed source: ReplicatedStorage/Core/Shared/LoadoutSnapshot.luau (new);
+  ServerScriptService/Base/BaseProgressionController.luau;
+  ServerScriptService/Dungeon/DungeonRuntime.server.luau;
+  Base/Tests/BaseProgressionControllerTest.server.luau and
+  Core/Tests/LoadoutServiceTest.server.luau under ServerScriptService.
+- Studio source regression PASS: Base controller 16 assertions; loadout service
+  28 assertions. Includes slots 1-6, move/replace/no duplicates, Slot 3 after empty
+  Slot 2, invalid 0/-1/7/fraction/string/boolean/infinities/NaN/nil, DungeonClear
+  moves and DungeonActive rejection. New source was executed in a temporary Play
+  session; this is not fresh-build visual evidence. Play stopped afterwards.
+- Fresh Base and Dungeon Rojo builds PASS:
+  `C:\Users\Remko\AppData\Local\Temp\DungeonMMO_Loadout_20260906_135433`.
+- Fresh Base Studio visuals and fresh Output: PENDING. File launch did not change
+  the MCP-connected older Base. User asked to open the fresh Base and connect MCP.
+- Exact next action: verify new LoadoutSnapshot exists in fresh Base Edit model,
+  start Play, run actual Skills clicks and inspect snapshots for all six slots,
+  moves/replacement/selection clearing/invalid requests; capture visual evidence
+  and inspect fresh Output, stop Play, then final diff check and Git status.
+- Gate 2B.B remains NOT ACCEPTED; Gate 2B.C not started. No commit/push/publish.
+- Final source/diff review and git diff --check PASS. Final status: eight modified
+  tracked files (four continuity docs, two runtime/controller files, two tests)
+  and one untracked LoadoutSnapshot.luau. No staging, commit or push.
+- No red errors observed in the temporary Studio source-test session Output;
+  fresh-build Output remains unverified. MCP confirmed the older Base still had
+  no LoadoutSnapshot in Edit after the file-launch attempt and handoff request.

@@ -38,5 +38,12 @@ local changed=controller:set_loadout(6101,{"Mend","ShieldBash","ArcSlash"})
 check(changed.ok==true and controller:build_snapshot(6101).Loadout[3]=="ArcSlash","Base controller must accept valid six-slot loadout changes.")
 local moved=controller:move_skill_to_slot(6101,"Mend",3)
 local moved_snapshot=controller:build_snapshot(6101)
-check(moved.ok==true and moved_snapshot.Loadout[3]=="Mend" and moved_snapshot.Loadout[1]==nil,"controller move must relocate selected skill using server-authoritative state.")
+check(moved.ok==true and moved_snapshot.Loadout[3]=="Mend" and moved_snapshot.Loadout[1]==false,"controller move must relocate selected skill using server-authoritative state.")
+local gap=controller:move_skill_to_slot(6101,"ShieldBash",6)
+local gap_snapshot=controller:build_snapshot(6101)
+check(gap.ok==true and gap_snapshot.Loadout[6]=="ShieldBash","last slot must remain exact")
+for slot=1,6 do
+    check(gap_snapshot.Loadout[slot]~=nil,"wire snapshot must contain every slot, including empty gaps")
+end
+check(gap_snapshot.Loadout[1]==false and gap_snapshot.Loadout[2]==false and gap_snapshot.Loadout[3]=="Mend","wire gaps must be explicit without moving skills")
 print(string.format("[Base Progression Controller Tests] PASS: %d assertions.",assertions))

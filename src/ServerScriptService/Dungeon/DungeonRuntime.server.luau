@@ -18,6 +18,7 @@ local SharedCombat = ReplicatedStorage:WaitForChild("Combat"):WaitForChild("Shar
 
 local DungeonDefinitions = require(SharedCore:WaitForChild("DungeonDefinitions"))
 local CombatConfig = require(SharedCombat:WaitForChild("CombatConfig"))
+local LoadoutSnapshot = require(SharedCore:WaitForChild("LoadoutSnapshot"))
 local SkillProgressionConfig = require(SharedCore:WaitForChild("SkillProgressionConfig"))
 local SkillProgressionDefinitions = require(SharedCore:WaitForChild("SkillProgressionDefinitions"))
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
@@ -186,7 +187,7 @@ local function build_progression_snapshot(user_id: number): any
         SPAvailable = skills.get_available_sp_for_character(c),
         Attributes = c.Progression.Attributes,
         Skills = skill_payload,
-        Loadout = c.Progression.Loadout,
+        Loadout = LoadoutSnapshot.encode(c.Progression.Loadout),
         RespecCounters = c.Progression.RespecCounters,
         OneTimeRewards = c.Progression.OneTimeRewards,
     }
@@ -909,13 +910,20 @@ progression_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
     if action == "Request" and loaded_users[player.UserId] then send_progression(player) end
 end)
 
-loadout_request.OnServerEvent:Connect(function(player: Player, slots: any)
+loadout_request.OnServerEvent:Connect(function(player: Player, first: any, second: any)
     if not loaded_users[player.UserId] then return end
     local context = "DungeonClear"
     if encounter_service and current_encounter_id ~= "" and not encounter_service:is_clear(current_encounter_id) then
         context = "DungeonActive"
     end
-    local result = loadout:set(player.UserId, slots, context)
+    local result:any
+    if type(first)=="string" then
+        result=loadout:move_to_slot(player.UserId,first,second,context)
+    elseif type(first)=="table" and second==nil then
+        result=loadout:set(player.UserId,first,context)
+    else
+        result={ok=false,reason="InvalidLoadoutRequest"}
+    end
     progression_action_result:FireClient(player, {action = "Loadout", ok = result.ok == true, reason = result.reason})
     if result.ok then send_progression(player) end
 end)

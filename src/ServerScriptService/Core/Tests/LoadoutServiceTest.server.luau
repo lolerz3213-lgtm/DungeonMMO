@@ -26,4 +26,23 @@ local bad_slot=service:move_to_slot(9401,"ShieldBash",7,"Base")
 check(bad_slot.ok==false and bad_slot.reason=="InvalidSlot","slots outside the active range must reject")
 local active=service:move_to_slot(9401,"ShieldBash",1,"DungeonActive")
 check(active.ok==false and active.reason=="LoadoutLockedDuringEncounter","active encounter must reject swapping")
+-- Exact targets, including leading/interior gaps, must survive profile migration.
+for slot=1,6 do
+    local placed=service:move_to_slot(9401,"ShieldBash",slot,"Base")
+    c=assert(profiles:get_character(9401,1))
+    local count=0
+    for _,id in pairs(c.Progression.Loadout) do if id=="ShieldBash" then count+=1 end end
+    check(placed.ok and c.Progression.Loadout[slot]=="ShieldBash" and count==1,"every target must be exact and unique")
+end
+check(service:set(9401,{[1]="ShieldBash"},"Base").ok,"prepare deliberate gap")
+check(service:move_to_slot(9401,"Mend",3,"Base").ok,"place learned skill after gap")
+c=assert(profiles:get_character(9401,1))
+check(c.Progression.Loadout[1]=="ShieldBash" and c.Progression.Loadout[2]==nil and c.Progression.Loadout[3]=="Mend","Slot 3 placement must preserve Slot 2 gap")
+for _,slot in ipairs({0,-1,7,1.5,"3",false,math.huge,-math.huge,0/0}) do
+    local rejected=service:move_to_slot(9401,"Mend",slot,"Base")
+    c=assert(profiles:get_character(9401,1))
+    check(not rejected.ok and rejected.reason=="InvalidSlot" and c.Progression.Loadout[3]=="Mend" and c.Progression.Loadout[1]=="ShieldBash","invalid slots must fail closed without mutation")
+end
+check(service:move_to_slot(9401,"Mend",nil,"Base").reason=="InvalidSlot","missing target must fail closed")
+check(service:move_to_slot(9401,"Mend",6,"DungeonClear").ok,"cleared Dungeon supports atomic moves")
 print(string.format("[Loadout Service Tests] PASS: %d assertions.",n))

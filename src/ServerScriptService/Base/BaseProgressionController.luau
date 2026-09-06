@@ -7,6 +7,8 @@ local SkillDefinitions=require(Shared:WaitForChild("SkillProgressionDefinitions"
 local InventoryService=require(ServerScriptService:WaitForChild("Core"):WaitForChild("Services"):WaitForChild("InventoryService"))
 local ProgressionRuntimeState=require(ServerScriptService:WaitForChild("Core"):WaitForChild("Services"):WaitForChild("ProgressionRuntimeState"))
 
+local LoadoutSnapshot=require(Shared:WaitForChild("LoadoutSnapshot"))
+
 local BaseProgressionController={}; BaseProgressionController.__index=BaseProgressionController
 local function failure(reason:string):any return {ok=false,reason=reason} end
 
@@ -68,7 +70,7 @@ function BaseProgressionController:build_snapshot(user_id:number):any
             Spirit=c.Progression.Attributes.Spirit,
         },
         Skills=skill_payload,
-        Loadout=c.Progression.Loadout,
+        Loadout=LoadoutSnapshot.encode(c.Progression.Loadout),
         RespecCounters={
             Attributes=c.Progression.RespecCounters.Attributes or 0,
             Skills=c.Progression.RespecCounters.Skills or 0,
