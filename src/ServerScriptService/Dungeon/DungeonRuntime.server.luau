@@ -18,11 +18,9 @@ local SharedCombat = ReplicatedStorage:WaitForChild("Combat"):WaitForChild("Shar
 
 local DungeonDefinitions = require(SharedCore:WaitForChild("DungeonDefinitions"))
 local CombatConfig = require(SharedCombat:WaitForChild("CombatConfig"))
-local LoadoutSnapshot = require(SharedCore:WaitForChild("LoadoutSnapshot"))
-local SkillProgressionConfig = require(SharedCore:WaitForChild("SkillProgressionConfig"))
-local SkillProgressionDefinitions = require(SharedCore:WaitForChild("SkillProgressionDefinitions"))
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
+local ProgressionSnapshotBuilder = require(Services:WaitForChild("ProgressionSnapshotBuilder"))
 local RevivePurchaseService = require(Services:WaitForChild("RevivePurchaseService"))
 local RevivePurchaseRegistry = require(Services:WaitForChild("RevivePurchaseRegistry"))
 local TeleportCoordinator = require(Services:WaitForChild("TeleportCoordinator"))
@@ -164,33 +162,7 @@ end
 
 local function build_progression_snapshot(user_id: number): any
     local c = profiles:get_character(user_id, 1)
-    if not c then return {} end
-    local skill_payload: any = {}
-    for skill_id, definition in pairs(SkillProgressionDefinitions.all()) do
-        local state = c.Progression.Skills[skill_id]
-        local known = type(state) == "table" and state.Known == true
-        local rank = if known then math.max(0, math.floor(tonumber(state.PurchasedRank) or 0)) else 0
-        local proficiency_value = if type(state) == "table" then math.max(0, tonumber(state.Proficiency) or 0) else 0
-        local target_rank = rank + 1
-        skill_payload[skill_id] = {
-            Id = skill_id, Known = known, Rank = rank, MaxRank = definition.MaxRank, Tier = definition.Tier,
-            Proficiency = proficiency_value,
-            NextThreshold = if target_rank <= definition.MaxRank then SkillProgressionConfig.get_threshold(definition.Tier, target_rank) else nil,
-            NextCost = if target_rank <= definition.MaxRank then SkillProgressionConfig.get_rank_cost(definition.Tier, target_rank) else nil,
-            WeaponTags = definition.WeaponTags,
-            BookOwned = if skill_id == "ArcSlash" then inventory.count_item(c, "arc_slash_book_bound") > 0 else false,
-        }
-    end
-    return {
-        Level = c.Level, XP = c.XP, Gold = c.Gold,
-        APAvailable = attributes.get_available_points(c),
-        SPAvailable = skills.get_available_sp_for_character(c),
-        Attributes = c.Progression.Attributes,
-        Skills = skill_payload,
-        Loadout = LoadoutSnapshot.encode(c.Progression.Loadout),
-        RespecCounters = c.Progression.RespecCounters,
-        OneTimeRewards = c.Progression.OneTimeRewards,
-    }
+    return ProgressionSnapshotBuilder.build(c)
 end
 
 local function send_progression(player: Player)

@@ -41,6 +41,7 @@ local ReturnPortalService = require(
 )
 local EnvironmentConfig = require(Shared:WaitForChild("EnvironmentConfig"))
 local DungeonDefinitions = require(Shared:WaitForChild("DungeonDefinitions"))
+local ReviveConfig = require(Shared:WaitForChild("ReviveConfig"))
 
 local assertions = 0
 local function check(condition: boolean, message: string)
@@ -234,12 +235,13 @@ check(
     death_service:on_player_died(death_player, CFrame.new()).ok,
     "A later death must reopen the wipe decision flow."
 )
-now = 1058
+local wipe_deadline = now + ReviveConfig.WIPE_DECISION_SECONDS
+now = wipe_deadline - 1
 check(
     death_service:tick(now).failed == false,
     "Wipe timer must remain recoverable before its deadline."
 )
-now = 1059
+now = wipe_deadline
 check(
     death_service:tick(now).failed == true,
     "Wipe timeout must fail the run with no completion flow."

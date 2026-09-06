@@ -5,7 +5,7 @@
 **Current phase:** Phase 2 - Vertical Slice
 **Current gate:** Phase 2B.C - Persistence + Published Acceptance
 **Gate 2B.B status:** ACCEPTED
-**Gate 2B.C status:** NOT STARTED
+**Gate 2B.C status:** IN PROGRESS
 
 ## Accepted baselines
 
@@ -13,15 +13,12 @@
 - Phase 2A core Base-to-Dungeon slice: ACCEPTED.
 - Phase 2B.A Progression Foundation: ACCEPTED.
 - Phase 2B.B Gameplay + Base Progression: ACCEPTED.
-- Previous accepted `main` baseline:
-  `24dee751b87d831abe22cd046dd3b9934c566a56`.
-- Accepted Gate 2B.B gameplay source candidate:
-  `0d86755ccbbd70b3f3b2a8e124247cc4097a71df`
-  (`wip: preserve loadout gap fix before dungeon art prototype`) on
-  `wip/phase-2b-b-pre-ai-continuity`.
-
-The close-out documentation must be reviewed and committed deliberately before
-`main` is fast-forwarded to the accepted Gate 2B.B state.
+- Accepted Gate 2B.B checkpoint:
+  `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
+- `main`, `origin/main`, and the frozen
+  `wip/phase-2b-b-pre-ai-continuity` branch resolve to that accepted checkpoint.
+- Active Gate 2B.C branch:
+  `wip/phase-2b-c-published-persistence`, forked exactly from `ac9546c`.
 
 ## Experience composition
 
@@ -87,15 +84,20 @@ branch and do not mix environment-art work into Gate 2B.C.
 
 ## Exact next engineering action
 
-1. Complete this Gate 2B.B documentation close-out, review the exact Git diff,
-   make the deliberate acceptance checkpoint, push it, then fast-forward
-   `main` to that accepted content without merging the art branch.
-2. Begin Gate 2B.C / Task 9 by creating
-   `docs/testing/phase2b-published-test-checklist.md`.
+1. RED was verified in a fresh Base build: the new snapshot regression failed
+   specifically because `ProgressionSnapshotBuilder` did not yet exist.
+2. Shared snapshot GREEN is verified in fresh Base and Dungeon builds:
+   `ProgressionSnapshotBuilderTest` reports PASS with 22 assertions in both.
+   The first full Dungeon run exposed two pre-existing regression-test defects:
+   a stale wipe-deadline expectation and ambiguous Luau callback syntax. The
+   test-only repair is now verified in a fresh Dungeon build:
+   `Phase2A Failure Path Tests` PASS with 25 assertions and
+   `Automatic Free Revive Tests` PASS with 10 assertions, with no red
+   runtime/test errors reported.
 3. Build both Places and run the complete Studio regression suite.
-4. Reconfirm TEST environment, Base Dungeon Place ID, forced teleport-failure
-   switches false/absent, and live paid revives/progression Robux products
-   disabled.
+4. Reconfirm TEST environment, Base Dungeon Place ID, both forced teleport
+   failure switches false/absent, and live paid revives/progression Robux
+   products disabled.
 5. Run the published TEST Base -> Dungeon -> Base -> leave -> rejoin proof for
    the complete Phase 2B progression state, reconnect/idempotency and duplicate
    protection.

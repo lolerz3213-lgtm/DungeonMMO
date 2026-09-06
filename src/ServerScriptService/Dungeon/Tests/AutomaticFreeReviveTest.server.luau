@@ -33,7 +33,11 @@ check(died.ok==true,"first death must be accepted.")
 check(session.Members["801"].FreeReviveUsed==true,"first death must consume the free revive immediately.")
 check(session.Members["801"].Mode=="Reviving","first death must enter forced Reviving mode.")
 check(scheduled_delay==3 and spawn_count==0 and scheduled_callback~=nil,"respawn must be scheduled for exactly three seconds later.")
-(scheduled_callback :: ()->())()
+local automatic_callback = scheduled_callback
+if not automatic_callback then
+    error("[Automatic Free Revive Tests] Automatic callback was not scheduled.")
+end
+automatic_callback()
 check(spawn_count==1 and session.Members["801"].Mode=="Active","scheduled callback must respawn once and restore Active mode.")
 local stale=service:request_free_revive(player)
 check(stale.ok==false and stale.reason=="AutomaticFreeRevive","stale manual free-revive requests must never grant a second revive.")
