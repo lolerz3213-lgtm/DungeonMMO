@@ -1,7 +1,19 @@
 # DungeonMMO AI Automation Boundary
 
-**Automation status:** Continuity layer being installed. Studio MCP connection
-has not yet been accepted as working in this repository workflow.
+**Automation status:** Prior Base smoke test verified Studio MCP connection,
+read-only DataModel inspection, local Play start, console inspection, viewport
+inspection, and Play stop/return to Edit (user-reported evidence). Git remained
+clean. Local Studio resolving EnvironmentConfig to DEV is expected.
+
+The controlled formatting-fix task began at repository HEAD `8ca139d` on
+`wip/phase-2b-b-pre-ai-continuity`. Both fresh Rojo builds succeeded. The available
+MCP tools expose no local-file opening command. Human action is needed to open
+`C:\Users\Remko\AppData\Local\Temp\DungeonMMO_ProgressionHudFix_20260906_122919\Base.rbxl`
+before fresh runtime verification. The connected older
+`DungeonMMO_AI_Continuity_Base.rbxl` was confirmed in Edit mode; it must not be
+used to claim the source fix passed. No Play was started during this task.
+The prior ProgressionHudRulesTest RED is fixed in source but runtime PASS is
+not yet established. Gate 2B.B remains NOT ACCEPTED.
 
 ## Goal
 

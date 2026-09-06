@@ -21,10 +21,22 @@ local again=ProgressionService.apply_xp_to_character(c,100)
 check(again.ok and c.Level==10 and c.Progression.SkillPointEntitlement==9, "grant at cap must not create extra entitlement")
 local debug_profiles=ProfileService.new(InMemoryProfileAdapter.new()); assert(debug_profiles:load(9102))
 local debug_progression=ProgressionService.new(debug_profiles)
+local notifications=0
+local notified_level=0
+debug_progression:set_change_callback(function(user_id:number)
+    notifications+=1
+    notified_level=assert(debug_profiles:get_character(user_id,1)).Level
+end)
 local dev_level=debug_progression:set_level_for_test(9102,4,"DEV")
 local debug_character=assert(debug_profiles:get_character(9102,1))
 check(dev_level.ok and debug_character.Level==4 and debug_character.XP==0, "DEV level command must set an exact prototype level for acceptance testing")
 check(debug_character.Progression.AttributePointEntitlement==3 and debug_character.Progression.SkillPointEntitlement==3, "DEV level command must synchronize AP/SP entitlement")
+check(notifications==1 and notified_level==4, "successful level mutation must notify after authoritative state changes")
 local prod_level=debug_progression:set_level_for_test(9102,10,"PROD")
 check(prod_level.ok==false and prod_level.reason=="DebugCommandDisabled", "level debug command must fail closed in PROD")
+check(notifications==1, "rejected PROD mutation must not notify")
+local invalid_level=debug_progression:set_level_for_test(9102,0,"DEV")
+check(not invalid_level.ok and notifications==1, "invalid level must not notify")
+local xp_result=debug_progression:grant_xp(9102,1)
+check(xp_result.ok and notifications==2, "successful XP mutation must notify")
 print(string.format("[Phase 2B Progression Service Tests] PASS: %d assertions.",n))

@@ -30,6 +30,10 @@ end
 function ProgressionService.bind_default(service:any) default_service=service end
 function ProgressionService.get_default():any return default_service end
 function ProgressionService.new(profile_service:any):any assert(profile_service,"ProgressionService requires ProfileService."); return setmetatable({_profiles=profile_service},ProgressionService) end
+-- The owning Place supplies its authoritative snapshot publisher.
+function ProgressionService:set_change_callback(callback:(number)->())
+    self._on_changed=callback
+end
 function ProgressionService:set_level_for_test(user_id:number,target_level:number,environment:string):any
     if environment~="DEV" and environment~="TEST" then return {ok=false,reason="DebugCommandDisabled"} end
     if not integer(target_level) or target_level<1 or target_level>ProgressionConfig.MAX_LEVEL then return {ok=false,reason="InvalidLevel"} end
@@ -46,6 +50,7 @@ function ProgressionService:set_level_for_test(user_id:number,target_level:numbe
     end)
     if not ok then return {ok=false,reason=err or "ProfileMutationFailed"} end
     local character=self._profiles:get_character(user_id); if character then ProgressionRuntimeState.set_character(user_id,character) end
+    if self._on_changed then self._on_changed(user_id) end
     return result
 end
 function ProgressionService:grant_xp(user_id:number,amount:number):any
@@ -57,6 +62,7 @@ function ProgressionService:grant_xp(user_id:number,amount:number):any
     end)
     if not ok then return invalid(err or "ProfileMutationFailed") end
     local character=self._profiles:get_character(user_id); if character then ProgressionRuntimeState.set_character(user_id,character) end
+    if self._on_changed then self._on_changed(user_id) end
     return result
 end
 return table.freeze(ProgressionService)

@@ -196,6 +196,11 @@ local function send_progression(player: Player)
     progression_snapshot:FireClient(player, build_progression_snapshot(player.UserId))
 end
 
+runtime.ProgressionService:set_change_callback(function(user_id: number)
+    local player = Players:GetPlayerByUserId(user_id)
+    if player and loaded_users[user_id] then send_progression(player) end
+end)
+
 local function send_profile(player: Player)
     local character = profiles:get_character(player.UserId, 1)
     if not character then return end

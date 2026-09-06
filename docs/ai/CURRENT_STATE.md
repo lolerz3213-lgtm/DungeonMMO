@@ -17,6 +17,8 @@
 ## Current WIP checkpoint
 
 - Branch: `wip/phase-2b-b-pre-ai-continuity`
+- Repository HEAD before the uncommitted formatting fix: `8ca139d`
+  (`chore: add AI development continuity layer`).
 - WIP commit: `c5e2a59`
 - Commit purpose:
   `wip: preserve Phase 2B.B before AI continuity setup`
@@ -86,6 +88,19 @@ game:GetService("ReplicatedStorage").Core.Remotes.ProgressionDebugRequest:FireSe
 
 ## Open defects
 
+### Controlled formatting fix checkpoint
+
+The prior Base Studio smoke test failed ProgressionHudRulesTest with
+"level cap must show XP MAX without formatting nil." Source inspection confirmed
+an extra `xp` argument in the XP MAX branch shifted Gold/AP/SP values. The
+uncommitted fix removes only that argument; the existing test is unchanged.
+Both Rojo projects build successfully. Fresh Studio runtime verification is
+pending manual opening of the new Base build:
+`C:\Users\Remko\AppData\Local\Temp\DungeonMMO_ProgressionHudFix_20260906_122919\Base.rbxl`.
+The older open build is not evidence for the fix. Studio was confirmed in Edit.
+Gate 2B.B remains NOT ACCEPTED. After verifying this fix, the next major target
+remains the stale Profile HUD, followed by six-slot gap placement.
+
 ### 1. Profile HUD refresh
 
 After the Level 10 DEV/TEST mutation, the generic Progression Trainer shows
@@ -133,3 +148,41 @@ Required temporary UX:
 10. Mark 2B.B accepted only when the complete gate passes.
 11. Update the roadmap and create a new accepted Git checkpoint.
 12. Begin Gate 2B.C only after step 11.
+
+## Profile HUD stale-state fix checkpoint (6 September 2026)
+
+- Branch: `wip/phase-2b-b-pre-ai-continuity`; HEAD: `8ca139d`.
+  All changes remain uncommitted; Gate 2B.B remains NOT ACCEPTED.
+- Preserved all pre-existing changes: four docs/ai files and the XP MAX
+  formatting fix in ProgressionHudRules.luau.
+- Reproduced in connected DungeonMMO_AI_Continuity_Base.rbxl before editing:
+  DEV level command reported Level 10 and AP/SP 9/9 on the server while
+  ProfileHud.Summary and the captured viewport still displayed Level 1/AP 0/SP 0.
+- Root cause: ProgressionService:set_level_for_test mutates the profile and
+  ProgressionRuntimeState but never notifies the Place snapshot publisher.
+  Trainer opening requests ProgressionSnapshot, masking the missing push.
+  ProfileHud already applies received snapshots to ProgressionClientState and
+  renders the authoritative Level/XP/Gold/AP/SP payload correctly.
+- Added a per-service change callback after successful level/XP mutations.
+  BaseRuntime and DungeonRuntime connect it to their existing send_progression
+  publisher for the affected loaded player. No client polling or Trainer change.
+- Source files changed: Core/Services/ProgressionService.luau,
+  Base/BaseRuntime.server.luau, Dungeon/DungeonRuntime.server.luau, and
+  Core/Tests/Phase2BProgressionServiceTest.server.luau under ServerScriptService.
+  Regression assertions cover post-mutation notification, rejection without
+  notification, and XP notification. New assertions have NOT run in Studio yet.
+- Fresh Base and Dungeon Rojo builds succeeded in
+  `C:\Users\Remko\AppData\Local\Temp\DungeonMMO_ProfileHud_20260906_125733`.
+- Fresh runtime verification is PENDING. Launching the fresh Base file did not
+  expose it through MCP. Computer-use input was rejected by automatic approval
+  review: "Computer Use was not approved to use Roblox Studio". MCP provides no
+  local-file opening command. No fresh-build visual PASS is claimed.
+- Pre-fix Output contained the known ProgressionHudRulesTest XP MAX error;
+  the other reported Base test families passed. Fresh-build red errors unknown.
+- Play was stopped through MCP. No commit, push, publish, DataStore or
+  monetisation changes were performed. Source git diff --check passed.
+- Exact next action: open the fresh Base.rbxl from the directory above and
+  connect it to Studio MCP; verify loaded source, start Play, fire DEV level 10,
+  verify Profile HUD Level 10/AP 9/SP 9 immediately with Trainer closed, inspect
+  Output and regression results, stop Play, and update this evidence.
+  Six-slot gap placement remains untouched; full gate acceptance remains pending.

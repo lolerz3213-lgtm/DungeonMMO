@@ -13,7 +13,6 @@ function ProgressionHudRules.format_summary(
         return string.format(
             "Level %d | XP MAX | Gold %d | AP %d | SP %d",
             level,
-            xp,
             gold,
             ap_available,
             sp_available
