@@ -1,0 +1,119 @@
+{
+  "schema_version": 1,
+  "last_scan": "2026-09-06T15:08:28.680490+00:00",
+  "total_references": 12,
+  "new_changed_count": 12,
+  "pending_analysis": [],
+  "removed_paths": [],
+  "contact_sheet_signature": "8db50afb24d79bbfa4f87885bb7a777f4a7c8f317e19669882089562904d45ed",
+  "references": [
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164432996.png",
+      "size_bytes": 3776486,
+      "modified_time_ns": 1788705873451345600,
+      "modified_time": "2026-09-06T14:44:33.451346+00:00",
+      "sha256": "f228b1555f7f0390fd8b60a3a5d3119beac8cda0facbde5150c92362a2cdeae1",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164510110.png",
+      "size_bytes": 3729329,
+      "modified_time_ns": 1788705910578738900,
+      "modified_time": "2026-09-06T14:45:10.578739+00:00",
+      "sha256": "39bbaf24a2ad931e19524b5c23ed6a854025f332c1c671ad9183d67569c27c8c",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164513256.png",
+      "size_bytes": 3764178,
+      "modified_time_ns": 1788705913718937800,
+      "modified_time": "2026-09-06T14:45:13.718938+00:00",
+      "sha256": "869b7eab7e962239a5fec3c5dfa18305194b663b7ae685a629b1a538088f1640",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164557846.png",
+      "size_bytes": 3766839,
+      "modified_time_ns": 1788705958391926900,
+      "modified_time": "2026-09-06T14:45:58.391927+00:00",
+      "sha256": "2bc87c4db43ce0fda86463bb830076a8e0209a04ecabd328929a0dc587a82a8b",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164605485.png",
+      "size_bytes": 3726713,
+      "modified_time_ns": 1788705965940465700,
+      "modified_time": "2026-09-06T14:46:05.940466+00:00",
+      "sha256": "ff5bd6512290f0e7a2bda81bc8dcdd426664c0ff1e6750b643431b068328344e",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164613852.png",
+      "size_bytes": 3592320,
+      "modified_time_ns": 1788705974347495200,
+      "modified_time": "2026-09-06T14:46:14.347495+00:00",
+      "sha256": "64bc81365273f01eab956fd9943d58b47d6fd2eff2808207dece693108c000e5",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164652304.png",
+      "size_bytes": 3580669,
+      "modified_time_ns": 1788706012794321900,
+      "modified_time": "2026-09-06T14:46:52.794322+00:00",
+      "sha256": "4a7649d49526eef4c1cbbfb99b50c37e4ca1378f53513bf378d9702257532fce",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164733953.png",
+      "size_bytes": 3331945,
+      "modified_time_ns": 1788706054433742200,
+      "modified_time": "2026-09-06T14:47:34.433742+00:00",
+      "sha256": "e62d622bbab28b7bbd3e0ab71ec0b62359cdc0eacf2841b6db13ffbaf95352c4",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164737002.png",
+      "size_bytes": 3326424,
+      "modified_time_ns": 1788706057497621500,
+      "modified_time": "2026-09-06T14:47:37.497622+00:00",
+      "sha256": "4df8b2f90cc67f49b44e66d90f5a4a22608f0e15883912483af838beeb32cffd",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164739452.png",
+      "size_bytes": 3364193,
+      "modified_time_ns": 1788706059949765800,
+      "modified_time": "2026-09-06T14:47:39.949766+00:00",
+      "sha256": "c757186779151e69c7808f988120a95eabcf196c3621bb77fb3c423709175250",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/RobloxScreenShot20260906_164742019.png",
+      "size_bytes": 3417926,
+      "modified_time_ns": 1788706062474919200,
+      "modified_time": "2026-09-06T14:47:42.474919+00:00",
+      "sha256": "dbb919efd97fa54199ad21d7c6e27aa96d9bc50ef8b1d28a327b64d483eac68e",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    },
+    {
+      "relative_path": "art/references/iron-soul-dungeon/Statue.jpg",
+      "size_bytes": 27526,
+      "modified_time_ns": 1788705533277481100,
+      "modified_time": "2026-09-06T14:38:53.277481+00:00",
+      "sha256": "510bc8c91a762a770c7d5b50fadf8021e402f56a5091d5afb56bf946a21d371d",
+      "analysed": true,
+      "analysed_at": "2026-09-06T15:10:18.111285+00:00"
+    }
+  ]
+}

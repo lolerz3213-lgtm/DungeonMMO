@@ -1,5 +1,17 @@
 # DungeonMMO AI Automation Boundary
 
+## Active art branch reconciliation — 6 September 2026
+
+- Current branch: `art/dungeon-environment-prototype`.
+- Current HEAD: `ebf9740 fix: refresh progression HUD after authoritative mutations`.
+- User confirms this branch was deliberately created from the last verified gameplay checkpoint for independent environment-art prototyping.
+- Phase 1, Phase 2A and Gate 2B.A remain ACCEPTED. Gate 2B.B remains INSTALLED / NOT ACCEPTED; Gate 2B.C has not started. No gameplay acceptance evidence is changed by this reconciliation.
+- Later gameplay/loadout WIP is not present on this branch and must not be merged into it. Art work must not modify gameplay systems.
+- Earlier branch names, uncommitted-fix descriptions and next gameplay actions below are historical records from before this art branch, not the active working-tree state or instructions for this branch.
+- Active next action: analyse all 12 art references, establish incremental reference cache and reusable Blender library, build and visually iterate TemplateCombatChamber_A, then validate in a disposable local Studio place. No commit, push or publish.
+
+## Historical gameplay continuity (retained without changing acceptance)
+
 **Automation status:** Prior Base smoke test verified Studio MCP connection,
 read-only DataModel inspection, local Play start, console inspection, viewport
 inspection, and Play stop/return to Edit (user-reported evidence). Git remained
