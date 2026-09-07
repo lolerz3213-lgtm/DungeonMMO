@@ -1,11 +1,11 @@
 # DungeonMMO Current Engineering State
 
-**State date:** 6 September 2026
-**Canonical roadmap:** Version 1.22
+**State date:** 7 September 2026
+**Canonical roadmap:** Version 1.23
 **Current phase:** Phase 2 - Vertical Slice
-**Current gate:** Phase 2B.C - Persistence + Published Acceptance
-**Gate 2B.B status:** ACCEPTED
-**Gate 2B.C status:** IN PROGRESS
+**Current gate:** Phase 2C - Race/base-class definitions and class-specific trainer catalogues
+**Gate 2B.C status:** ACCEPTED
+**Phase 2B status:** FUNCTIONALLY COMPLETE
 
 ## Accepted baselines
 
@@ -13,12 +13,16 @@
 - Phase 2A core Base-to-Dungeon slice: ACCEPTED.
 - Phase 2B.A Progression Foundation: ACCEPTED.
 - Phase 2B.B Gameplay + Base Progression: ACCEPTED.
-- Accepted Gate 2B.B checkpoint:
-  `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
-- `main`, `origin/main`, and the frozen
-  `wip/phase-2b-b-pre-ai-continuity` branch resolve to that accepted checkpoint.
-- Active Gate 2B.C branch:
-  `wip/phase-2b-c-published-persistence`, forked exactly from `ac9546c`.
+- Phase 2B.C Persistence + Published Acceptance: ACCEPTED.
+- Accepted Phase 2B.C code checkpoint:
+  `4a82d7486e7455f7597a777e862393c5bbb56cfb`.
+- Gate 2B.C acceptance documentation checkpoint:
+  `cf67bb32f9643beca7875b5f35e82b4bbe1114ce`.
+- Accepted gameplay baseline:
+  `main` and `origin/main` at
+  `8be005ff1ef87712bff8fde01d313fd2569771ac`.
+- Archived Gate 2B.C branch:
+  `origin/wip/phase-2b-c-published-persistence` at `cf67bb3`.
 
 ## Experience composition
 
@@ -32,73 +36,53 @@
 - Published environment: TEST.
 - Live paid revives: disabled.
 
-## Gate 2B.B accepted evidence
+## Gate 2B.C accepted evidence
 
-### Base combined acceptance
+Published TEST acceptance passed the complete Phase 2B persistence proof:
 
-Fresh Base Studio validation passed:
+- Base -> Dungeon -> Base -> leave -> rejoin preserves the accepted progression state;
+- attributes, AP/SP allocation, ranks, proficiency, trainer learning, Arc Slash
+  knowledge/loadout and independent respec state persist;
+- the first-clear bound Arc Slash Skill Book remains exactly-once and survives
+  the return to Base;
+- Arc Slash learning consumes the book and 3 SP atomically and auto-fills the
+  first free active slot;
+- active Dungeon encounters reject loadout swaps and cleared-room windows accept them;
+- first death performs the automatic approximately three-second free revive and
+  later deaths use the normal paid/spectator boundary;
+- published sword presentation works;
+- one combat HUD/runtime presentation is shown;
+- one Captain/boss runtime is spawned;
+- the client-only camera-parented shield presentation remains visible;
+- the shield arm remains behind the shield during Block and Shield Bash;
+- swept-volume dodge clearance prevents the previously observed
+  under-monster/floor fall-through regression.
 
-- Profile HUD immediately matched the authoritative Level 10 mutation.
-- HUD and Progression Trainer agreed at Level 10 with AP/SP entitlement 9/9.
-- Attribute multi-point preview cancelled without saving.
-- Attribute Confirm committed atomically and reduced available AP correctly.
-- Shield Bash and Mend proficiency thresholds enabled the expected Rank 2
-  purchases and SP costs.
-- Six active slots preserved intentional empty gaps.
-- Selected-skill placement into later slots, moves, replacement, uniqueness,
-  selection clearing and no-op slot clicks without selection all worked.
-- Attribute TEST respec restored entitlement and incremented only its counter.
-- Skill TEST respec refunded allocated SP while preserving starter knowledge and
-  saved proficiency and incremented only its counter.
-- No red runtime errors were reported.
-
-### Six-slot gap root cause and fix
-
-The authoritative profile was correct, but sparse numeric RemoteEvent arrays
-lost entries after an intentional nil gap. Shared `LoadoutSnapshot.encode`
-produces six dense wire entries and represents empty slots as `false`.
-Persistent profiles and service mutations remain sparse. Base and Dungeon
-snapshot builders use the shared encoder.
-
-### Dungeon combined acceptance
-
-Fresh Dungeon Studio validation passed:
-
-- relevant Gate 2B.B and accepted regression families reported PASS;
-- no red runtime errors were reported;
-- first death automatically consumed the free revive, entered forced Reviving,
-  and returned after approximately three seconds at the latest checkpoint with
-  restored HP/Stamina;
-- second death returned to the normal defeated flow instead of another
-  automatic free revive;
-- Marauder Captain first-clear reward succeeded;
-- a fresh progression snapshot reported:
-  `ArcSlash BookOwned = true` and `ArcSlash FirstClear = true`.
+Detailed acceptance evidence is stored in
+`docs/testing/phase2b-gate-c-acceptance-record.md`.
 
 ## Separate environment-art branch
 
-`art/dungeon-environment-prototype` is not the gameplay branch. Before returning
-to gameplay, its uncommitted `docs/ai/TEST_MATRIX.md` change was preserved in a
-timestamped recovery copy and Git stash. Do not pop that stash onto the gameplay
-branch and do not mix environment-art work into Gate 2B.C.
+`art/dungeon-environment-prototype` is not the gameplay branch. Its preserved
+art-side work/stash remains separate. Do not merge or pop that work into the
+race/base-class gameplay branch.
 
 ## Exact next engineering action
 
-1. RED was verified in a fresh Base build: the new snapshot regression failed
-   specifically because `ProgressionSnapshotBuilder` did not yet exist.
-2. Shared snapshot GREEN is verified in fresh Base and Dungeon builds:
-   `ProgressionSnapshotBuilderTest` reports PASS with 22 assertions in both.
-   The first full Dungeon run exposed two pre-existing regression-test defects:
-   a stale wipe-deadline expectation and ambiguous Luau callback syntax. The
-   test-only repair is now verified in a fresh Dungeon build:
-   `Phase2A Failure Path Tests` PASS with 25 assertions and
-   `Automatic Free Revive Tests` PASS with 10 assertions, with no red
-   runtime/test errors reported.
-3. Build both Places and run the complete Studio regression suite.
-4. Reconfirm TEST environment, Base Dungeon Place ID, both forced teleport
-   failure switches false/absent, and live paid revives/progression Robux
-   products disabled.
-5. Run the published TEST Base -> Dungeon -> Base -> leave -> rejoin proof for
-   the complete Phase 2B progression state, reconnect/idempotency and duplicate
-   protection.
-6. Mark Phase 2B functionally complete only after the user accepts Gate 2B.C.
+Start the first real race/base-class slice from accepted `main`:
+
+1. create a fresh gameplay branch from
+   `8be005ff1ef87712bff8fde01d313fd2569771ac` or a later deliberate accepted
+   `main`;
+2. lock the first two prototype races and one shared starting archetype;
+3. extend the existing class-definition interface into real race/base-class
+   definitions with starter active/passive grants and one class-specific Base
+   trainer catalogue;
+4. prove that the shared starting archetype points to different first
+   race-specific secondary-class advancement targets;
+5. define a safe migration/default for existing accepted Prototype characters
+   without losing or duplicating Phase 2B progression;
+6. rerun Base and Dungeon regressions before any new published acceptance.
+
+Do not enable Race Change monetisation, broad Phase 3 trees, or final class
+balance in this first slice.

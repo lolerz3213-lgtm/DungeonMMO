@@ -2,18 +2,24 @@
 
 The canonical long-form roadmap currently stored here is:
 
-`DungeonMMO_Roadmap_v1_22.docx`
+`DungeonMMO_Roadmap_v1_23.docx`
 
-Version: **1.22**
-Last updated: **6 September 2026**
+Version: **1.23**
+Last updated: **7 September 2026**
 
 SHA-256:
 
-`ba7f56571fc0b7cb46274fb72ff5568bb1bfb11e86600f466cb2e666f2aeba00`
+`5a309b220f22cffc8578ad714f9695578983625710eceadfa9c71c025a7e0944`
 
-Version 1.22 records Phase 2B Gate 2B.B as ACCEPTED and makes Gate 2B.C / Task 9
-- published cross-Place progression persistence and final Phase 2B acceptance -
-the active gameplay gate.
+Version 1.23 records Phase 2B Gate 2B.C as ACCEPTED and Phase 2B as
+FUNCTIONALLY COMPLETE. The accepted Phase 2B code checkpoint is
+`4a82d7486e7455f7597a777e862393c5bbb56cfb`, merged into `main` at
+`8be005ff1ef87712bff8fde01d313fd2569771ac`.
+
+The next gameplay slice is Phase 2C: the first real race/base-class definitions
+and class-specific trainer catalogues. It begins by locking two prototype races
+and one shared starting archetype, then extending the accepted class-definition
+interface without replacing the Phase 2B profile/progression services.
 
 `docs/ai/CURRENT_STATE.md` is the fast engineering-status layer. It does not
 replace the canonical roadmap's LOCKED/WORKING/LATER/OPEN design decisions.

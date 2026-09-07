@@ -1,91 +1,68 @@
 # DungeonMMO Development Handoff
 
-**Date:** 6 September 2026
+**Date:** 7 September 2026
 
 ## Current accepted gameplay boundary
 
-- Gate 2B.B - Gameplay + Base Progression: ACCEPTED and frozen.
-- Gate 2B.C - Persistence + Published Acceptance: IN PROGRESS.
-- Active gameplay branch: `wip/phase-2b-c-published-persistence`.
-- Accepted Gate 2B.B checkpoint:
-  `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
-- `main`, `origin/main`, and the frozen 2B.B branch resolve to `ac9546c`.
-- Canonical roadmap: `docs/roadmap/DungeonMMO_Roadmap_v1_22.docx`.
+- Phase 1 combat: ACCEPTED.
+- Phase 2A - Core Base-to-Dungeon slice: ACCEPTED.
+- Phase 2B.A - Progression Foundation: ACCEPTED.
+- Phase 2B.B - Gameplay + Base Progression: ACCEPTED.
+- Phase 2B.C - Persistence + Published Acceptance: ACCEPTED.
+- Phase 2B: FUNCTIONALLY COMPLETE.
+- Accepted Gate 2B.C code checkpoint:
+  `4a82d7486e7455f7597a777e862393c5bbb56cfb`.
+- Accepted merged gameplay baseline:
+  `main` / `origin/main` at
+  `8be005ff1ef87712bff8fde01d313fd2569771ac`.
+- Archived Gate 2B.C branch:
+  `origin/wip/phase-2b-c-published-persistence` at
+  `cf67bb32f9643beca7875b5f35e82b4bbe1114ce`.
+- Canonical roadmap:
+  `docs/roadmap/DungeonMMO_Roadmap_v1_23.docx`.
 
-Gate 2B.C starts from the exact accepted 2B.B checkpoint. The published TEST
-checklist is now present. RED was verified in a fresh Base build: the new
-`ProgressionSnapshotBuilderTest` failed specifically because the shared builder
-was absent. The GREEN candidate adds that shared sanitized builder and routes
-both Base and Dungeon through it. Fresh Base and Dungeon runs now report
-`Progression Snapshot Builder Tests` PASS with 22 assertions. The Dungeon run
-also surfaced two pre-existing test defects: `Phase2AFailurePathTest` used a
-stale 1058/1059 wipe boundary despite the configured 30-second window, and
-`AutomaticFreeReviveTest` contained ambiguous leading-parenthesis callback
-syntax. The test-only repair is now verified in a fresh Dungeon build:
-`Phase2A Failure Path Tests` PASS with 25 assertions and
-`Automatic Free Revive Tests` PASS with 10 assertions, with no red errors
-reported.
+## Gate 2B.C published acceptance
 
-## Gate 2B.B evidence
+The user completed and accepted the published TEST Base -> Dungeon -> Base ->
+leave -> rejoin proof. The complete Phase 2B progression state persisted across
+Places and reconnect without duplicate reward or point-minting regressions.
 
-### Resolved Profile HUD defect
+Targeted published regressions are also closed:
 
-The stale HUD path was fixed at the authoritative mutation boundary. Successful
-level/XP mutations notify the Place snapshot publisher, so the top-left Profile
-HUD updates immediately; opening the Progression Trainer is not a refresh
-mechanism. Fresh Base Studio verification passed Level 10 HUD/trainer agreement
-at AP/SP entitlement 9/9 with no red runtime error reported.
+- duplicate HUD/runtime presentation: fixed;
+- published sword attack presentation: fixed;
+- duplicate Captain/boss runtime: fixed;
+- shield disappearing in published play: fixed through the independent
+  camera-parented client visual;
+- left arm appearing in front of the shield during Block/Shield Bash: fixed;
+- dodge pushing the player under a monster/floor: fixed with swept-volume
+  clearance rules.
 
-### Resolved six-slot gap defect
-
-Root cause: sparse numeric arrays sent through RemoteEvent lost later entries
-after an intentional nil slot. `ReplicatedStorage/Core/Shared/LoadoutSnapshot`
-now encodes six dense wire slots using `false` for empty entries. Persistent
-profile/loadout state remains sparse. Base and Dungeon snapshots use the shared
-encoder.
-
-Fresh Base visual acceptance passed:
-
-- Slot 1 occupied / Slot 2 empty / later-slot placement;
-- all six target slots;
-- moves and replacement;
-- no duplicate selected skill;
-- intentional gaps preserved;
-- slot click with no selected skill is a no-op;
-- selection clears after successful placement;
-- authoritative UI refresh is immediate.
-
-The Base combined gate also passed Attribute preview/commit, proficiency-gated
-rank purchases and both independent TEST respec flows.
-
-### Dungeon acceptance
-
-Fresh Dungeon validation passed the relevant Gate 2B.B and accepted regression
-families with no red runtime errors reported. Manual gameplay confirmed:
-
-- first death -> forced automatic three-second free revive at latest checkpoint;
-- second death -> normal defeated/simulated paid-revive flow;
-- Captain first clear -> one-time bound Arc Slash Skill Book;
-- fresh progression snapshot -> `BookOwned=true`, `ArcSlashFirstClear=true`.
+The Gate C acceptance record is
+`docs/testing/phase2b-gate-c-acceptance-record.md`.
 
 ## Separate art work
 
-`art/dungeon-environment-prototype` is separate. Do not do gameplay work there,
-merge it into the current gate, or pop the preserved art-side stash onto the
-gameplay branch.
+`art/dungeon-environment-prototype` remains separate. Do not do gameplay work
+there, merge it into the next race/class slice, or pop the preserved art-side
+stash onto the gameplay branch.
 
 ## Exact next action
 
-Gate 2B.C / Task 9 is active:
+The next gameplay slice is Phase 2C: first real race/base-class definitions and
+class-specific trainer catalogues.
 
-1. add the published TEST progression checklist;
-2. RED/GREEN one shared sanitized progression-snapshot builder used by Base and
-   Dungeon;
-3. rerun both Place regression builds and fresh Studio regressions;
-4. run the real private TEST Base -> Dungeon -> Base -> leave -> rejoin proof;
-5. verify the full progression state, reconnect/idempotency and duplicate
-   protection survive;
-6. freeze Phase 2B only after user acceptance.
+1. branch from accepted `main` at
+   `8be005ff1ef87712bff8fde01d313fd2569771ac`;
+2. lock two prototype races and one shared starting archetype;
+3. replace the temporary class-neutral Prototype catalogue with real
+   race/base-class definitions while reusing the accepted Phase 2B
+   profile/progression/loadout/proficiency services;
+4. add one class-specific Base trainer catalogue;
+5. prove different race-specific first secondary-class advancement targets for
+   the shared archetype;
+6. define safe migration/default behaviour for existing Prototype characters;
+7. rerun Base and Dungeon regression builds before any published acceptance.
 
-Do not begin real race/base-class definitions or class-specific trainer
-catalogues before Gate 2B.C is accepted.
+Do not begin Race Change monetisation, broad Phase 3 class trees, or final class
+balance in this first slice.

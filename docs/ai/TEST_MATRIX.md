@@ -78,45 +78,54 @@ gap. Shared `LoadoutSnapshot.encode` produces six dense wire entries and uses
 
 ## Phase 2B.C - Persistence + Published Acceptance
 
-**Status:** IN PROGRESS
+**Status:** ACCEPTED
+**Accepted code checkpoint:**
+`4a82d7486e7455f7597a777e862393c5bbb56cfb`
+**Merged accepted main:**
+`8be005ff1ef87712bff8fde01d313fd2569771ac`
 
-Task 9 started from accepted checkpoint
-`ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137` on
-`wip/phase-2b-c-published-persistence`.
+Published TEST acceptance confirmed:
 
-RED verified in a fresh Base build: `ProgressionSnapshotBuilderTest` failed for
-the expected missing-builder reason while the surrounding accepted Base
-regressions remained green. GREEN is now verified for the shared builder in
-fresh Base and Dungeon runs at 22 assertions each. The first full Dungeon run
-also exposed two pre-existing test defects, not runtime regressions:
-`Phase2AFailurePathTest` had a stale wipe-deadline expectation and
-`AutomaticFreeReviveTest` had ambiguous Luau callback syntax. The test-only
-repair is verified: `Phase2A Failure Path Tests` PASS with 25 assertions and
-`Automatic Free Revive Tests` PASS with 10 assertions in a fresh Dungeon run,
-with no red runtime/test errors reported.
+- [x] fresh Level 1 profile = 5/5/5/5/5, 0 AP/SP, Mend R1 + Shield Bash R1;
+- [x] each level gain grants exactly +1 AP/+1 SP;
+- [x] Strength changes basic sword damage;
+- [x] Vitality changes MaxHealth;
+- [x] Spirit changes Mend;
+- [x] Mend/Shield Bash proficiency caps at the next threshold;
+- [x] DEV/TEST proficiency mutation changes proficiency only;
+- [x] trainer rank purchase persists;
+- [x] first Captain clear grants exactly one bound Arc Slash book;
+- [x] return to Base preserves the book;
+- [x] trainer consumes the book + 3 SP atomically and learns Arc Slash;
+- [x] Arc Slash auto-fills the first free slot;
+- [x] Character -> Skills swaps in Base;
+- [x] active Dungeon encounter rejects swap and clear window accepts it;
+- [x] Arc Slash requires one-handed sword and multi-target proficiency diminishes;
+- [x] Attribute/Skill respec counters and allocation cannot mint points;
+- [x] first death auto-revives after approximately three seconds at checkpoint;
+- [x] later death uses paid/spectator flow;
+- [x] Base -> Dungeon -> Base -> leave -> rejoin preserves the complete state;
+- [x] reconnect/idempotency and duplicate protection remain correct;
+- [x] fresh Base/Dungeon regressions remained green with no reported red runtime errors.
 
-Task 9 is the final Phase 2B gate. Published TEST acceptance must prove:
+### Targeted published regression close-out
 
-- [ ] fresh Level 1 profile = 5/5/5/5/5, 0 AP/SP, Mend R1 + Shield Bash R1;
-- [ ] each level gain grants exactly +1 AP/+1 SP;
-- [ ] Strength changes basic sword damage;
-- [ ] Vitality changes MaxHealth;
-- [ ] Spirit changes Mend;
-- [ ] Mend/Shield Bash proficiency caps at the next threshold;
-- [ ] DEV/TEST proficiency mutation changes proficiency only;
-- [ ] trainer rank purchase persists;
-- [ ] first Captain clear grants exactly one bound Arc Slash book;
-- [ ] return to Base preserves the book;
-- [ ] trainer consumes the book + 3 SP atomically and learns Arc Slash;
-- [ ] Arc Slash auto-fills the first free slot;
-- [ ] Character -> Skills swaps in Base;
-- [ ] active Dungeon encounter rejects swap and clear window accepts it;
-- [ ] Arc Slash requires one-handed sword and multi-target proficiency diminishes;
-- [ ] Attribute/Skill respec counters and allocation cannot mint points;
-- [ ] first death auto-revives after three seconds at checkpoint;
-- [ ] later death uses paid/spectator flow;
-- [ ] Base -> Dungeon -> Base -> leave -> rejoin preserves the complete state;
-- [ ] reconnect/idempotency and duplicate protection remain correct;
-- [ ] all fresh Base/Dungeon regressions are green with no red runtime errors.
+- [x] only one combat HUD/runtime presentation appears;
+- [x] published sword attack presentation works;
+- [x] only one Captain/boss runtime spawns;
+- [x] shield presentation remains visible in published play;
+- [x] shield arm remains behind the shield during Block and Shield Bash;
+- [x] swept-volume dodge clearance prevents the under-monster/floor
+  fall-through regression.
 
-Phase 2B is not functionally complete until Gate 2B.C passes and is accepted.
+Detailed evidence is recorded in
+`docs/testing/phase2b-gate-c-acceptance-record.md`.
+
+**Phase 2B status:** FUNCTIONALLY COMPLETE.
+
+## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
+
+**Status:** NEXT / NOT STARTED
+
+No Phase 2C result may be claimed from Phase 2B evidence. Fresh RED/GREEN and
+runtime evidence must be gathered for the new race/base-class slice.
