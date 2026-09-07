@@ -40,6 +40,9 @@ local DungeonDeathPresentation = require(
 )
 local DungeonEnemyCleanup = require(Dungeon:WaitForChild("DungeonEnemyCleanup"))
 local MarauderCaptainFactory = require(Dungeon:WaitForChild("MarauderCaptainFactory"))
+local DungeonBossSpawnGuard = require(
+    Dungeon:WaitForChild("DungeonBossSpawnGuard")
+)
 local CompletionEligibilityRules = require(Dungeon:WaitForChild("CompletionEligibilityRules"))
 local CompletionService = require(Dungeon:WaitForChild("CompletionService"))
 local ReturnPortalService = require(Dungeon:WaitForChild("ReturnPortalService"))
@@ -486,6 +489,21 @@ local function start_boss()
     end
     local session = current_session()
     if not session or session.State ~= "Active" then return end
+
+    if not DungeonBossSpawnGuard.claim(
+        dungeon_root,
+        active_session_id
+    ) then
+        boss_started = true
+        warn(
+            "[Dungeon Runtime] Duplicate Captain spawn blocked "
+                .. "for session "
+                .. active_session_id
+                .. "."
+        )
+        return
+    end
+
     boss_started = true
     sync_all_character_encounters("MarauderCaptain")
     sessions:set_runtime_progress(active_session_id, "MarauderCaptain", "MarauderCaptain")

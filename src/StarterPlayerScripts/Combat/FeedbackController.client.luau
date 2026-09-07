@@ -18,6 +18,9 @@ local CombatConfig = require(
 local CombatTypes = require(
     shared_folder:WaitForChild("CombatTypes")
 )
+local PrototypeAnimationFactory = require(
+    shared_folder:WaitForChild("PrototypeAnimationFactory")
+)
 local SkillDefinitions = require(
     shared_folder:WaitForChild("SkillDefinitions")
 )
@@ -55,6 +58,14 @@ local current_carry_weight = 0
 
 local running_connection: RBXScriptConnection? = nil
 local state_connection: RBXScriptConnection? = nil
+
+local current_local_state = State.LOCOMOTION
+local procedural_attack_id = ""
+local procedural_attack_started_at = 0
+local procedural_waist: Instance? = nil
+local procedural_right_shoulder: Instance? = nil
+local procedural_right_elbow: Instance? = nil
+local procedural_right_wrist: Instance? = nil
 
 
 --[[
@@ -103,6 +114,182 @@ local function clear_animation_tracks()
     carry_track = nil
     last_running_speed = 0
     current_carry_weight = 0
+end
+
+
+local function joint_name_matches(
+    instance: Instance,
+    names: {string}
+): boolean
+    for _, name in names do
+        if instance.Name == name then
+            return true
+        end
+    end
+
+    return false
+end
+
+
+local function find_presentation_joint(
+    character: Model,
+    names: {string}
+): Instance?
+    for _, descendant in character:GetDescendants() do
+        if descendant:IsA("AnimationConstraint")
+            and joint_name_matches(descendant, names) then
+            return descendant
+        end
+    end
+
+    for _, descendant in character:GetDescendants() do
+        if descendant:IsA("Motor6D")
+            and joint_name_matches(descendant, names) then
+            return descendant
+        end
+    end
+
+    return nil
+end
+
+
+local function layer_presentation_joint(
+    joint: Instance?,
+    overlay: CFrame
+)
+    if not joint then
+        return
+    end
+
+    if joint:IsA("Motor6D") then
+        joint.Transform = joint.Transform * overlay
+        return
+    end
+
+    if joint:IsA("AnimationConstraint") then
+        joint.Transform = joint.Transform * overlay
+    end
+end
+
+
+local function clear_published_pose_joints()
+    procedural_waist = nil
+    procedural_right_shoulder = nil
+    procedural_right_elbow = nil
+    procedural_right_wrist = nil
+    procedural_attack_id = ""
+    procedural_attack_started_at = 0
+end
+
+
+local function bind_published_pose_joints(
+    character: Model
+)
+    if RunService:IsStudio() then
+        return
+    end
+
+    procedural_waist = find_presentation_joint(
+        character,
+        {"Waist"}
+    )
+    procedural_right_shoulder = find_presentation_joint(
+        character,
+        {"RightShoulder"}
+    )
+    procedural_right_elbow = find_presentation_joint(
+        character,
+        {"RightElbow"}
+    )
+    procedural_right_wrist = find_presentation_joint(
+        character,
+        {"RightWrist"}
+    )
+end
+
+
+local function render_published_sword(
+    _delta_time: number
+)
+    if RunService:IsStudio() then
+        return
+    end
+
+    if procedural_attack_id ~= ""
+        and (
+            current_local_state == State.WIND_UP
+            or current_local_state == State.ACTIVE
+            or current_local_state == State.RECOVERY
+        ) then
+        local definition =
+            BasicAttack.ATTACKS[procedural_attack_id]
+
+        if definition then
+            local elapsed =
+                os.clock() - procedural_attack_started_at
+            local pose =
+                PrototypeAnimationFactory.sample_attack_pose(
+                    procedural_attack_id,
+                    definition,
+                    elapsed
+                )
+
+            layer_presentation_joint(
+                procedural_waist,
+                pose.UpperTorso
+            )
+            layer_presentation_joint(
+                procedural_right_shoulder,
+                pose.RightUpperArm
+            )
+            layer_presentation_joint(
+                procedural_right_elbow,
+                pose.RightLowerArm
+            )
+            layer_presentation_joint(
+                procedural_right_wrist,
+                pose.RightHand
+            )
+
+            if elapsed
+                >= PrototypeAnimationFactory
+                    .get_expected_duration(definition) then
+                procedural_attack_id = ""
+            end
+
+            return
+        end
+    end
+
+    if current_local_state ~= State.LOCOMOTION then
+        return
+    end
+
+    local carry_pose =
+        PrototypeAnimationFactory.get_carry_pose()
+    local carry_weight = CARRY_WEIGHT_IDLE
+
+    layer_presentation_joint(
+        procedural_right_shoulder,
+        CFrame.identity:Lerp(
+            carry_pose.RightUpperArm,
+            carry_weight
+        )
+    )
+    layer_presentation_joint(
+        procedural_right_elbow,
+        CFrame.identity:Lerp(
+            carry_pose.RightLowerArm,
+            carry_weight
+        )
+    )
+    layer_presentation_joint(
+        procedural_right_wrist,
+        CFrame.identity:Lerp(
+            carry_pose.RightHand,
+            carry_weight
+        )
+    )
 end
 
 
@@ -299,10 +486,6 @@ local function load_animation_tracks(
     clear_animation_tracks()
 
     if not RunService:IsStudio() then
-        warn(
-            "[Combat Prototype] Imported clips are "
-                .. "Studio-only until published."
-        )
         return
     end
 
@@ -605,6 +788,8 @@ local function on_local_state_changed(
     state_name: string,
     attack_id: string
 )
+    current_local_state = state_name
+
     if local_state_label then
         local attack_text = attack_id ~= ""
             and (" / " .. attack_id)
@@ -627,7 +812,12 @@ local function on_local_state_changed(
     if state_name == State.WIND_UP
         and attack_id ~= ""
         and not is_active_skill then
-        play_attack_animation(attack_id)
+        if RunService:IsStudio() then
+            play_attack_animation(attack_id)
+        else
+            procedural_attack_id = attack_id
+            procedural_attack_started_at = os.clock()
+        end
     elseif (
         state_name == State.LOCOMOTION
         or state_name == State.BLOCKING
@@ -637,6 +827,13 @@ local function on_local_state_changed(
         and current_attack_track.IsPlaying then
         current_attack_track:Stop(0.05)
         current_attack_track = nil
+    end
+
+    if not RunService:IsStudio()
+        and state_name ~= State.WIND_UP
+        and state_name ~= State.ACTIVE
+        and state_name ~= State.RECOVERY then
+        procedural_attack_id = ""
     end
 end
 
@@ -687,6 +884,7 @@ local function on_character_added(
     character: Model
 )
     task.defer(function()
+        bind_published_pose_joints(character)
         load_animation_tracks(character)
         blade_trail =
             find_weapon_trail(character)
@@ -708,10 +906,17 @@ local function on_character_removing(
 )
     blade_trail = nil
     clear_animation_tracks()
+    clear_published_pose_joints()
 end
 
 
-create_debug_gui()
+if RunService:IsStudio() then
+    create_debug_gui()
+end
+
+RunService.PreSimulation:Connect(
+    render_published_sword
+)
 
 ClientCombatController.on_state_changed(
     on_local_state_changed

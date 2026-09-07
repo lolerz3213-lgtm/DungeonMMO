@@ -1393,7 +1393,33 @@ Args:
 Returns:
     None.
 ]]
+local function reconcile_shield_binding()
+    if not current_character then
+        return
+    end
+
+    local preferred, source =
+        ShieldPresentationBinding.reconcile(
+            current_character,
+            ShieldConfig,
+            shield_grip
+        )
+
+    if preferred and preferred ~= shield_grip then
+        shield_grip = preferred
+
+        print(
+            "[Combat Prototype] Shield presentation rebound ("
+                .. source
+                .. ")."
+        )
+    end
+end
+
+
 local function render_defense(_delta_time: number)
+    reconcile_shield_binding()
+
     if current_action_id == "ShieldBash"
         and (
             current_state == State.WIND_UP

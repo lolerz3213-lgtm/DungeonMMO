@@ -97,10 +97,105 @@ function ShieldPresentationBinding.resolve(
         return existing, "Replicated"
     end
 
+    local fallback_name = shield_config.GRIP_NAME
+        .. "ClientFallback"
+    local existing_fallback = attach_part:FindFirstChild(
+        fallback_name
+    )
+
+    if existing_fallback
+        and existing_fallback:IsA("Motor6D") then
+        existing_fallback.Part0 = attach_part
+        existing_fallback.Part1 = shield
+        return existing_fallback, "ClientFallback"
+    end
+
+    if existing_fallback then
+        existing_fallback:Destroy()
+    end
+
     local fallback = Instance.new("Motor6D")
 
-    fallback.Name = shield_config.GRIP_NAME
+    fallback.Name = fallback_name
+    fallback.Part0 = attach_part
+    fallback.Part1 = shield
+    fallback.C0 = attach_part.CFrame:ToObjectSpace(
+        shield.CFrame
+    )
+    fallback.C1 = CFrame.identity
+    fallback.Parent = attach_part
+
+    return fallback, "ClientFallback"
+end
+
+
+function ShieldPresentationBinding.reconcile(
+    character: Model,
+    shield_config: any,
+    current_grip: Motor6D?
+): (Motor6D?, string)
+    local attach_part = character:FindFirstChild(
+        shield_config.ATTACH_PART_NAME
+    )
+
+    if not attach_part or not attach_part:IsA("BasePart") then
+        if current_grip and current_grip.Parent then
+            current_grip:Destroy()
+        end
+
+        return nil, "AttachPartMissing"
+    end
+
+    local shield = character:FindFirstChild(
+        shield_config.PART_NAME
+    )
+
+    if not shield or not shield:IsA("BasePart") then
+        if current_grip and current_grip.Parent then
+            current_grip:Destroy()
+        end
+
+        return nil, "ShieldPartMissing"
+    end
+
+    local replicated = attach_part:FindFirstChild(
+        shield_config.GRIP_NAME
+    )
+
+    if replicated and replicated:IsA("Motor6D") then
+        if current_grip
+            and current_grip ~= replicated
+            and current_grip.Parent then
+            current_grip:Destroy()
+        end
+
+        return replicated, "Replicated"
+    end
+
+    if current_grip
+        and current_grip:IsA("Motor6D")
+        and current_grip.Parent
+        and current_grip.Part0 == attach_part
+        and current_grip.Part1 == shield then
+        return current_grip, "ClientFallback"
+    end
+
+    local fallback_name = shield_config.GRIP_NAME
         .. "ClientFallback"
+    local existing_fallback = attach_part:FindFirstChild(
+        fallback_name
+    )
+
+    if existing_fallback
+        and existing_fallback:IsA("Motor6D") then
+        existing_fallback.Part0 = attach_part
+        existing_fallback.Part1 = shield
+        return existing_fallback, "ClientFallback"
+    end
+
+    local fallback = Instance.new("Motor6D")
+
+    fallback.Name = fallback_name
     fallback.Part0 = attach_part
     fallback.Part1 = shield
     fallback.C0 = attach_part.CFrame:ToObjectSpace(
