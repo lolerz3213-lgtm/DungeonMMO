@@ -43,7 +43,7 @@ local left_hip_joint: Instance? = nil
 local right_hip_joint: Instance? = nil
 local left_knee_joint: Instance? = nil
 local right_knee_joint: Instance? = nil
-local shield_grip: Motor6D? = nil
+local shield_visual: BasePart? = nil
 local block_ik: IKControl? = nil
 local block_ik_target: Attachment? = nil
 local block_ik_pole: Attachment? = nil
@@ -184,19 +184,10 @@ Returns:
 local function set_shield_world_cframe(
     desired_cframe: CFrame
 )
-    if not shield_grip or not shield_grip.Part0 then
-        return
-    end
-
-    local part0 = shield_grip.Part0
-    local local_target = part0.CFrame:ToObjectSpace(
+    ShieldPresentationBinding.set_visual_cframe(
+        shield_visual,
         desired_cframe
     )
-
-    shield_grip.Transform =
-        shield_grip.C0:Inverse()
-        * local_target
-        * shield_grip.C1
 end
 
 
@@ -1061,24 +1052,25 @@ local function on_character_added(character: Model)
             {"RightKnee"}
         )
 
-        local grip, binding_source =
-            ShieldPresentationBinding.resolve(
+        local visual, binding_source =
+            ShieldPresentationBinding.ensure_visual(
                 character,
                 ShieldConfig,
+                shield_visual,
                 5
             )
 
-        if grip then
-            shield_grip = grip
+        if visual then
+            shield_visual = visual
 
             print(
-                "[Combat Prototype] Shield presentation bound ("
+                "[Combat Prototype] Shield client visual bound ("
                     .. binding_source
                     .. ")."
             )
         else
             warn(
-                "[Combat Prototype] Shield presentation unavailable: "
+                "[Combat Prototype] Shield client visual unavailable: "
                     .. binding_source
                     .. "."
             )
@@ -1115,7 +1107,12 @@ local function on_character_removing(
     right_hip_joint = nil
     left_knee_joint = nil
     right_knee_joint = nil
-    shield_grip = nil
+    ShieldPresentationBinding.release_visual(
+        current_character,
+        ShieldConfig,
+        shield_visual
+    )
+    shield_visual = nil
     current_character = nil
     current_humanoid = nil
     current_root_part = nil
@@ -1393,7 +1390,36 @@ Args:
 Returns:
     None.
 ]]
+local function ensure_shield_visual()
+    if not current_character then
+        return
+    end
+
+    local visual, source =
+        ShieldPresentationBinding.ensure_visual(
+            current_character,
+            ShieldConfig,
+            shield_visual,
+            0
+        )
+
+    if visual and visual ~= shield_visual then
+        shield_visual = visual
+
+        print(
+            "[Combat Prototype] Shield client visual acquired ("
+                .. source
+                .. ")."
+        )
+    elseif not visual then
+        shield_visual = nil
+    end
+end
+
+
 local function render_defense(_delta_time: number)
+    ensure_shield_visual()
+
     if current_action_id == "ShieldBash"
         and (
             current_state == State.WIND_UP

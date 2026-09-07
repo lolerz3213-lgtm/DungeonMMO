@@ -5,13 +5,17 @@ read-only DataModel inspection, local Play start, console inspection, viewport
 inspection, and Play stop/return to Edit (user-reported evidence). Git remained
 clean. Local Studio resolving EnvironmentConfig to DEV is expected.
 
-Current verified checkpoint: `ebf9740` on
-`wip/phase-2b-b-pre-ai-continuity`, committed and pushed; clean at task start.
-The user verified the fresh Base HUD fix visually in Studio: Level 10 immediate
-update and ProgressionHudRulesTest PASS, no red errors, both builds and diff check
-PASS. Prior pending HUD verification notes are superseded. Gate 2B.B remains
-NOT ACCEPTED; six-slot gap placement is the remaining active defect.
-MCP has no local-file opening command; inspect available Studio instances before
+Current accepted checkpoint: `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
+Gate 2B.B is accepted and frozen on `main`. Gate 2B.C / Task 9 is active on
+`wip/phase-2b-c-published-persistence`.
+
+Task 9 RED is verified and the shared snapshot GREEN passes in fresh Base and
+Dungeon runs with 22 assertions. The two pre-existing regression-test defects
+are also repaired and verified in a fresh Dungeon run:
+`Phase2A Failure Path Tests` PASS with 25 assertions and
+`Automatic Free Revive Tests` PASS with 10 assertions, with no red errors
+reported. Published TEST cross-Place verification remains outstanding. MCP has
+no local-file opening command; inspect available Studio instances before
 claiming fresh-build runtime evidence.
 
 ## Goal

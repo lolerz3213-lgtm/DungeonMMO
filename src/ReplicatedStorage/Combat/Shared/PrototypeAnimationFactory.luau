@@ -15,6 +15,13 @@ type AttackPoseSet = {
     FOLLOW_THROUGH: PoseMap,
 }
 
+type RuntimePoseMap = {
+    UpperTorso: CFrame,
+    RightUpperArm: CFrame,
+    RightLowerArm: CFrame,
+    RightHand: CFrame,
+}
+
 local IDENTITY_POSE: PoseMap = {
     UpperTorso = CFrame.identity,
     RightUpperArm = CFrame.identity,
@@ -502,6 +509,121 @@ local function get_total_duration(
 end
 
 
+local function runtime_pose(
+    pose: PoseMap
+): RuntimePoseMap
+    return {
+        UpperTorso = pose.UpperTorso,
+        RightUpperArm = pose.RightUpperArm,
+        RightLowerArm = pose.RightLowerArm,
+        RightHand = pose.RightHand,
+    }
+end
+
+
+local function lerp_runtime_pose(
+    first: PoseMap,
+    second: PoseMap,
+    alpha: number
+): RuntimePoseMap
+    local clamped = math.clamp(alpha, 0, 1)
+
+    return {
+        UpperTorso = first.UpperTorso:Lerp(
+            second.UpperTorso,
+            clamped
+        ),
+        RightUpperArm = first.RightUpperArm:Lerp(
+            second.RightUpperArm,
+            clamped
+        ),
+        RightLowerArm = first.RightLowerArm:Lerp(
+            second.RightLowerArm,
+            clamped
+        ),
+        RightHand = first.RightHand:Lerp(
+            second.RightHand,
+            clamped
+        ),
+    }
+end
+
+
+function PrototypeAnimationFactory.sample_attack_pose(
+    attack_id: string,
+    attack_definition: any,
+    elapsed_seconds: number
+): RuntimePoseMap
+    local pose_set = ATTACK_POSES[attack_id]
+
+    if not pose_set then
+        error(
+            "No prototype animation poses configured for "
+                .. attack_id
+        )
+    end
+
+    local wind_up = attack_definition.WIND_UP_SECONDS
+    local active = attack_definition.ACTIVE_SECONDS
+    local active_end = wind_up + active
+    local total_duration = get_total_duration(
+        attack_definition
+    )
+    local samples = {
+        {
+            time = 0,
+            pose = IDENTITY_POSE,
+        },
+        {
+            time = wind_up * 0.55,
+            pose = pose_set.ANTICIPATION,
+        },
+        {
+            time = wind_up,
+            pose = pose_set.WIND_UP,
+        },
+        {
+            time = wind_up + (active * 0.55),
+            pose = pose_set.CONTACT,
+        },
+        {
+            time = active_end,
+            pose = pose_set.FOLLOW_THROUGH,
+        },
+        {
+            time = total_duration,
+            pose = IDENTITY_POSE,
+        },
+    }
+
+    local elapsed = math.clamp(
+        elapsed_seconds,
+        0,
+        total_duration
+    )
+
+    for index = 2, #samples do
+        local previous = samples[index - 1]
+        local current = samples[index]
+
+        if elapsed <= current.time then
+            local duration = current.time - previous.time
+            local alpha = if duration <= 0
+                then 1
+                else (elapsed - previous.time) / duration
+
+            return lerp_runtime_pose(
+                previous.pose,
+                current.pose,
+                alpha
+            )
+        end
+    end
+
+    return runtime_pose(IDENTITY_POSE)
+end
+
+
 --[[
 Builds a temporary R15 attack KeyframeSequence.
 
@@ -627,6 +749,28 @@ function PrototypeAnimationFactory.create_carry_sequence(
     end
 
     return sequence
+end
+
+
+function PrototypeAnimationFactory.get_carry_pose(): RuntimePoseMap
+    return {
+        UpperTorso = CFrame.identity,
+        RightUpperArm = CFrame.Angles(
+            math.rad(-5),
+            0,
+            math.rad(9)
+        ),
+        RightLowerArm = CFrame.Angles(
+            math.rad(-4),
+            0,
+            math.rad(3)
+        ),
+        RightHand = CFrame.Angles(
+            0,
+            0,
+            math.rad(3)
+        ),
+    }
 end
 
 

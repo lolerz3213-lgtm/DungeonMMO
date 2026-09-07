@@ -4,18 +4,27 @@
 
 ## Current accepted gameplay boundary
 
-- Gate 2B.B - Gameplay + Base Progression: ACCEPTED.
-- Gate 2B.C - Persistence + Published Acceptance: NOT STARTED.
-- Gameplay branch: `wip/phase-2b-b-pre-ai-continuity`.
-- Accepted Gate 2B.B source candidate:
-  `0d86755ccbbd70b3f3b2a8e124247cc4097a71df`.
-- Previous accepted `main` baseline:
-  `24dee751b87d831abe22cd046dd3b9934c566a56`.
+- Gate 2B.B - Gameplay + Base Progression: ACCEPTED and frozen.
+- Gate 2B.C - Persistence + Published Acceptance: IN PROGRESS.
+- Active gameplay branch: `wip/phase-2b-c-published-persistence`.
+- Accepted Gate 2B.B checkpoint:
+  `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
+- `main`, `origin/main`, and the frozen 2B.B branch resolve to `ac9546c`.
 - Canonical roadmap: `docs/roadmap/DungeonMMO_Roadmap_v1_22.docx`.
 
-The Gate 2B.B source has passed its complete manual acceptance. The remaining
-close-out step is documentation review + deliberate Git checkpoint, followed by
-a fast-forward of `main` to accepted content.
+Gate 2B.C starts from the exact accepted 2B.B checkpoint. The published TEST
+checklist is now present. RED was verified in a fresh Base build: the new
+`ProgressionSnapshotBuilderTest` failed specifically because the shared builder
+was absent. The GREEN candidate adds that shared sanitized builder and routes
+both Base and Dungeon through it. Fresh Base and Dungeon runs now report
+`Progression Snapshot Builder Tests` PASS with 22 assertions. The Dungeon run
+also surfaced two pre-existing test defects: `Phase2AFailurePathTest` used a
+stale 1058/1059 wipe boundary despite the configured 30-second window, and
+`AutomaticFreeReviveTest` contained ambiguous leading-parenthesis callback
+syntax. The test-only repair is now verified in a fresh Dungeon build:
+`Phase2A Failure Path Tests` PASS with 25 assertions and
+`Automatic Free Revive Tests` PASS with 10 assertions, with no red errors
+reported.
 
 ## Gate 2B.B evidence
 
@@ -67,15 +76,16 @@ gameplay branch.
 
 ## Exact next action
 
-After the Gate 2B.B close-out commit is reviewed and accepted on `main`, begin
-Gate 2B.C / Task 9 only:
+Gate 2B.C / Task 9 is active:
 
-1. create the published TEST progression checklist;
-2. rerun both Place regression builds;
-3. run the real private TEST Base -> Dungeon -> Base -> leave -> rejoin proof;
-4. verify the full progression state, reconnect/idempotency and duplicate
+1. add the published TEST progression checklist;
+2. RED/GREEN one shared sanitized progression-snapshot builder used by Base and
+   Dungeon;
+3. rerun both Place regression builds and fresh Studio regressions;
+4. run the real private TEST Base -> Dungeon -> Base -> leave -> rejoin proof;
+5. verify the full progression state, reconnect/idempotency and duplicate
    protection survive;
-5. freeze Phase 2B only after user acceptance.
+6. freeze Phase 2B only after user acceptance.
 
 Do not begin real race/base-class definitions or class-specific trainer
 catalogues before Gate 2B.C is accepted.

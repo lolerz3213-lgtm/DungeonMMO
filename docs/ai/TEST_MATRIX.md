@@ -42,8 +42,8 @@ regression families.
 ## Phase 2B.B - Gameplay + Base Progression
 
 **Status:** ACCEPTED
-**Accepted gameplay source candidate:**
-`0d86755ccbbd70b3f3b2a8e124247cc4097a71df`
+**Accepted Git checkpoint:**
+`ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`
 
 ### Base combined acceptance
 
@@ -78,7 +78,22 @@ gap. Shared `LoadoutSnapshot.encode` produces six dense wire entries and uses
 
 ## Phase 2B.C - Persistence + Published Acceptance
 
-**Status:** NOT STARTED
+**Status:** IN PROGRESS
+
+Task 9 started from accepted checkpoint
+`ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137` on
+`wip/phase-2b-c-published-persistence`.
+
+RED verified in a fresh Base build: `ProgressionSnapshotBuilderTest` failed for
+the expected missing-builder reason while the surrounding accepted Base
+regressions remained green. GREEN is now verified for the shared builder in
+fresh Base and Dungeon runs at 22 assertions each. The first full Dungeon run
+also exposed two pre-existing test defects, not runtime regressions:
+`Phase2AFailurePathTest` had a stale wipe-deadline expectation and
+`AutomaticFreeReviveTest` had ambiguous Luau callback syntax. The test-only
+repair is verified: `Phase2A Failure Path Tests` PASS with 25 assertions and
+`Automatic Free Revive Tests` PASS with 10 assertions in a fresh Dungeon run,
+with no red runtime/test errors reported.
 
 Task 9 is the final Phase 2B gate. Published TEST acceptance must prove:
 

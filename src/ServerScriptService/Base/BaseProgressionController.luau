@@ -1,13 +1,8 @@
 --!strict
-local ReplicatedStorage=game:GetService("ReplicatedStorage")
 local ServerScriptService=game:GetService("ServerScriptService")
-local Shared=ReplicatedStorage:WaitForChild("Core"):WaitForChild("Shared")
-local SkillProgressionConfig=require(Shared:WaitForChild("SkillProgressionConfig"))
-local SkillDefinitions=require(Shared:WaitForChild("SkillProgressionDefinitions"))
-local InventoryService=require(ServerScriptService:WaitForChild("Core"):WaitForChild("Services"):WaitForChild("InventoryService"))
-local ProgressionRuntimeState=require(ServerScriptService:WaitForChild("Core"):WaitForChild("Services"):WaitForChild("ProgressionRuntimeState"))
-
-local LoadoutSnapshot=require(Shared:WaitForChild("LoadoutSnapshot"))
+local Services=ServerScriptService:WaitForChild("Core"):WaitForChild("Services")
+local ProgressionRuntimeState=require(Services:WaitForChild("ProgressionRuntimeState"))
+local ProgressionSnapshotBuilder=require(Services:WaitForChild("ProgressionSnapshotBuilder"))
 
 local BaseProgressionController={}; BaseProgressionController.__index=BaseProgressionController
 local function failure(reason:string):any return {ok=false,reason=reason} end
@@ -32,51 +27,7 @@ end
 
 function BaseProgressionController:build_snapshot(user_id:number):any
     local c=self._profiles:get_character(user_id,1)
-    if not c then return {Level=1,XP=0,APAvailable=0,SPAvailable=0,Attributes={},Skills={},Loadout={},RespecCounters={Attributes=0,Skills=0}} end
-    local skill_payload:any={}
-    for skill_id,definition in pairs(SkillDefinitions.all()) do
-        local state=c.Progression.Skills[skill_id]
-        local known=type(state)=="table" and state.Known==true
-        local rank=if known then math.max(0,math.floor(tonumber(state.PurchasedRank) or 0)) else 0
-        local proficiency=if type(state)=="table" then math.max(0,tonumber(state.Proficiency) or 0) else 0
-        local target_rank=rank+1
-        local next_threshold=if target_rank<=definition.MaxRank then SkillProgressionConfig.get_threshold(definition.Tier,target_rank) else nil
-        local next_cost=if target_rank<=definition.MaxRank then SkillProgressionConfig.get_rank_cost(definition.Tier,target_rank) else nil
-        skill_payload[skill_id]={
-            Id=skill_id,
-            Known=known,
-            StarterGranted=type(state)=="table" and state.StarterGranted==true,
-            Rank=rank,
-            MaxRank=definition.MaxRank,
-            Tier=definition.Tier,
-            Proficiency=proficiency,
-            NextThreshold=next_threshold,
-            NextCost=next_cost,
-            WeaponTags=definition.WeaponTags,
-            BookOwned=if skill_id=="ArcSlash" then InventoryService.count_item(c,"arc_slash_book_bound")>0 else false,
-        }
-    end
-    return {
-        Level=c.Level,
-        XP=c.XP,
-        Gold=c.Gold,
-        APAvailable=self._attributes.get_available_points(c),
-        SPAvailable=self._skills.get_available_sp_for_character(c),
-        Attributes={
-            Strength=c.Progression.Attributes.Strength,
-            Dexterity=c.Progression.Attributes.Dexterity,
-            Vitality=c.Progression.Attributes.Vitality,
-            Intellect=c.Progression.Attributes.Intellect,
-            Spirit=c.Progression.Attributes.Spirit,
-        },
-        Skills=skill_payload,
-        Loadout=LoadoutSnapshot.encode(c.Progression.Loadout),
-        RespecCounters={
-            Attributes=c.Progression.RespecCounters.Attributes or 0,
-            Skills=c.Progression.RespecCounters.Skills or 0,
-        },
-        OneTimeRewards={ArcSlashFirstClear=c.Progression.OneTimeRewards.ArcSlashFirstClear==true},
-    }
+    return ProgressionSnapshotBuilder.build(c)
 end
 
 function BaseProgressionController:commit_attributes(user_id:number,desired:any):any
