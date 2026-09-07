@@ -51,6 +51,9 @@ local DefenseService = require(
 local DodgeDirectionRules = require(
     script.Parent:WaitForChild("DodgeDirectionRules")
 )
+local DodgeClearanceRules = require(
+    script.Parent:WaitForChild("DodgeClearanceRules")
+)
 local CombatValidationService = require(
     script.Parent:WaitForChild("CombatValidationService")
 )
@@ -679,25 +682,50 @@ local function update_dodge_movement(
     local progress = elapsed / movement.duration
     local speed = get_dodge_speed(movement, progress)
     local safe_delta = math.max(delta_time, 1 / 240)
+    local probe_size = DodgeClearanceRules.get_probe_size(
+        root_part.Size,
+        movement.clearance
+    )
+
+    local overlap_params = OverlapParams.new()
+    overlap_params.FilterType =
+        Enum.RaycastFilterType.Exclude
+    overlap_params.FilterDescendantsInstances = {
+        movement.character,
+    }
+    overlap_params.RespectCanCollide = true
+    overlap_params.MaxParts = 1
+
+    local initially_blocked =
+        #Workspace:GetPartBoundsInBox(
+            root_part.CFrame,
+            probe_size,
+            overlap_params
+        ) > 0
+
+    local safety_margin =
+        DodgeClearanceRules.get_safety_margin(
+            movement.clearance
+        )
     local probe_distance =
-        (speed * safe_delta) + movement.clearance
-    local result = Workspace:Raycast(
-        root_part.Position,
+        (speed * safe_delta) + safety_margin
+
+    movement.raycast_params.RespectCanCollide = true
+
+    local result = Workspace:Blockcast(
+        root_part.CFrame,
+        probe_size,
         direction * probe_distance,
         movement.raycast_params
     )
 
-    if result then
-        local allowed_distance = math.max(
-            0,
-            result.Distance - movement.clearance
-        )
-
-        speed = math.min(
-            speed,
-            allowed_distance / safe_delta
-        )
-    end
+    speed = DodgeClearanceRules.limit_speed(
+        speed,
+        safe_delta,
+        if result then result.Distance else nil,
+        movement.clearance,
+        initially_blocked
+    )
 
     movement.velocity.PlaneVelocity = Vector2.new(
         direction.X * speed,

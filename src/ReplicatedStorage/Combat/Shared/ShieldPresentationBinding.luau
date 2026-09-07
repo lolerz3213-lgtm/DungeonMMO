@@ -1,211 +1,258 @@
+local RunService = game:GetService("RunService")
+local Workspace = game:GetService("Workspace")
+
 local ShieldPresentationBinding = {}
 
+local SERVER_TEST_FOLDER_NAME =
+    "DungeonMMOLocalPresentationTest"
 
---[[
-Returns the configured attachment part and visible shield part from a character.
-
-The shield part is server-created, but the presentation Motor6D may not always
-be replicated to the owning client before presentation starts. This module
-keeps that replication timing detail out of DefensePresentation.
-
-Args:
-    character (Model): Character containing the shield.
-    shield_config (table): CombatConfig.PROTOTYPE_SHIELD.
-    timeout_seconds (number): Maximum wait for server-created instances.
-
-Returns:
-    BasePart?: Configured attachment part.
-    BasePart?: Visible shield part.
-    string?: Failure reason when either part is unavailable.
-]]
-local function resolve_parts(
+local function get_server_shield(
     character: Model,
-    shield_config: any,
-    timeout_seconds: number
-): (BasePart?, BasePart?, string?)
-    local attach_part = character:FindFirstChild(
-        shield_config.ATTACH_PART_NAME
-    ) or character:WaitForChild(
-        shield_config.ATTACH_PART_NAME,
-        timeout_seconds
-    )
-
-    if not attach_part or not attach_part:IsA("BasePart") then
-        return nil, nil, "AttachPartMissing"
-    end
-
+    shield_config: any
+): BasePart?
     local shield = character:FindFirstChild(
         shield_config.PART_NAME
-    ) or character:WaitForChild(
-        shield_config.PART_NAME,
-        timeout_seconds
     )
 
-    if not shield or not shield:IsA("BasePart") then
-        return attach_part, nil, "ShieldPartMissing"
+    if shield and shield:IsA("BasePart") then
+        return shield
     end
 
-    return attach_part, shield, nil
+    return nil
 end
 
-
---[[
-Finds the replicated server presentation grip or creates a local fallback.
-
-The fallback changes presentation only. Damage, blocking, parry, stamina and
-Shield Bash remain fully server-authoritative.
-
-Args:
-    character (Model): Character receiving local shield presentation.
-    shield_config (table): CombatConfig.PROTOTYPE_SHIELD.
-    timeout_seconds (number): Maximum wait for the shield part itself.
-
-Returns:
-    Motor6D?: Grip to drive from DefensePresentation.
-    string: "Replicated", "ClientFallback", or a failure reason.
-]]
-function ShieldPresentationBinding.resolve(
+local function hide_server_shield(
     character: Model,
-    shield_config: any,
-    timeout_seconds: number
-): (Motor6D?, string)
-    local attach_part, shield, failure = resolve_parts(
+    shield_config: any
+)
+    local shield = get_server_shield(
         character,
-        shield_config,
-        timeout_seconds
+        shield_config
     )
 
-    if failure then
-        return nil, failure
+    if shield then
+        shield.LocalTransparencyModifier = 1
     end
-
-    assert(attach_part ~= nil)
-    assert(shield ~= nil)
-
-    local existing = attach_part:FindFirstChild(
-        shield_config.GRIP_NAME
-    )
-
-    if not existing then
-        existing = attach_part:WaitForChild(
-            shield_config.GRIP_NAME,
-            shield_config.PRESENTATION_GRIP_REPLICATION_WAIT_SECONDS
-        )
-    end
-
-    if existing and existing:IsA("Motor6D") then
-        return existing, "Replicated"
-    end
-
-    local fallback_name = shield_config.GRIP_NAME
-        .. "ClientFallback"
-    local existing_fallback = attach_part:FindFirstChild(
-        fallback_name
-    )
-
-    if existing_fallback
-        and existing_fallback:IsA("Motor6D") then
-        existing_fallback.Part0 = attach_part
-        existing_fallback.Part1 = shield
-        return existing_fallback, "ClientFallback"
-    end
-
-    if existing_fallback then
-        existing_fallback:Destroy()
-    end
-
-    local fallback = Instance.new("Motor6D")
-
-    fallback.Name = fallback_name
-    fallback.Part0 = attach_part
-    fallback.Part1 = shield
-    fallback.C0 = attach_part.CFrame:ToObjectSpace(
-        shield.CFrame
-    )
-    fallback.C1 = CFrame.identity
-    fallback.Parent = attach_part
-
-    return fallback, "ClientFallback"
 end
 
+function ShieldPresentationBinding.get_visual_name(
+    shield_config: any
+): string
+    return shield_config.PART_NAME .. "ClientVisual"
+end
 
-function ShieldPresentationBinding.reconcile(
+local function get_presentation_parent(): Instance
+    if RunService:IsClient() then
+        local camera = Workspace.CurrentCamera
+
+        if camera then
+            return camera
+        end
+    end
+
+    local existing = Workspace:FindFirstChild(
+        SERVER_TEST_FOLDER_NAME
+    )
+
+    if existing and existing:IsA("Folder") then
+        return existing
+    end
+
+    if existing then
+        existing:Destroy()
+    end
+
+    local folder = Instance.new("Folder")
+    folder.Name = SERVER_TEST_FOLDER_NAME
+    folder.Parent = Workspace
+
+    return folder
+end
+
+local function apply_visual_properties(
+    visual: BasePart,
+    shield_config: any
+)
+    visual.Size = shield_config.SIZE
+    visual.Anchored = true
+    visual.CanCollide = false
+    visual.CanTouch = false
+    visual.CanQuery = false
+    visual.Massless = true
+    visual.CastShadow = false
+    visual.Transparency = 0
+    visual.LocalTransparencyModifier = 0
+end
+
+local function create_visual(
+    character: Model,
+    shield_config: any
+): BasePart
+    local server_shield = get_server_shield(
+        character,
+        shield_config
+    )
+    local visual: BasePart
+
+    if server_shield then
+        visual = server_shield:Clone()
+    else
+        local part = Instance.new("Part")
+        part.Color = Color3.fromRGB(88, 94, 104)
+        part.Material = Enum.Material.Metal
+        part.CFrame = CFrame.new(0, -1000, 0)
+        visual = part
+    end
+
+    visual.Name =
+        ShieldPresentationBinding.get_visual_name(
+            shield_config
+        )
+
+    for _, descendant in visual:GetDescendants() do
+        if descendant:IsA("JointInstance")
+            or descendant:IsA("Constraint")
+            or descendant:IsA("Attachment") then
+            descendant:Destroy()
+        end
+    end
+
+    apply_visual_properties(
+        visual,
+        shield_config
+    )
+
+    visual:SetAttribute(
+        "DungeonMMOIntentionalRelease",
+        false
+    )
+
+    visual.Destroying:Connect(function()
+        if visual:GetAttribute(
+            "DungeonMMOIntentionalRelease"
+        ) ~= true then
+            warn(
+                "[Combat Prototype] Shield camera visual "
+                    .. "was destroyed unexpectedly."
+            )
+        end
+    end)
+
+    visual.Parent = get_presentation_parent()
+
+    print(
+        "[Combat Prototype] Shield camera visual created."
+    )
+
+    return visual
+end
+
+function ShieldPresentationBinding.ensure_visual(
     character: Model,
     shield_config: any,
-    current_grip: Motor6D?
-): (Motor6D?, string)
-    local attach_part = character:FindFirstChild(
-        shield_config.ATTACH_PART_NAME
+    current_visual: BasePart?,
+    _timeout_seconds: number
+): (BasePart?, string)
+    hide_server_shield(
+        character,
+        shield_config
     )
 
-    if not attach_part or not attach_part:IsA("BasePart") then
-        if current_grip and current_grip.Parent then
-            current_grip:Destroy()
+    local visual_name =
+        ShieldPresentationBinding.get_visual_name(
+            shield_config
+        )
+    local presentation_parent =
+        get_presentation_parent()
+
+    if current_visual
+        and current_visual.Parent
+        and current_visual.Name == visual_name then
+        if current_visual.Parent ~= presentation_parent then
+            current_visual.Parent = presentation_parent
+
+            print(
+                "[Combat Prototype] Shield camera visual "
+                    .. "reparented to current camera."
+            )
         end
 
-        return nil, "AttachPartMissing"
+        apply_visual_properties(
+            current_visual,
+            shield_config
+        )
+
+        return current_visual, "CameraClientVisual"
     end
 
-    local shield = character:FindFirstChild(
-        shield_config.PART_NAME
+    local existing = presentation_parent:FindFirstChild(
+        visual_name
     )
 
-    if not shield or not shield:IsA("BasePart") then
-        if current_grip and current_grip.Parent then
-            current_grip:Destroy()
-        end
-
-        return nil, "ShieldPartMissing"
+    if existing and existing:IsA("BasePart") then
+        apply_visual_properties(
+            existing,
+            shield_config
+        )
+        return existing, "CameraClientVisual"
     end
 
-    local replicated = attach_part:FindFirstChild(
-        shield_config.GRIP_NAME
-    )
-
-    if replicated and replicated:IsA("Motor6D") then
-        if current_grip
-            and current_grip ~= replicated
-            and current_grip.Parent then
-            current_grip:Destroy()
-        end
-
-        return replicated, "Replicated"
+    if existing then
+        existing:Destroy()
     end
 
-    if current_grip
-        and current_grip:IsA("Motor6D")
-        and current_grip.Parent
-        and current_grip.Part0 == attach_part
-        and current_grip.Part1 == shield then
-        return current_grip, "ClientFallback"
-    end
-
-    local fallback_name = shield_config.GRIP_NAME
-        .. "ClientFallback"
-    local existing_fallback = attach_part:FindFirstChild(
-        fallback_name
-    )
-
-    if existing_fallback
-        and existing_fallback:IsA("Motor6D") then
-        existing_fallback.Part0 = attach_part
-        existing_fallback.Part1 = shield
-        return existing_fallback, "ClientFallback"
-    end
-
-    local fallback = Instance.new("Motor6D")
-
-    fallback.Name = fallback_name
-    fallback.Part0 = attach_part
-    fallback.Part1 = shield
-    fallback.C0 = attach_part.CFrame:ToObjectSpace(
-        shield.CFrame
-    )
-    fallback.C1 = CFrame.identity
-    fallback.Parent = attach_part
-
-    return fallback, "ClientFallback"
+    return create_visual(
+        character,
+        shield_config
+    ), "CameraClientVisual"
 end
 
+function ShieldPresentationBinding.set_visual_cframe(
+    visual: BasePart?,
+    desired_cframe: CFrame
+)
+    if not visual or not visual.Parent then
+        return
+    end
+
+    visual.Transparency = 0
+    visual.LocalTransparencyModifier = 0
+    visual.CFrame = desired_cframe
+end
+
+function ShieldPresentationBinding.release_visual(
+    character: Model?,
+    shield_config: any,
+    visual: BasePart?
+)
+    if visual and visual.Parent then
+        visual:SetAttribute(
+            "DungeonMMOIntentionalRelease",
+            true
+        )
+        visual:Destroy()
+    end
+
+    if character then
+        local server_shield = get_server_shield(
+            character,
+            shield_config
+        )
+
+        if server_shield then
+            server_shield.LocalTransparencyModifier = 0
+        end
+    end
+
+    local folder = Workspace:FindFirstChild(
+        SERVER_TEST_FOLDER_NAME
+    )
+
+    if folder
+        and folder:IsA("Folder")
+        and #folder:GetChildren() == 0 then
+        folder:Destroy()
+    end
+end
 
 return ShieldPresentationBinding

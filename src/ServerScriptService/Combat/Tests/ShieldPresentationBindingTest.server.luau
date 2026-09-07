@@ -1,4 +1,5 @@
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
+local Workspace = game:GetService("Workspace")
 
 local shared_folder = ReplicatedStorage
     :WaitForChild("Combat")
@@ -22,74 +23,85 @@ local function expect(condition: boolean, message: string)
     end
 end
 
-local function make_character(include_grip: boolean): Model
-    local character = Instance.new("Model")
-    local root = Instance.new("Part")
-    local shield = Instance.new("Part")
+local character = Instance.new("Model")
 
-    root.Name = ShieldConfig.ATTACH_PART_NAME
-    root.Anchored = true
-    root.CFrame = CFrame.new(0, 3, 0)
-    root.Parent = character
+local shield = Instance.new("Part")
+shield.Name = ShieldConfig.PART_NAME
+shield.Size = ShieldConfig.SIZE
+shield.Anchored = false
+shield.CanCollide = false
+shield.CFrame = CFrame.new(-2, 3, 0)
+shield.Parent = character
 
-    shield.Name = ShieldConfig.PART_NAME
-    shield.Anchored = false
-    shield.CFrame = CFrame.new(-2, 3, 0)
-    shield.Parent = character
-
-    if include_grip then
-        local grip = Instance.new("Motor6D")
-
-        grip.Name = ShieldConfig.GRIP_NAME
-        grip.Part0 = root
-        grip.Part1 = shield
-        grip.C0 = root.CFrame:ToObjectSpace(shield.CFrame)
-        grip.Parent = root
-    end
-
-    return character
-end
-
-local replicated_character = make_character(true)
-local replicated_grip, replicated_source =
-    ShieldPresentationBinding.resolve(
-        replicated_character,
+local visual, source =
+    ShieldPresentationBinding.ensure_visual(
+        character,
         ShieldConfig,
+        nil,
         0
     )
 
-expect(replicated_grip ~= nil, "Existing replicated grip must resolve.")
-expect(replicated_source == "Replicated", "Existing grip must be preferred.")
+expect(visual ~= nil, "Client visual must be created.")
+expect(source == "CameraClientVisual", "Camera visual source must be reported.")
+expect(visual ~= nil and visual.Parent ~= character, "Client visual must live outside the character model.")
 expect(
-    replicated_grip ~= nil
-        and replicated_grip.Name == ShieldConfig.GRIP_NAME,
-    "Existing grip name must remain authoritative."
+    visual ~= nil
+        and visual.Name
+            == ShieldPresentationBinding.get_visual_name(
+                ShieldConfig
+            ),
+    "Client visual must use the configured presentation name."
 )
-replicated_character:Destroy()
+expect(
+    visual ~= nil
+        and visual.Anchored
+        and not visual.CanCollide
+        and not visual.CanTouch
+        and not visual.CanQuery,
+    "Client visual must be presentation-only."
+)
+expect(shield.LocalTransparencyModifier == 1, "Replicated source shield must be hidden locally while present.")
 
-local fallback_character = make_character(false)
-local fallback_grip, fallback_source =
-    ShieldPresentationBinding.resolve(
-        fallback_character,
+local reused, reused_source =
+    ShieldPresentationBinding.ensure_visual(
+        character,
         ShieldConfig,
+        visual,
         0
     )
 
-expect(fallback_grip ~= nil, "Missing replicated grip must get a fallback.")
-expect(fallback_source == "ClientFallback", "Fallback path must be reported.")
+expect(reused == visual and reused_source == "CameraClientVisual", "ensure_visual must reuse the same visual.")
+
+local target = CFrame.new(4, 5, 6)
+ShieldPresentationBinding.set_visual_cframe(visual, target)
+
+expect(visual ~= nil and visual.CFrame == target, "Client visual must accept direct world-space positioning.")
 expect(
-    fallback_grip ~= nil
-        and fallback_grip.Part0 ~= nil
-        and fallback_grip.Part1 ~= nil,
-    "Fallback grip must connect attachment part to shield."
+    visual ~= nil
+        and visual.Transparency == 0
+        and visual.LocalTransparencyModifier == 0,
+    "Client visual must be explicitly kept visible."
 )
+
+ShieldPresentationBinding.release_visual(
+    character,
+    ShieldConfig,
+    visual
+)
+
+expect(visual == nil or visual.Parent == nil, "release_visual must destroy the client visual.")
+expect(shield.LocalTransparencyModifier == 0, "release_visual must restore the source shield locally.")
+
+character:Destroy()
+
+local folder = Workspace:FindFirstChild(
+    "DungeonMMOLocalPresentationTest"
+)
+
 expect(
-    fallback_grip ~= nil
-        and fallback_grip.Name
-            == ShieldConfig.GRIP_NAME .. "ClientFallback",
-    "Fallback grip needs a distinct presentation-only name."
+    folder == nil or #folder:GetChildren() == 0,
+    "test cleanup must leave no presentation visuals behind."
 )
-fallback_character:Destroy()
 
 print(
     "[Shield Presentation Binding Tests] PASS: "
