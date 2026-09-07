@@ -10,11 +10,11 @@
 
 **Spec:** `docs/superpowers/specs/2026-09-05-phase2b-character-progression-design.md`
 
-## Current Gate Status — 5 September 2026
+## Current Gate Status - 7 September 2026
 
-- **2B.A — Progression Foundation: ACCEPTED.** Combined Dungeon/Base Studio regression output passed; the accepted source is checkpointed on `main` at Git commit `24dee751b87d831abe22cd046dd3b9934c566a56`.
-- **2B.B — Gameplay + Base Progression: BUILT / AWAITING ONE COMBINED STUDIO ACCEPTANCE.** The candidate adds Arc Slash, the six-slot dynamic active loadout, Progression Trainer + Character -> Skills flow, one-time Captain Arc Slash book, rank-aware starter skills, DEV/TEST `!level`, and the forced three-second first-death free revive.
-- **2B.C — Persistence + Published Acceptance: PENDING.** This remains the final Base -> Dungeon -> Base persistence/reconnect/idempotency and published TEST gate.
+- **2B.A - Progression Foundation: ACCEPTED.** Combined Dungeon/Base Studio regression output passed; the accepted source is checkpointed at Git commit `24dee751b87d831abe22cd046dd3b9934c566a56`.
+- **2B.B - Gameplay + Base Progression: ACCEPTED.** Gameplay + Base progression acceptance is checkpointed at Git commit `ac9546c73d3f2f57221ae71b2f1e7a6ebcd35137`.
+- **2B.C - Persistence + Published Acceptance: ACCEPTED.** Published TEST Base -> Dungeon -> Base, reconnect persistence/idempotency, and targeted live combat regressions passed. The accepted code checkpoint is Git commit `4a82d7486e7455f7597a777e862393c5bbb56cfb`; detailed evidence is recorded in `docs/testing/phase2b-gate-c-acceptance-record.md`.
 
 ## Global Constraints
 
