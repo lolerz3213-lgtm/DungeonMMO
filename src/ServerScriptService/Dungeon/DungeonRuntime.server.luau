@@ -930,7 +930,7 @@ local function admit_player(player: Player)
     end
 
     player.CharacterAdded:Connect(function(character)
-        task.defer(ProgressionRuntimeState.apply_max_health, player)
+        task.defer(ProgressionRuntimeState.apply_runtime_stats, player)
         task.defer(function()
             if character.Parent then
                 bind_character(player, character)
@@ -943,7 +943,7 @@ local function admit_player(player: Player)
         spawn_cframe = checkpoint_service:get_active_checkpoint().CFrame
     end
     load_character_at(player, spawn_cframe)
-    ProgressionRuntimeState.apply_max_health(player)
+    ProgressionRuntimeState.apply_runtime_stats(player)
     send_profile(player)
 
     if reconnecting then

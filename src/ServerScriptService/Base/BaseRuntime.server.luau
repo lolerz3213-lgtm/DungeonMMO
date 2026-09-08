@@ -195,8 +195,8 @@ local function load_player(player: Player)
 
     loaded_users[player.UserId] = true
     ProgressionRuntimeState.set_character(player.UserId, loaded.Characters.Slot1)
-    ProgressionRuntimeState.apply_max_health(player)
-    player.CharacterAdded:Connect(function() task.defer(ProgressionRuntimeState.apply_max_health, player) end)
+    ProgressionRuntimeState.apply_runtime_stats(player)
+    player.CharacterAdded:Connect(function() task.defer(ProgressionRuntimeState.apply_runtime_stats, player) end)
     send_profile(player)
     print(string.format(
         "[Base Runtime] Slot1 loaded for %s (Level %d, XP %d, Gold %d).",
@@ -303,7 +303,7 @@ local function refresh_runtime_character(player: Player)
         character
     )
 
-    ProgressionRuntimeState.apply_max_health(
+    ProgressionRuntimeState.apply_runtime_stats(
         player
     )
 end
