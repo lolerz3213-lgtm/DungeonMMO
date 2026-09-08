@@ -18,6 +18,12 @@ local RobloxTeleportAdapter = require(Adapters:WaitForChild("RobloxTeleportAdapt
 local TestFailureSwitches = require(Core:WaitForChild("TestFailureSwitches"))
 local BaseReconnectRouting = require(Base:WaitForChild("BaseReconnectRouting"))
 local BaseReturnAdmissionRules = require(Base:WaitForChild("BaseReturnAdmissionRules"))
+local CharacterIdentityRules = require(
+    ReplicatedStorage
+        :WaitForChild("Core")
+        :WaitForChild("Shared")
+        :WaitForChild("CharacterIdentityRules")
+)
 local BaseProgressionController = require(Base:WaitForChild("BaseProgressionController"))
 
 local remotes = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Remotes")
@@ -215,6 +221,28 @@ local function handle_entry(player: Player, dungeon_id: any)
         send_entry_result(player, {ok = false, reason = "ProfileNotReady"})
         return
     end
+
+    local character = profiles:get_character(
+        player.UserId,
+        1
+    )
+
+    if (
+        not character
+        or not CharacterIdentityRules
+            .is_complete(character)
+    ) then
+        send_entry_result(
+            player,
+            {
+                ok = false,
+                reason = "IdentityIncomplete",
+            }
+        )
+
+        return
+    end
+
     if coordinator:is_pending(player.UserId) then
         send_entry_result(player, {ok = false, reason = "TeleportAlreadyPending"})
         return

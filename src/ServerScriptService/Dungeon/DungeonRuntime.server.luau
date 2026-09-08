@@ -17,6 +17,9 @@ local SharedCore = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Shared")
 local SharedCombat = ReplicatedStorage:WaitForChild("Combat"):WaitForChild("Shared")
 
 local DungeonDefinitions = require(SharedCore:WaitForChild("DungeonDefinitions"))
+local CharacterIdentityRules = require(
+    SharedCore:WaitForChild("CharacterIdentityRules")
+)
 local CombatConfig = require(SharedCombat:WaitForChild("CombatConfig"))
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
@@ -71,6 +74,7 @@ local inventory = runtime.InventoryService
 local attributes = runtime.AttributeService
 local loadout = runtime.LoadoutService
 local skills = runtime.SkillProgressionService
+local identity = runtime.IdentityService
 
 local dungeon_root = Workspace:WaitForChild("DungeonRuntime", 10)
 assert(dungeon_root, "DungeonRuntime greybox was not created")
@@ -759,6 +763,132 @@ local function admit_player(player: Player)
     if not loaded then
         player:Kick("Profile load failed: " .. tostring(load_error))
         return
+    end
+
+    local identity_character =
+        profiles:get_character(
+            player.UserId,
+            1
+        )
+
+    if (
+        not identity_character
+        or not CharacterIdentityRules
+            .is_complete(identity_character)
+    ) then
+        if RunService:IsStudio() then
+            local race_result =
+                identity:select_race(
+                    player.UserId,
+                    "Human"
+                )
+
+            if not race_result.ok then
+                profiles:release(
+                    player.UserId,
+                    "DungeonAdmissionFailed"
+                )
+
+                player:Kick(
+                    "Studio identity bootstrap failed: "
+                        .. tostring(
+                            race_result.reason
+                        )
+                )
+
+                return
+            end
+
+            identity_character =
+                profiles:get_character(
+                    player.UserId,
+                    1
+                )
+
+            local creation_stage =
+                identity_character
+                and identity_character.Identity
+                and identity_character
+                    .Identity
+                    .CreationStage
+
+            if creation_stage == "ClassSelection" then
+                local class_result =
+                    identity:select_base_class(
+                        player.UserId,
+                        "Fighter"
+                    )
+
+                if not class_result.ok then
+                    profiles:release(
+                        player.UserId,
+                        "DungeonAdmissionFailed"
+                    )
+
+                    player:Kick(
+                        "Studio class bootstrap failed: "
+                            .. tostring(
+                                class_result.reason
+                            )
+                    )
+
+                    return
+                end
+            end
+
+            identity_character =
+                profiles:get_character(
+                    player.UserId,
+                    1
+                )
+
+            if (
+                not identity_character
+                or not CharacterIdentityRules
+                    .is_complete(
+                        identity_character
+                    )
+            ) then
+                profiles:release(
+                    player.UserId,
+                    "DungeonAdmissionFailed"
+                )
+
+                player:Kick(
+                    "Studio identity bootstrap remained incomplete."
+                )
+
+                return
+            end
+
+            print(
+                string.format(
+                    "[Dungeon Runtime] Studio-only identity bootstrap: %s / %s for %s.",
+                    tostring(
+                        identity_character
+                            .Identity
+                            .RaceId
+                    ),
+                    tostring(
+                        identity_character
+                            .Identity
+                            .ClassId
+                    ),
+                    player.Name
+                )
+            )
+        else
+            profiles:release(
+                player.UserId,
+                "IdentityIncomplete"
+            )
+
+            player:Kick(
+                "Dungeon admission rejected: IdentityIncomplete"
+            )
+
+            return
+        end
     end
 
     local reconnecting = member_is_reconnecting(session, player.UserId)
