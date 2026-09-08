@@ -13,6 +13,9 @@ local Base = ServerScriptService:WaitForChild("Base")
 
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
+local RacePresentationService = require(
+    Services:WaitForChild("RacePresentationService")
+)
 local TeleportCoordinator = require(Services:WaitForChild("TeleportCoordinator"))
 local RobloxTeleportAdapter = require(Adapters:WaitForChild("RobloxTeleportAdapter"))
 local TestFailureSwitches = require(Core:WaitForChild("TestFailureSwitches"))
@@ -103,6 +106,61 @@ local function send_profile(player: Player)
     inventory_snapshot:FireClient(player, character.Inventory)
     send_progression(player)
 end
+
+local function apply_race_presentation(
+    player: Player,
+    character_model: Model?
+)
+    local profile_character =
+        profiles:get_character(
+            player.UserId,
+            1
+        )
+
+    local race_id =
+        profile_character
+        and profile_character.Identity
+        and profile_character.Identity.RaceId
+        or nil
+
+    local target =
+        character_model
+        or player.Character
+
+    if not target then
+        warn(
+            "[Base Race Presentation] No character for "
+                .. player.Name
+        )
+        return
+    end
+
+    local result =
+        RacePresentationService.apply(
+            target,
+            race_id
+        )
+
+    if result.ok then
+        print(
+            string.format(
+                "[Base Race Presentation] Applied %s to %s (%d ears).",
+                tostring(race_id),
+                player.Name,
+                tonumber(result.ear_count) or 0
+            )
+        )
+    else
+        warn(
+            string.format(
+                "[Base Race Presentation] %s failed: %s",
+                player.Name,
+                tostring(result.reason)
+            )
+        )
+    end
+end
+
 
 local function send_entry_result(player: Player, result: any)
     entry_result:FireClient(player, {
@@ -196,7 +254,13 @@ local function load_player(player: Player)
     loaded_users[player.UserId] = true
     ProgressionRuntimeState.set_character(player.UserId, loaded.Characters.Slot1)
     ProgressionRuntimeState.apply_runtime_stats(player)
-    player.CharacterAdded:Connect(function() task.defer(ProgressionRuntimeState.apply_runtime_stats, player) end)
+    apply_race_presentation(player, player.Character)
+    player.CharacterAdded:Connect(function(character)
+        task.defer(function()
+            ProgressionRuntimeState.apply_runtime_stats(player)
+            apply_race_presentation(player, character)
+        end)
+    end)
     send_profile(player)
     print(string.format(
         "[Base Runtime] Slot1 loaded for %s (Level %d, XP %d, Gold %d).",
@@ -327,6 +391,7 @@ local function finish_progression_action(
     if payload.ok then
         refresh_runtime_character(player)
         send_profile(player)
+        apply_race_presentation(player, player.Character)
     end
 end
 

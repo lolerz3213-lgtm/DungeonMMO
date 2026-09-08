@@ -23,6 +23,9 @@ local CharacterIdentityRules = require(
 local CombatConfig = require(SharedCombat:WaitForChild("CombatConfig"))
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
+local RacePresentationService = require(
+    Services:WaitForChild("RacePresentationService")
+)
 local ProgressionSnapshotBuilder = require(Services:WaitForChild("ProgressionSnapshotBuilder"))
 local RevivePurchaseService = require(Services:WaitForChild("RevivePurchaseService"))
 local RevivePurchaseRegistry = require(Services:WaitForChild("RevivePurchaseRegistry"))
@@ -188,6 +191,50 @@ local function send_profile(player: Player)
     inventory_snapshot:FireClient(player, character.Inventory)
     send_progression(player)
 end
+
+local function apply_race_presentation(
+    player: Player,
+    character_model: Model?
+)
+    local profile_character =
+        profiles:get_character(
+            player.UserId,
+            1
+        )
+
+    local race_id =
+        profile_character
+        and profile_character.Identity
+        and profile_character.Identity.RaceId
+        or nil
+
+    local target =
+        character_model
+        or player.Character
+
+    if not target then
+        return
+    end
+
+    local result =
+        RacePresentationService.apply(
+            target,
+            race_id
+        )
+
+    if not result.ok
+        and result.reason ~= "HeadNotFound"
+    then
+        warn(
+            string.format(
+                "[Dungeon Race Presentation] %s: %s",
+                player.Name,
+                tostring(result.reason)
+            )
+        )
+    end
+end
+
 
 local function set_character_encounter(player: Player, encounter_id: string)
     local character = player.Character
@@ -676,6 +723,11 @@ end
 local function bind_character(player: Player, character: Model)
     if bound_characters[character] then return end
     bound_characters[character] = true
+
+    apply_race_presentation(
+        player,
+        character
+    )
     character:SetAttribute(CombatConfig.TRAINING_MARAUDER.RUN_PARTICIPANT_ATTRIBUTE, true)
     character:SetAttribute(CombatConfig.TRAINING_MARAUDER.ENCOUNTER_ATTRIBUTE, current_encounter_id)
     local humanoid = character:WaitForChild("Humanoid") :: Humanoid
