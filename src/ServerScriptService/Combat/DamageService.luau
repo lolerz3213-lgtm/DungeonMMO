@@ -1,4 +1,7 @@
+--!strict
+
 local Players = game:GetService("Players")
+
 local ReplicatedStorage = game:GetService(
     "ReplicatedStorage"
 )
@@ -8,13 +11,27 @@ local shared_folder = ReplicatedStorage
     :WaitForChild("Shared")
 
 local CombatConfig = require(
-    shared_folder:WaitForChild("CombatConfig")
+    shared_folder:WaitForChild(
+        "CombatConfig"
+    )
 )
+
+local CriticalHitRules = require(
+    shared_folder:WaitForChild(
+        "CriticalHitRules"
+    )
+)
+
 local CombatValidationService = require(
-    script.Parent:WaitForChild("CombatValidationService")
+    script.Parent:WaitForChild(
+        "CombatValidationService"
+    )
 )
 
 local DamageService = {}
+
+local critical_random =
+    Random.new()
 
 export type DamageContext = {
     attacker: Player?,
@@ -26,23 +43,15 @@ export type DamageContext = {
     base_damage: number,
     multiplier: number,
     sequence_id: number?,
+
+    critical_chance: number?,
+    critical_damage_multiplier: number?,
+
+    -- Test injection only.
+    -- Live basic-melee callers never provide this value.
+    critical_roll: number?,
 }
 
-
---[[
-Calculates final prototype damage from a base value and multiplier.
-
-This function deliberately does not know how a target was acquired.
-Melee, projectiles, area effects, traps, and enemy attacks can all
-reuse the same damage calculation boundary later.
-
-Args:
-    base_damage (number): Raw damage supplied by the damage source.
-    multiplier (number): Attack or skill damage multiplier.
-
-Returns:
-    number: Non-negative final damage without rounding.
-]]
 function DamageService.calculate_damage(
     base_damage: number,
     multiplier: number
@@ -53,48 +62,84 @@ function DamageService.calculate_damage(
     )
 end
 
+local function resolve_critical_multiplier(
+    context: DamageContext
+): number
+    if (
+        type(context.critical_chance)
+            ~= "number"
+        or type(
+            context
+                .critical_damage_multiplier
+        ) ~= "number"
+    ) then
+        return 1
+    end
 
---[[
-Applies already-authorized damage to a target Humanoid.
+    local roll =
+        context.critical_roll
 
-Target legality is intentionally handled elsewhere by
-CombatTargetRules. This service only calculates and applies damage.
+    if type(roll) ~= "number" then
+        roll =
+            critical_random:NextNumber()
+    end
 
-Args:
-    context (DamageContext): Generic damage-source information.
+    local result =
+        CriticalHitRules.resolve(
+            context.critical_chance,
+            context
+                .critical_damage_multiplier,
+            roll
+        )
 
-Returns:
-    number: Damage applied, or zero when the target cannot receive it.
-]]
+    return result.multiplier
+end
+
 function DamageService.apply_damage(
     context: DamageContext
 ): number
     local humanoid =
-        context.target:FindFirstChildOfClass(
-            "Humanoid"
-        )
+        context.target
+            :FindFirstChildOfClass(
+                "Humanoid"
+            )
 
-    if not humanoid
-        or humanoid.Health <= 0 then
+    if (
+        not humanoid
+        or humanoid.Health <= 0
+    ) then
         return 0
     end
 
-    local damage =
+    local normal_damage =
         DamageService.calculate_damage(
             context.base_damage,
             context.multiplier
         )
 
-    if damage <= 0 then
+    if normal_damage <= 0 then
         return 0
     end
 
+    local critical_multiplier =
+        resolve_critical_multiplier(
+            context
+        )
+
+    local damage =
+        normal_damage
+        * critical_multiplier
+
     humanoid:TakeDamage(damage)
 
-    local observer = context.attacker
+    local observer =
+        context.attacker
 
     if not observer then
-        observer = Players:GetPlayerFromCharacter(context.target)
+        observer =
+            Players:GetPlayerFromCharacter(
+                context.target
+            )
     end
 
     CombatValidationService.emit(
@@ -103,7 +148,8 @@ function DamageService.apply_damage(
         "APPLIED",
         string.format(
             "%s %.1fHP -> %s",
-            context.attack_id or context.source_id,
+            context.attack_id
+                or context.source_id,
             damage,
             context.target.Name
         ),
@@ -123,5 +169,6 @@ function DamageService.apply_damage(
     return damage
 end
 
-
-return table.freeze(DamageService)
+return table.freeze(
+    DamageService
+)

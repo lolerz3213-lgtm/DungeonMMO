@@ -1002,6 +1002,15 @@ local function enter_active(
             attack_definition = attack_definition,
             base_damage =
                 CombatConfig.PROTOTYPE_WEAPON.BASE_DAMAGE * ProgressionRuntimeState.get_physical_multiplier(player.UserId),
+            critical_chance =
+                ProgressionRuntimeState.get_critical_chance(
+                    player.UserId
+                ),
+            critical_damage_multiplier =
+                ProgressionRuntimeState
+                    .get_critical_damage_multiplier(
+                        player.UserId
+                    ),
             sequence_id = sequence_id,
             is_cancelled = function()
                 return not sequence_is_current(
