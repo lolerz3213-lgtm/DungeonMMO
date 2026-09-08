@@ -20,6 +20,9 @@ local StateRules = require(
 local AttackStepRules = require(
     shared_folder:WaitForChild("AttackStepRules")
 )
+local BasicAttackTimingRules = require(
+    shared_folder:WaitForChild("BasicAttackTimingRules")
+)
 local HotbarConfig = require(
     shared_folder:WaitForChild("HotbarConfig")
 )
@@ -1077,12 +1080,26 @@ start_attack = function(
     record: PlayerCombatState,
     attack_id: string
 )
-    local attack_definition = BasicAttack.ATTACKS[attack_id]
+    local base_attack_definition =
+        BasicAttack.ATTACKS[attack_id]
 
-    if not attack_definition then
+    if not base_attack_definition then
         warn("[Combat] Unknown attack id: " .. attack_id)
         return
     end
+
+    local attack_rate =
+        ProgressionRuntimeState
+            .get_basic_attack_rate(
+                player.UserId
+            )
+
+    local attack_definition =
+        BasicAttackTimingRules
+            .scale_definition(
+                base_attack_definition,
+                attack_rate
+            )
 
     record.sequence_id += 1
     record.current_attack_id = attack_id
@@ -1165,16 +1182,34 @@ local function handle_attack_request(player: Player)
         return
     end
 
-    local attack_definition = BasicAttack.ATTACKS[
-        current_attack_id
-    ]
-    local recovery_elapsed = os.clock() - record.state_started_at
+    local base_attack_definition =
+        BasicAttack.ATTACKS[
+            current_attack_id
+        ]
 
-    local buffer_open = StateRules.is_buffer_window_open(
-        recovery_elapsed,
-        attack_definition.RECOVERY_SECONDS,
-        BasicAttack.COMBO_BUFFER_SECONDS
-    )
+    if not base_attack_definition then
+        return
+    end
+
+    local attack_definition =
+        BasicAttackTimingRules
+            .scale_definition(
+                base_attack_definition,
+                ProgressionRuntimeState
+                    .get_basic_attack_rate(
+                        player.UserId
+                    )
+            )
+
+    local recovery_elapsed =
+        os.clock() - record.state_started_at
+
+    local buffer_open =
+        StateRules.is_buffer_window_open(
+            recovery_elapsed,
+            attack_definition.RECOVERY_SECONDS,
+            BasicAttack.COMBO_BUFFER_SECONDS
+        )
 
     if buffer_open then
         record.queued_attack = true
