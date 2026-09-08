@@ -125,7 +125,146 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** NEXT / NOT STARTED
+**Status:** ACTIVE - PHASE 2C.A LOCAL GREEN
 
-No Phase 2C result may be claimed from Phase 2B evidence. Fresh RED/GREEN and
-runtime evidence must be gathered for the new race/base-class slice.
+Phase 2C.A is the active race/base-class gate.
+
+Fresh local evidence exists for the Human/Elf Fighter identity foundation, but
+no Phase 2C.A acceptance may be claimed until the published TEST persistence
+gate passes and explicit user acceptance is received.
+
+## Phase 2C.A - Race + Character Identity Foundation
+
+**Status:** IN PROGRESS - LOCAL GREEN
+
+**Latest tested gameplay commit:**
+
+`c7ae49faf7c2449ca3bfd00d2422c16c202ca18b`
+
+### Task 12 local build verification
+
+- [x] `git diff --check` clean before full regression.
+- [x] Base full Task 12 build succeeded.
+- [x] Dungeon full Task 12 build succeeded.
+
+Base build:
+
+`%TEMP%\DungeonMMO_Phase2C_A_Base_FULL.rbxl`
+
+Dungeon build:
+
+`%TEMP%\DungeonMMO_Phase2C_A_Dungeon_FULL.rbxl`
+
+### Fresh Base automated regression
+
+- [x] Phase 2C.A Race Definitions PASS - 35 assertions.
+- [x] Profile Schema/Migration PASS - 43 assertions.
+- [x] Phase 2C.A Profile Migration PASS - 38 assertions.
+- [x] Phase 2C.A Identity Service PASS - 58 assertions.
+- [x] Attribute Config PASS - 14 assertions.
+- [x] Attribute Service PASS - 30 assertions.
+- [x] Progression Service PASS - 9 assertions.
+- [x] Phase 2B Progression Service PASS - 42 assertions.
+- [x] Progression Snapshot Builder PASS - 37 assertions.
+- [x] Base Progression Controller PASS - 25 assertions.
+- [x] Character Combat Stats PASS - 32 assertions.
+- [x] Race Presentation Service PASS - 51 assertions.
+- [x] accepted Core/Base regression families remained green.
+
+### Fresh Base manual regression
+
+- [x] unresolved fresh identity opens mandatory race selection.
+- [x] trainer/progression unavailable before identity Complete.
+- [x] Dungeon entry blocked before identity Complete.
+- [x] Human -> Fighter completes.
+- [x] Human baseline is 5/4/6/5/5.
+- [x] Human Resolve applied.
+- [x] Human Fighter receives Shield Bash + Mend.
+- [x] Elf -> Fighter completes.
+- [x] Elf baseline is 5/6/4/5/5.
+- [x] Elven Grace applied.
+- [x] Elf Fighter receives Shield Bash + Mend.
+- [x] Elf ears appear automatically.
+- [x] Elf ears survive Reset Character.
+- [x] repeated presentation does not duplicate ears.
+- [x] existing Base progression works after identity Complete.
+- [x] no red Base runtime exception observed.
+
+### Fresh Dungeon automated regression
+
+- [x] Character Combat Stats PASS - 32 assertions.
+- [x] Phase 2C.A Identity Service PASS - 58 assertions.
+- [x] Phase 2C.A Race Definitions PASS - 35 assertions.
+- [x] Phase 2C.A Profile Migration PASS - 38 assertions.
+- [x] Race Presentation Service PASS - 51 assertions.
+- [x] Damage Service PASS - 15 assertions.
+- [x] Basic Attack Timing Rules PASS - 25 assertions.
+- [x] Critical Hit Rules PASS - 10 assertions.
+- [x] Shield Bash Integration PASS - 17 assertions.
+- [x] Arc Slash Integration PASS - 10 assertions.
+- [x] Mend Service PASS - 9 assertions.
+- [x] Defensive Combat Integration PASS - 42 assertions.
+- [x] Dodge Direction PASS - 45 assertions.
+- [x] Dodge Swept Clearance PASS - 8 assertions.
+- [x] accepted combat/state/block/parry/skill families remained green.
+- [x] accepted Dungeon/Phase 2A/Phase 2B families remained green.
+
+### Fresh Dungeon manual regression
+
+- [x] Studio-only Human/Fighter bootstrap logged.
+- [x] Dungeon admission succeeded.
+- [x] Slash1 -> Slash2 -> Finisher works.
+- [x] attack buffering works.
+- [x] Block works.
+- [x] parry works.
+- [x] Dodge works.
+- [x] Shield Bash works.
+- [x] Mend works.
+- [x] Arc Slash works.
+- [x] no red Dungeon runtime exception observed.
+
+### Presentation note
+
+- [x] Elf race presentation is functional and persistent.
+- [x] ears survive Base respawn.
+- [x] repeated application remains idempotent.
+- [ ] final Elf-ear mesh/art polish is deferred and is not a Task 12 blocker.
+
+### Task 13 - Published TEST acceptance
+
+- [ ] reviewed Task 12 local-green candidate identified.
+- [ ] TEST environment confirmed.
+- [ ] Starting Base TEST Place ID confirmed.
+- [ ] Test Dungeon Place ID confirmed.
+- [ ] live paid revives confirmed disabled.
+- [ ] no PROD DataStore namespace selected.
+- [ ] no monetisation changes active.
+- [ ] genuinely new Human Fighter persists through Base -> Dungeon -> Base -> leave -> rejoin.
+- [ ] Human baseline/passive/starter kit remain correct after rejoin.
+- [ ] genuinely new Elf Fighter persists through Base -> Dungeon -> Base -> leave -> rejoin.
+- [ ] Elf baseline/passive/starter kit remain correct after rejoin.
+- [ ] Elf ears persist through Dungeon, return and rejoin.
+- [ ] accepted Phase 2B legacy character enters LegacyRaceSelection.
+- [ ] legacy pre-choice progression state recorded.
+- [ ] legacy attributes translate exactly once.
+- [ ] legacy Level/XP/Gold/AP/SP remain preserved.
+- [ ] legacy skills/ranks/proficiency/loadout remain preserved.
+- [ ] legacy rewards/inventory/respec state remain preserved.
+- [ ] second legacy race-selection attempt rejected without mutation.
+- [ ] legacy Base -> Dungeon -> Base -> leave -> rejoin succeeds.
+- [ ] no remigration occurs after rejoin.
+- [ ] no AP/SP minting occurs.
+- [ ] no duplicate rewards occur.
+- [ ] published combat HUD/runtime presentation remains singular.
+- [ ] published sword presentation works.
+- [ ] only one Captain runtime appears.
+- [ ] camera-parented shield remains visible.
+- [ ] shield arm remains behind shield during Block/Shield Bash.
+- [ ] swept dodge clearance remains correct.
+- [ ] first free revive remains correct.
+- [ ] later defeated flow remains correct.
+- [ ] Arc Slash book/learning/loadout persistence remains correct.
+- [ ] Phase 2C.A acceptance record written from observed evidence.
+- [ ] explicit user acceptance received.
+
+Phase 2C.A must not be marked ACCEPTED from local evidence alone.
