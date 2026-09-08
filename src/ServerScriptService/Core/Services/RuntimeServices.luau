@@ -24,6 +24,7 @@ local AttributeService = require(Services:WaitForChild("AttributeService"))
 local LoadoutService = require(Services:WaitForChild("LoadoutService"))
 local SkillProgressionService = require(Services:WaitForChild("SkillProgressionService"))
 local ProficiencyService = require(Services:WaitForChild("ProficiencyService"))
+local IdentityService = require(Services:WaitForChild("IdentityService"))
 
 local RuntimeServices = {}
 
@@ -52,6 +53,7 @@ function RuntimeServices.new(place_kind: string): any
     local skills = SkillProgressionService.new(profiles, inventory, loadout)
     local proficiency = ProficiencyService.new(profiles)
     ProficiencyService.bind_default(proficiency)
+    local identity = IdentityService.new(profiles)
 
     return {
         IsStudio = studio,
@@ -66,6 +68,7 @@ function RuntimeServices.new(place_kind: string): any
         LoadoutService = loadout,
         SkillProgressionService = skills,
         ProficiencyService = proficiency,
+        IdentityService = identity,
     }
 end
 
