@@ -42,4 +42,60 @@ local ItemDefinitions = require(shared:WaitForChild("ItemDefinitions"))
 assert(ItemDefinitions.get("marauder_sword") ~= nil, "Prototype equipment item missing")
 assert(ItemDefinitions.get("skill_book_test") ~= nil, "Prototype Skill Book missing")
 
+-- Phase 2C.A identity definition contract
+local RaceDefinitions = require(
+    shared:WaitForChild("RaceDefinitions")
+)
+
+local CharacterIdentityRules = require(
+    shared:WaitForChild("CharacterIdentityRules")
+)
+
+local ClassProgressionDefinitions = require(
+    shared:WaitForChild("ClassProgressionDefinitions")
+)
+
+assert(
+    RaceDefinitions.get("Human") ~= nil,
+    "Human race definition missing"
+)
+assert(
+    RaceDefinitions.get("Elf") ~= nil,
+    "Elf race definition missing"
+)
+assert(
+    CharacterIdentityRules.Stages.RaceSelection ==
+        "RaceSelection",
+    "RaceSelection stage mismatch"
+)
+assert(
+    CharacterIdentityRules.Stages.ClassSelection ==
+        "ClassSelection",
+    "ClassSelection stage mismatch"
+)
+assert(
+    CharacterIdentityRules.Stages.LegacyRaceSelection ==
+        "LegacyRaceSelection",
+    "LegacyRaceSelection stage mismatch"
+)
+assert(
+    CharacterIdentityRules.Stages.Complete ==
+        "Complete",
+    "Complete stage mismatch"
+)
+assert(
+    ClassProgressionDefinitions.get("Prototype") == nil,
+    "Prototype class must be retired"
+)
+assert(
+    ClassProgressionDefinitions.get("Fighter") ~= nil,
+    "Fighter class definition missing"
+)
+assert(
+    ClassProgressionDefinitions.can_teach(
+        "Fighter",
+        "ArcSlash"
+    ),
+    "Fighter must teach Arc Slash"
+)
 print("[Core Config Tests] PASS")
