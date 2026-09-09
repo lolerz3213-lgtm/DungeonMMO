@@ -4,7 +4,7 @@
 **Canonical roadmap:** Version 1.23
 **Current phase:** Phase 2C - Race/base-class implementation
 **Current gate:** Phase 2C.A - Race + Character Identity Foundation
-**Phase 2C.A status:** IN PROGRESS - LOCAL GREEN
+**Phase 2C.A status:** ACCEPTED
 **Gate 2B.C status:** ACCEPTED
 **Phase 2B status:** FUNCTIONALLY COMPLETE
 
@@ -70,40 +70,25 @@ race/base-class gameplay branch.
 
 ## Exact next engineering action
 
-Run Task 13 - Published TEST persistence acceptance and Phase 2C.A gate
-close-out from the reviewed local-green candidate.
+Phase 2C.A is ACCEPTED.
 
-Before publishing:
+The next gameplay architecture gate is:
 
-1. verify the candidate commit and clean worktree;
-2. verify `DungeonMMOEnvironment = TEST`;
-3. verify Starting Base Place ID `134132328219009`;
-4. verify Test Dungeon Place ID `117293035754309`;
-5. verify live paid revives remain disabled;
-6. verify no PROD DataStore namespace is selected;
-7. verify no monetisation changes are present.
+**Phase 2C.B - Equipment + Trainer Architecture**
 
-Published TEST must then prove:
+Before Phase 2C.B implementation:
 
-- a genuinely new Human Fighter through
-  Base -> Dungeon -> Base -> leave -> rejoin;
-- a separate genuinely new Elf Fighter through
-  Base -> Dungeon -> Base -> leave -> rejoin;
-- Elf ears persist through Dungeon, return and rejoin;
-- one accepted Phase 2B legacy character performs exactly one race migration;
-- legacy earned allocation is translated using the approved neutral-5 rule;
-- Level/XP/Gold/AP/SP/skills/ranks/proficiency/loadout/rewards/respec state is
-  preserved without duplication;
-- a second race-selection attempt is rejected without mutation;
-- sensitive published combat/presentation/revive/loadout behaviour remains
-  correct.
+- generate canonical Roadmap v1.27 using the final Phase 2C.A acceptance
+  checkpoint;
+- merge the accepted Phase 2C.A branch to `main` only after explicit approval;
+- verify the resulting `main` ancestry and clean repository state;
+- push only after explicit approval;
+- keep the Dungeon Completed Skill Book summary defect in the next patch;
+- require a live legacy-profile migration proof before any future release with
+  real existing player data;
+- keep `art/dungeon-environment-prototype` fully isolated from gameplay work.
 
-Do not mark Phase 2C.A ACCEPTED yet.
-
-Do not update the canonical roadmap yet.
-
-Do not merge to `main` until the published evidence has passed and explicit user
-acceptance has been received.
+Do not begin Phase 2C.B from an ambiguous or unmerged baseline.
 
 ## Phase 2C.A local-green checkpoint - 9 September 2026
 
@@ -221,3 +206,99 @@ Live paid revives were not enabled.
 Nothing was pushed, merged or published during Task 12.
 
 The separate `art/dungeon-environment-prototype` branch/stash was not touched.
+
+## Phase 2C.A published TEST evidence - 9 September 2026
+
+**Status:** ACCEPTED
+
+Task 13 published TEST evidence is complete and was explicitly accepted by the
+project owner on 9 September 2026.
+
+### Published targets
+
+- Universe: `10765241947`
+- Starting Base: `134132328219009`
+- Dungeon: `117293035754309`
+- Environment: `TEST`
+- live paid revives remained disabled;
+- PROD DataStores were not used;
+- no Robux was spent;
+- no monetisation change was made.
+
+### New Elf
+
+Published TEST passed:
+
+- Elf -> Fighter;
+- Level 1;
+- baseline 5/6/4/5/5;
+- Elven Grace;
+- Shield Bash + Mend;
+- permanent ears;
+- Base -> Dungeon;
+- published combat;
+- Dungeon -> Base;
+- leave -> rejoin;
+- race/class/stats/passive/ears/skills/progression persistence.
+
+### New Human
+
+Published TEST passed:
+
+- Human -> Fighter;
+- Level 1;
+- baseline 5/4/6/5/5;
+- Human Resolve;
+- Shield Bash + Mend;
+- Base -> Dungeon;
+- published combat;
+- Dungeon -> Base;
+- leave -> rejoin;
+- race/class/stats/passive/skills/progression persistence.
+
+### Sensitive published regressions
+
+Published TEST passed:
+
+- one combat HUD/runtime presentation;
+- sword presentation;
+- one Marauder Captain;
+- camera/view shield presentation;
+- shield arm position during Block and Shield Bash;
+- swept Dodge clearance;
+- first free revive;
+- later defeated / paid-revive-disabled boundary;
+- Arc Slash book inventory grant;
+- Arc Slash learning;
+- Arc Slash loadout;
+- Arc Slash persistence after rejoin.
+
+### Accepted legacy live-migration waiver
+
+The project owner deliberately waived the published live Phase 2B
+legacy-character migration proof for this pre-player TEST gate.
+
+This waiver is limited to the current developer-only environment.
+
+Automated migration coverage remains green.
+
+A live migration proof remains mandatory before any future release where real
+existing player profiles require migration.
+
+### Deferred next-patch issue
+
+The Arc Slash Skill Book is correctly awarded and appears in Inventory but is
+omitted from the Dungeon Completed reward summary.
+
+Reward ownership and persistence passed.
+
+The completion-summary presentation defect is explicitly deferred to the next
+patch.
+
+### Acceptance
+
+The project owner explicitly stated:
+
+`I accept Phase 2C.A`
+
+Phase 2C.A - Race + Character Identity Foundation is ACCEPTED.

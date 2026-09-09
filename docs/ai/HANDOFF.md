@@ -49,32 +49,26 @@ stash onto the gameplay branch.
 
 ## Exact next action
 
-Execute Phase 2C.A Task 13 only.
+Phase 2C.A is ACCEPTED.
 
-1. Verify the reviewed local-green candidate and clean Git state.
-2. Verify `DungeonMMOEnvironment = TEST`.
-3. Verify Starting Base Place ID `134132328219009`.
-4. Verify Test Dungeon Place ID `117293035754309`.
-5. Verify live paid revives remain disabled.
-6. Verify no PROD DataStore or monetisation path is active.
-7. Deliberately publish only the reviewed TEST candidate after explicit approval.
-8. Prove one genuinely new Human Fighter through
-   Base -> Dungeon -> Base -> leave -> rejoin.
-9. Prove a separate genuinely new Elf Fighter through the same path.
-10. Verify Elf ears persist in Dungeon, after return and after rejoin.
-11. Prove one accepted Phase 2B legacy character enters LegacyRaceSelection.
-12. Record its pre-choice progression state.
-13. Choose one race and verify exact neutral-5 earned-allocation translation.
-14. Verify all accepted Phase 2B progression state is otherwise unchanged.
-15. Attempt a second race choice and verify rejection with no mutation.
-16. Run Base -> Dungeon -> Base -> leave -> rejoin for the migrated character.
-17. Verify no remigration, duplicate reward or AP/SP minting.
-18. Recheck sensitive published combat/presentation/revive/loadout behaviour.
-19. Write the Phase 2C.A acceptance record only from observed evidence.
-20. Obtain explicit user acceptance before marking Phase 2C.A ACCEPTED.
-21. Only after acceptance update state/roadmap and deliberately merge.
+Next:
 
-Keep `art/dungeon-environment-prototype` completely separate.
+- generate Roadmap v1.27 with the exact final acceptance checkpoint;
+- merge the accepted Phase 2C.A branch to `main` only after explicit approval;
+- verify `main` ancestry and clean repository state;
+- push only after explicit approval;
+- begin Phase 2C.B - Equipment + Trainer Architecture only from the deliberate
+  accepted baseline.
+
+Carry forward:
+
+- live legacy Phase 2B migration proof was waived only for this pre-player TEST
+  gate and must be revalidated before a release involving real existing
+  profiles;
+- the Skill Book is correctly awarded to Inventory but omitted from the Dungeon
+  Completed summary; fix that presentation issue in the next patch.
+
+The separate `art/dungeon-environment-prototype` branch remains untouched.
 
 ## Phase 2C.A local-green engineering checkpoint - 9 September 2026
 
@@ -219,3 +213,73 @@ Task 13 published TEST must still prove:
 - sensitive published gameplay regressions.
 
 No PROD, Robux or live paid-revive path was used in Task 12.
+
+## Phase 2C.A published TEST gate - 9 September 2026
+
+Phase 2C.A is **ACCEPTED**.
+
+The project owner explicitly accepted the gate after reviewing the complete
+Task 13 evidence.
+
+### Published TEST results
+
+New Elf Fighter:
+
+- Level 1;
+- 5/6/4/5/5;
+- Elven Grace;
+- Shield Bash + Mend;
+- ears in Base and Dungeon;
+- Base -> Dungeon -> Base;
+- leave -> rejoin;
+- identity, stats, passive, ears, skills and progression persisted.
+
+New Human Fighter:
+
+- Level 1;
+- 5/4/6/5/5;
+- Human Resolve;
+- Shield Bash + Mend;
+- Base -> Dungeon -> Base;
+- leave -> rejoin;
+- identity, stats, passive, skills and progression persisted.
+
+Sensitive published Dungeon regression passed:
+
+- one combat HUD/runtime;
+- sword presentation;
+- one Marauder Captain;
+- shield visibility;
+- shield-arm position;
+- swept Dodge clearance;
+- first free revive;
+- later defeated/paid-revive-disabled path;
+- Arc Slash inventory, learning, loadout and rejoin persistence.
+
+### Accepted live-migration qualification
+
+The project owner waived the live published Phase 2B legacy migration proof for
+this gate because the project is still pre-player and the current TEST profiles
+contain only developer/test data.
+
+The waiver applies only to this pre-player gate.
+
+Automated migration coverage remains green.
+
+A live migration proof is still required before any release that must migrate
+real existing player profiles.
+
+### Deferred patch item
+
+The Arc Slash Skill Book is awarded correctly and appears in Inventory but is
+not listed in the Dungeon Completed reward summary.
+
+Fix the completion-summary presentation in the next patch.
+
+### Explicit acceptance
+
+Project-owner statement:
+
+`I accept Phase 2C.A`
+
+Phase 2C.A - Race + Character Identity Foundation is ACCEPTED.

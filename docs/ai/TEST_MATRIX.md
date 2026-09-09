@@ -135,28 +135,17 @@ gate passes and explicit user acceptance is received.
 
 ## Phase 2C.A - Race + Character Identity Foundation
 
-**Status:** IN PROGRESS - LOCAL GREEN
+**Status:** ACCEPTED
 
-**Latest tested gameplay commit:**
+**Reviewed local-green checkpoint:**
 
-`c7ae49faf7c2449ca3bfd00d2422c16c202ca18b`
+`d13c5b8f834ab9642b0fb3f629bf05f46616e543`
 
-### Task 12 local build verification
+### Task 12 local build and Studio regression
 
-- [x] `git diff --check` clean before full regression.
+- [x] `git diff --check` clean before full local regression.
 - [x] Base full Task 12 build succeeded.
 - [x] Dungeon full Task 12 build succeeded.
-
-Base build:
-
-`%TEMP%\DungeonMMO_Phase2C_A_Base_FULL.rbxl`
-
-Dungeon build:
-
-`%TEMP%\DungeonMMO_Phase2C_A_Dungeon_FULL.rbxl`
-
-### Fresh Base automated regression
-
 - [x] Phase 2C.A Race Definitions PASS - 35 assertions.
 - [x] Profile Schema/Migration PASS - 43 assertions.
 - [x] Phase 2C.A Profile Migration PASS - 38 assertions.
@@ -169,34 +158,6 @@ Dungeon build:
 - [x] Base Progression Controller PASS - 25 assertions.
 - [x] Character Combat Stats PASS - 32 assertions.
 - [x] Race Presentation Service PASS - 51 assertions.
-- [x] accepted Core/Base regression families remained green.
-
-### Fresh Base manual regression
-
-- [x] unresolved fresh identity opens mandatory race selection.
-- [x] trainer/progression unavailable before identity Complete.
-- [x] Dungeon entry blocked before identity Complete.
-- [x] Human -> Fighter completes.
-- [x] Human baseline is 5/4/6/5/5.
-- [x] Human Resolve applied.
-- [x] Human Fighter receives Shield Bash + Mend.
-- [x] Elf -> Fighter completes.
-- [x] Elf baseline is 5/6/4/5/5.
-- [x] Elven Grace applied.
-- [x] Elf Fighter receives Shield Bash + Mend.
-- [x] Elf ears appear automatically.
-- [x] Elf ears survive Reset Character.
-- [x] repeated presentation does not duplicate ears.
-- [x] existing Base progression works after identity Complete.
-- [x] no red Base runtime exception observed.
-
-### Fresh Dungeon automated regression
-
-- [x] Character Combat Stats PASS - 32 assertions.
-- [x] Phase 2C.A Identity Service PASS - 58 assertions.
-- [x] Phase 2C.A Race Definitions PASS - 35 assertions.
-- [x] Phase 2C.A Profile Migration PASS - 38 assertions.
-- [x] Race Presentation Service PASS - 51 assertions.
 - [x] Damage Service PASS - 15 assertions.
 - [x] Basic Attack Timing Rules PASS - 25 assertions.
 - [x] Critical Hit Rules PASS - 10 assertions.
@@ -206,65 +167,142 @@ Dungeon build:
 - [x] Defensive Combat Integration PASS - 42 assertions.
 - [x] Dodge Direction PASS - 45 assertions.
 - [x] Dodge Swept Clearance PASS - 8 assertions.
-- [x] accepted combat/state/block/parry/skill families remained green.
-- [x] accepted Dungeon/Phase 2A/Phase 2B families remained green.
+- [x] accepted Core/Base/Dungeon/Phase 2A/Phase 2B regression families remained green.
 
-### Fresh Dungeon manual regression
+### Local manual Base/Dungeon regression
 
-- [x] Studio-only Human/Fighter bootstrap logged.
-- [x] Dungeon admission succeeded.
-- [x] Slash1 -> Slash2 -> Finisher works.
-- [x] attack buffering works.
-- [x] Block works.
-- [x] parry works.
-- [x] Dodge works.
-- [x] Shield Bash works.
-- [x] Mend works.
-- [x] Arc Slash works.
-- [x] no red Dungeon runtime exception observed.
+- [x] mandatory unresolved race selection.
+- [x] incomplete identity blocks gated Base/Dungeon behaviour.
+- [x] Human -> Fighter.
+- [x] Human baseline 5/4/6/5/5.
+- [x] Human Resolve.
+- [x] Human Shield Bash + Mend.
+- [x] Elf -> Fighter.
+- [x] Elf baseline 5/6/4/5/5.
+- [x] Elven Grace.
+- [x] Elf Shield Bash + Mend.
+- [x] Elf ears.
+- [x] Elf ears survive respawn.
+- [x] race presentation remains idempotent.
+- [x] sword combo.
+- [x] attack buffering.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] Arc Slash.
+- [x] no red runtime exception observed.
 
-### Presentation note
+### Task 13 published TEST safety
 
-- [x] Elf race presentation is functional and persistent.
-- [x] ears survive Base respawn.
-- [x] repeated application remains idempotent.
-- [ ] final Elf-ear mesh/art polish is deferred and is not a Task 12 blocker.
+- [x] reviewed Task 12 local-green candidate identified.
+- [x] TEST environment confirmed.
+- [x] Universe ID `10765241947` confirmed.
+- [x] Starting Base Place ID `134132328219009` confirmed.
+- [x] Test Dungeon Place ID `117293035754309` confirmed.
+- [x] live paid revives remained disabled.
+- [x] no PROD profile/DataStore path used.
+- [x] no Robux spend.
+- [x] no Task 13 monetisation changes.
 
-### Task 13 - Published TEST acceptance
+### New Elf published persistence
 
-- [ ] reviewed Task 12 local-green candidate identified.
-- [ ] TEST environment confirmed.
-- [ ] Starting Base TEST Place ID confirmed.
-- [ ] Test Dungeon Place ID confirmed.
-- [ ] live paid revives confirmed disabled.
-- [ ] no PROD DataStore namespace selected.
-- [ ] no monetisation changes active.
-- [ ] genuinely new Human Fighter persists through Base -> Dungeon -> Base -> leave -> rejoin.
-- [ ] Human baseline/passive/starter kit remain correct after rejoin.
-- [ ] genuinely new Elf Fighter persists through Base -> Dungeon -> Base -> leave -> rejoin.
-- [ ] Elf baseline/passive/starter kit remain correct after rejoin.
-- [ ] Elf ears persist through Dungeon, return and rejoin.
-- [ ] accepted Phase 2B legacy character enters LegacyRaceSelection.
-- [ ] legacy pre-choice progression state recorded.
-- [ ] legacy attributes translate exactly once.
-- [ ] legacy Level/XP/Gold/AP/SP remain preserved.
-- [ ] legacy skills/ranks/proficiency/loadout remain preserved.
-- [ ] legacy rewards/inventory/respec state remain preserved.
-- [ ] second legacy race-selection attempt rejected without mutation.
-- [ ] legacy Base -> Dungeon -> Base -> leave -> rejoin succeeds.
-- [ ] no remigration occurs after rejoin.
-- [ ] no AP/SP minting occurs.
-- [ ] no duplicate rewards occur.
-- [ ] published combat HUD/runtime presentation remains singular.
-- [ ] published sword presentation works.
-- [ ] only one Captain runtime appears.
-- [ ] camera-parented shield remains visible.
-- [ ] shield arm remains behind shield during Block/Shield Bash.
-- [ ] swept dodge clearance remains correct.
-- [ ] first free revive remains correct.
-- [ ] later defeated flow remains correct.
-- [ ] Arc Slash book/learning/loadout persistence remains correct.
-- [ ] Phase 2C.A acceptance record written from observed evidence.
-- [ ] explicit user acceptance received.
+- [x] fresh TEST race selection.
+- [x] Elf -> Fighter.
+- [x] Level 1.
+- [x] baseline 5/6/4/5/5.
+- [x] Elven Grace.
+- [x] Shield Bash + Mend.
+- [x] Elf ears in Base.
+- [x] Base -> published Dungeon.
+- [x] Elf ears in Dungeon.
+- [x] normal sword/basic attack behaviour.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] normal Dungeon completion.
+- [x] Dungeon -> Base.
+- [x] Elf / Fighter preserved after return.
+- [x] ears preserved after return.
+- [x] leave Experience.
+- [x] rejoin Starting Base.
+- [x] Elf / Fighter persisted.
+- [x] baseline/passive persisted.
+- [x] ears persisted.
+- [x] skills/progression persisted.
 
-Phase 2C.A must not be marked ACCEPTED from local evidence alone.
+### New Human published persistence
+
+- [x] TEST profile reset to a fresh identity.
+- [x] Human -> Fighter.
+- [x] Level 1.
+- [x] baseline 5/4/6/5/5.
+- [x] Human Resolve.
+- [x] Shield Bash + Mend.
+- [x] Base -> published Dungeon.
+- [x] normal sword/basic attack behaviour.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] normal Dungeon completion.
+- [x] Dungeon -> Base.
+- [x] Human / Fighter preserved after return.
+- [x] leave Experience.
+- [x] rejoin Starting Base.
+- [x] Human / Fighter persisted.
+- [x] baseline/passive persisted.
+- [x] skills/progression persisted.
+
+### Published sensitive regressions
+
+- [x] one combat HUD/runtime presentation.
+- [x] published sword presentation.
+- [x] one Marauder Captain runtime.
+- [x] camera/view shield visible.
+- [x] shield arm remains behind shield during Block.
+- [x] shield arm remains behind shield during Shield Bash.
+- [x] swept Dodge does not place player under floor.
+- [x] swept Dodge does not place player inside monster.
+- [x] first free revive works.
+- [x] second death reaches normal defeated boundary.
+- [x] live paid revive remains disabled.
+- [x] Return to Base remains available.
+- [x] Arc Slash Skill Book awarded to Inventory.
+- [x] Arc Slash learning works.
+- [x] Arc Slash loadout works.
+- [x] Arc Slash knowledge/loadout persists after rejoin.
+
+### Legacy published migration qualification
+
+- [x] automated Profile Schema/Migration coverage green.
+- [x] automated Phase 2C.A Profile Migration coverage green.
+- [x] automated Identity Service coverage green.
+- [ ] LIVE LEGACY MIGRATION PROOF WAIVED FOR THIS PRE-PLAYER TEST GATE.
+
+The project owner deliberately waived the live legacy-character migration proof
+because there are no real players and the current TEST data is disposable
+developer/test data.
+
+A live legacy migration proof remains required before any future release that
+must migrate real existing player profiles.
+
+### Known deferred issue
+
+- [x] Skill Book reward is correctly granted to Inventory.
+- [ ] Skill Book is not listed in the Dungeon Completed reward summary.
+
+The completion-summary display issue is explicitly deferred to the next patch
+and is not being treated as a reward/persistence failure.
+
+### Acceptance close-out
+
+- [x] Phase 2C.A acceptance evidence record created.
+- [x] explicit user acceptance received.
+- [x] Phase 2C.A marked ACCEPTED.
+- [ ] canonical roadmap updated.
+- [ ] acceptance documentation committed.
+- [ ] merge to `main` deliberately approved/completed.
+
+Phase 2C.A was explicitly accepted by the project owner on 9 September 2026.
