@@ -429,7 +429,7 @@ feature branch. Merge and push remain separate deliberate actions.
 - [x] Base and Dungeon rebuilt from merged local `main`.
 - [x] Art worktree remains untouched.
 - [x] No Roblox publish, PROD, Robux or monetisation action occurred.
-- [ ] Push local `main` to `origin/main` only after separate explicit approval.
+- [x] Push local `main` to `origin/main` completed after explicit approval.
 ### Phase 2C.B remote push verification
 
 - [x] Remote `origin/main` verified unchanged immediately before push.
