@@ -441,3 +441,65 @@ feature branch. Merge and push remain separate deliberate actions.
 - [x] Final local main, origin/main and server main verified equal.
 - [x] Final origin/main...main ahead/behind verified 0/0.
 - [x] No Roblox publish, PROD, Robux, monetisation or art-branch action occurred.
+
+## Phase 2C.C - Equipment Effects + Combat Integration
+
+**Status:** COMMIT APPROVED - BUILD/MANUAL EVIDENCE RECORDED; AUTOMATED RUNTIME GREEN NOT SEPARATELY OBSERVED
+**Starting canonical GitHub server main:**
+`8587c1546aa1689b69606f860fb5c18a847de617`
+**Phase 2C.B accepted checkpoint:**
+`fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`
+
+### Design lock
+
+- [x] reuse the accepted six-slot Equipment state;
+- [x] one pure server-authoritative equipment stat resolver;
+- [x] representative physical-damage / MaxHealth / crit-chance proof effects;
+- [x] runtime Equipment snapshot locks the gear brought into the Dungeon;
+- [x] Dungeon equipment mutation remains rejected;
+- [x] newly looted equipment cannot change the active runtime snapshot;
+- [x] runtime Equipment, not prototype Tool presence, owns weapon tags;
+- [x] Base Equipment UI receives server-computed effects/previews/deltas;
+- [x] prototype sword/shield presentation may follow equipped representative items;
+- [x] no duplicate DungeonSession equipment store;
+- [x] deferred scope remains out of 2C.C;
+- [x] art branch remains isolated;
+- [x] legacy live-migration waiver remains NOT PASS.
+
+### Test-first contract preparation
+
+The following focused tests were authored before their corresponding production
+behaviour in the isolated candidate. This environment cannot execute Roblox
+Studio tests, so these are **not** being marked runtime RED/GREEN yet.
+
+- [ ] Equipment Stat Resolver runtime GREEN observed.
+- [ ] Progression Runtime Equipment runtime GREEN observed.
+- [ ] Equipment Weapon Requirement runtime GREEN observed.
+- [ ] Equipment Service Effects runtime GREEN observed.
+- [ ] Equipment Effect Presentation runtime GREEN observed.
+- [ ] Equipment Presentation Rules runtime GREEN observed.
+- [ ] Dungeon Studio Equipment Bootstrap runtime GREEN observed.
+- [ ] Arc Slash integration regression GREEN observed.
+- [ ] accepted Character Combat Stats regression GREEN observed.
+- [ ] accepted Equipment Service regression GREEN observed.
+- [ ] accepted Base/Core regression families GREEN observed.
+- [ ] accepted Dungeon/combat/revive/completion regression families GREEN observed.
+
+### Build and manual evidence
+
+- [x] `git diff --check` clean in the real feature worktree.
+- [x] TEMP Base Rojo build succeeded.
+- [x] TEMP Dungeon Rojo build succeeded.
+- [x] Base Equipment UI functional placeholder accepted; visual overhaul deferred.
+- [x] Dungeon gear-aware sword/shield presentation passed manual play.
+- [ ] brought-in gear affects combat as expected.
+- [ ] newly looted gear does not affect the active run.
+- [ ] Human/Elf, crit, attack-rate, Mend, Shield Bash, Arc Slash, revive and
+      completion regressions remain accepted.
+- [x] no PROD / Robux / monetisation / art-branch action occurred.
+
+The project owner approved the exact local Phase 2C.C commit after fresh build
+and manual evidence. Arc Slash was not manually exercised because it was not
+unlocked/equipped, and the authored Roblox automated runtime tests were not
+separately observed GREEN. Do not rewrite either limitation as a PASS.
+Push, merge and publish remain separate explicit approval gates.

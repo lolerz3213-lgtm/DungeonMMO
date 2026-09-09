@@ -11,35 +11,31 @@ Before modifying source:
 2. Read `docs/ai/HANDOFF.md`.
 3. Read `docs/ai/TEST_MATRIX.md`.
 4. Read `docs/ai/AUTOMATION.md`.
-5. Treat external `DungeonMMO_Roadmap_v1_30.docx` as the current canonical
-   long-form roadmap. Tracked roadmap copies in this repository are historical
-   snapshots unless deliberately refreshed.
+5. Treat external `DungeonMMO Roadmap v1.31` as the canonical long-form
+   roadmap. Tracked roadmap copies are historical unless deliberately updated.
 6. Read the active approved design and implementation plan under
    `docs/superpowers/specs/` and `docs/superpowers/plans/`.
-7. Inspect:
-   - `git branch --show-current`
-   - `git log -1 --oneline`
-   - `git status --short`
-   - `git diff --check`
+7. Inspect the current branch, HEAD, status, worktrees, remotes and
+   `git diff --check` before changing source.
 
-If these disagree with `CURRENT_STATE.md`, stop source modification and report
-the mismatch. Do not guess which state is correct.
+If repository state disagrees with the continuity documents, stop source
+modification and reconcile the mismatch without destructive Git operations.
 
 ## Current accepted boundary
 
-- Phase 1 combat: ACCEPTED.
-- Phase 2A: ACCEPTED.
-- Phase 2B.A: ACCEPTED.
-- Phase 2B.B: ACCEPTED.
-- Phase 2B.C: ACCEPTED.
-- Phase 2B: FUNCTIONALLY COMPLETE.
-- Phase 2C.A - Race + Character Identity Foundation: ACCEPTED, MERGED, PUSHED.
-- Formal Phase 2C.A acceptance checkpoint:
-  `ad3685be4a507f00e0b08bf8d948a41ecfa80b47`.
-- Current accepted `main` / `origin/main` baseline:
-  `19f8c31284da80dc87cf5d44560d366e48427888`.
+- Phase 1: ACCEPTED / functionally complete.
+- Phase 2A: ACCEPTED / functionally complete.
+- Phase 2B.A/B/C: ACCEPTED; Phase 2B functionally complete.
+- Phase 2C.A Race + Character Identity Foundation: ACCEPTED / merged / pushed.
+- Phase 2C.B Equipment + Trainer Architecture: ACCEPTED / merged / pushed.
+- Phase 2C.B acceptance checkpoint:
+  `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
+- Phase 2C.B gameplay merge:
+  `0edc542fafccd4a05c13a0a8940718575e536ab2`.
+- Canonical GitHub server `main` baseline before Phase 2C.C:
+  `8587c1546aa1689b69606f860fb5c18a847de617`.
 - Active engineering gate:
-  Phase 2C.B - Equipment + Trainer Architecture.
+  Phase 2C.C - Equipment Effects + Combat Integration.
 
 Do not reopen accepted architecture merely for cosmetic polish unless a real
 regression or readability blocker is demonstrated.
@@ -48,27 +44,26 @@ regression or readability blocker is demonstrated.
 
 - `main` is for deliberately accepted checkpoints.
 - Do not develop directly on `main`.
-- Phase 2C.B must use an isolated worktree/branch.
-- Never run `git reset --hard`, `git clean`, destructive checkout, force push,
-  history rewrite, or any operation that discards local work without explicit
-  user approval.
+- Phase 2C.C must use an isolated feature branch/worktree.
+- Never reset hard, clean, force-push, rewrite history, or discard local work
+  without explicit user approval.
 - Installers and patches must not stage, commit, push, merge or publish
   automatically.
 - Review exact diffs before deliberate commits.
-- Merge and push remain separate explicit approvals.
+- Commit, push, merge and Roblox publish remain explicit approval gates.
 
 ## Build and validation rules
 
 - `default.project.json` builds the Dungeon Place.
 - `base.project.json` builds the Starting Base Place.
 - When shared/Core/Base/Dungeon composition changes, build both Places.
-- Write validation `.rbxl` files only to TEMP/timestamped paths.
+- Write validation `.rbxl` files only to timestamped TEMP paths.
 - Never overwrite `DungeonMMO.rbxl`.
 - Run `git diff --check` after source changes.
 - Preserve relevant accepted regression families.
-- New behaviour follows RED -> GREEN test-first development.
-- A build succeeding does not prove Roblox runtime tests passed; record actual
-  Studio output before claiming a test family green.
+- New behaviour follows test-first RED -> GREEN development.
+- A Rojo build does not prove Roblox runtime tests passed. Record fresh Studio
+  output before claiming a runtime test family green.
 
 ## Roblox authority and environment rules
 
@@ -88,40 +83,45 @@ Do not autonomously:
 
 TEST-only debug hooks must remain rejected or disabled in PROD.
 
-## Phase 2C.B scope discipline
+## Phase 2C.C scope discipline
 
-The approved 2C.B design establishes:
+The approved 2C.C architecture extends the accepted six-slot Equipment state
+through one server-authoritative equipment-stat resolver and the existing
+combat runtime snapshot.
 
-- six equipment slots:
-  `Weapon`, `OffHand`, `Helmet`, `Body`, `Gloves`, `Boots`;
-- schema-v5 persistent equipment;
-- Base-only server-authoritative equip/unequip;
-- race/base-class/class equipment eligibility;
-- data-driven trainer catalogues;
-- Human/Elf Fighter trainer proof;
-- functional equipment/trainer UI;
-- targeted Dungeon Completed Arc Slash Skill Book summary fix.
+Representative equipment may prove only these working modifier families:
 
-Do not pull in:
+- physical-damage bonus;
+- flat MaxHealth;
+- critical-chance bonus.
 
+The Dungeon must use the Equipment snapshot brought into the run. Equipment
+remains non-mutable in Dungeon, and newly looted equipment must not affect the
+active run. Persistent Equipment, not a client Tool or visual object, owns
+weapon-family authority.
+
+Do not pull into Phase 2C.C:
+
+- Mage or Ranger implementation;
 - advanced classes or advancement quests;
-- level/attribute equipment requirements;
-- procedural/unique item instances, durability or random affixes;
-- full gear-stat balancing;
-- trading/economy;
-- race-change monetisation;
+- crafting, trading or economy;
+- unique item instances or random affixes;
+- durability or enhancement;
+- final gear-stat balance;
 - large equipment-content production;
-- replacement of the accepted prototype combat sword/shield presentation.
+- Race Change / Robux systems;
+- environment-art work.
 
-The pre-player live legacy Phase 2B migration proof waiver is NOT permanent.
-A live migration proof is required before any future release involving real
-existing player profiles.
+The previous live legacy migration proof was waived only for a pre-player TEST
+project. It is not a PASS. A real live migration proof remains mandatory before
+any future release involving existing player profiles.
 
 ## Separate environment-art branch
 
 `art/dungeon-environment-prototype` is a separate art worktree/branch.
-Do not switch to it, merge it, reset it, clean it, apply its stash, or copy its
-changes into Phase 2C.B gameplay work.
+
+Do not switch to it, merge it, reset it, clean it, apply its stash, copy its
+work into gameplay, or otherwise modify it during Phase 2C.C.
 
 ## Handoff discipline
 
@@ -130,8 +130,8 @@ At every meaningful WIP checkpoint:
 - update `docs/ai/CURRENT_STATE.md`;
 - update `docs/ai/HANDOFF.md`;
 - update `docs/ai/TEST_MATRIX.md` when evidence changes;
-- record branch/checkpoint;
-- record known defects and exact next action.
+- record branch/checkpoint and exact next action;
+- record known defects and unresolved evidence.
 
 At an accepted gate, update the canonical roadmap through the established
 roadmap maintenance workflow.

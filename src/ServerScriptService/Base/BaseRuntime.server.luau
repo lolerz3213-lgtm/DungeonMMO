@@ -520,6 +520,7 @@ local function finish_equipment_action(
     })
 
     if result and result.ok == true then
+        refresh_runtime_character(player)
         send_profile(player)
     end
 end

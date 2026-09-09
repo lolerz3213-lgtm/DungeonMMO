@@ -1,145 +1,122 @@
 # DungeonMMO Development Handoff
 
 **Date:** 9 September 2026
-**Active gate:** Phase 2C.B - Equipment + Trainer Architecture
-**Status:** ACCEPTED - MERGED / PUSHED
+**Active gate:** Phase 2C.C - Equipment Effects + Combat Integration
+**Status:** COMMIT APPROVED - VERIFIED PRE-PUSH CANDIDATE
 
-## Canonical accepted gameplay boundary
+## Accepted gameplay boundary
 
 - Phase 1: ACCEPTED.
 - Phase 2A: ACCEPTED.
-- Phase 2B.A/B/C: ACCEPTED.
-- Phase 2B: FUNCTIONALLY COMPLETE.
-- Phase 2C.A: ACCEPTED / MERGED / PUSHED.
-- Phase 2C.A formal acceptance:
-  `ad3685be4a507f00e0b08bf8d948a41ecfa80b47`.
-- Current accepted `main` / `origin/main`:
-  `19f8c31284da80dc87cf5d44560d366e48427888`.
-- Canonical long-form roadmap: external Roadmap v1.30.
+- Phase 2B.A/B/C: ACCEPTED; Phase 2B functionally complete.
+- Phase 2C.A: ACCEPTED / merged / pushed.
+- Phase 2C.B: ACCEPTED / merged / pushed.
+- Phase 2C.B acceptance:
+  `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
+- Phase 2C.B gameplay merge:
+  `0edc542fafccd4a05c13a0a8940718575e536ab2`.
+- Canonical GitHub server `main` baseline:
+  `8587c1546aa1689b69606f860fb5c18a847de617`.
+- Canonical long-form roadmap: external Roadmap v1.31.
 
-## Phase 2C.B locked scope
+Windows repository verification is complete: local `main`, `origin/main` and
+GitHub server `main` matched
+`8587c1546aa1689b69606f860fb5c18a847de617`. The accepted candidate is in
+`DungeonMMO_Phase2CC_Recovery2` on
+`wip/phase-2c-c-equipment-effects-recovery-2`.
 
-Six persistent equipment slots:
+## Phase 2C.C locked architecture
 
-1. Weapon
-2. OffHand
-3. Helmet
-4. Body
-5. Gloves
-6. Boots
+Approach A is approved:
 
-2C.B adds schema-v5 persistent equipment, server-authoritative Base-only
-equip/unequip, data-driven race/class/slot eligibility, a Fighter trainer
-catalogue for current Human and Elf Fighters, catalogue-driven trainer UI,
-functional six-slot equipment UI, and the deferred Dungeon Completed Skill
-Book summary presentation fix.
+1. Keep the Phase 2C.B six-slot persistent Equipment table.
+2. Put representative combat metadata in `ItemDefinitions`.
+3. Resolve it through one pure `EquipmentStatResolver`.
+4. Deep-clone Equipment into `ProgressionRuntimeState` and cache resolved
+   effects for the active authoritative runtime character.
+5. Keep existing combat consumers on runtime getters.
+6. Make runtime Equipment, not prototype Tools, authoritative for weapon tags.
+7. Keep Dungeon Equipment non-mutable and let the runtime snapshot lock the
+   gear brought into the run.
+8. Send server-computed Equipment effects/previews/deltas to the Base UI; the
+   client only formats them.
+9. Make the current sword/shield presentation Equipment-aware where practical,
+   without creating an armour-art system.
 
-Do not add level/attribute equipment requirements, unique rolled item
-instances, durability, full gear balance, advanced classes, economy/trading,
-monetisation, or replacement combat meshes in this gate.
+Working proof effects are limited to physical damage, flat MaxHealth and
+critical chance. They are not final balance.
 
-## Critical migration note
+## Candidate changed responsibilities
 
-The schema bump from v4 to v5 must preserve accepted Phase 2C.A identities.
-Existing migration logic that previously treated every schema lower than the
-current schema as legacy must be narrowed: only pre-v4 data is legacy.
-Schema-v4 profiles are accepted Human/Elf identity profiles and must remain so.
+### Shared Core
 
-## Carried acceptance qualification
+- `ItemDefinitions`: representative combat metadata only.
+- `EquipmentStatResolver`: pure slot/item -> effect/tag resolution.
+- `EquipmentEffectPresentation`: display formatting only.
+- `EquipmentPresentationRules`: representative sword/shield display decisions.
 
-The live legacy Phase 2B migration proof was waived only for the pre-player
-TEST gate. Automated migration remains required, and a live proof is mandatory
-before a future release containing real existing profiles.
+### Server Core
 
-## Deferred patch item
+- `ProgressionRuntimeState`: authoritative Equipment snapshot, final gear-aware
+  combat getters and runtime weapon tags.
+- `EquipmentService`: sanitized item/current/preview/delta effect snapshots.
 
-Arc Slash Skill Book ownership/persistence is already correct. The only carried
-defect is that a newly awarded book is not shown in the Dungeon Completed
-reward summary. Fix presentation without changing grant logic.
+### Base
+
+- successful equip/unequip refreshes the runtime character before sending the
+  refreshed snapshot;
+- Equipment UI shows meaningful current effects and server-computed changes.
+
+### Dungeon combat presentation
+
+- prototype sword/shield scripts render according to server-owned equipped item
+  attributes;
+- the visual objects own no combat stats or skill eligibility;
+- standalone Studio testing uses a `RunService:IsStudio()`-guarded in-memory
+  representative-loadout bootstrap only so the visual gate can be exercised.
+
+## Dungeon run-lock invariant
+
+After `ProgressionRuntimeState.set_character`, later mutation of the source
+Inventory or Equipment table cannot change active combat effects. Only a new
+authoritative runtime seed can change the active Equipment snapshot.
+
+This is sufficient for Phase 2C.C because Dungeon equipment mutation is already
+rejected by the accepted Phase 2C.B EquipmentService boundary.
+
+## Deferred scope
+
+Do not add Mage/Ranger, advanced classes/quests, crafting, trading/economy,
+unique item instances, random affixes, durability, enhancement, final gear
+balance, large equipment-content production, Race Change/Robux or environment
+art.
+
+## Migration qualification
+
+The previous live legacy migration proof was waived only for this pre-player
+TEST project. It is not a PASS. A real live migration proof remains mandatory
+before a future release involving existing player profiles.
 
 ## Art isolation
 
-The separate worktree/branch:
+`art/dungeon-environment-prototype` is strictly separate. Do not switch to it,
+merge it, reset/clean it, apply its stash, or copy from it during gameplay work.
 
-`art/dungeon-environment-prototype`
+## Evidence state and exact next action
 
-is not gameplay. Do not switch to it, merge it, clean/reset it, or apply its
-stash to 2C.B.
+Fresh real-Windows evidence is recorded for the accepted recovery worktree:
 
-## Approved sources
+- exact 27-file boundary verified;
+- `git diff --check` clean;
+- TEMP Base and Dungeon Rojo builds succeeded with repository-pinned
+  `7.7.0-rc.1`;
+- Base UI displayed the full representative set and expected aggregate effects;
+- the Base Equipment UI is accepted as a functional placeholder, with visual
+  overhaul deferred;
+- Dungeon manual play reported the requested equipment/combat flow working;
+- Arc Slash was not manually exercised because it was not unlocked/equipped,
+  and automated Roblox runtime GREEN was not separately captured.
 
-Design:
-`docs/superpowers/specs/2026-09-09-phase-2c-b-equipment-trainer-architecture-design.md`
-
-Plans:
-- `docs/superpowers/plans/2026-09-09-phase-2c-b-a-equipment-foundation-implementation.md`
-- `docs/superpowers/plans/2026-09-09-phase-2c-b-b-trainer-ui-reward-implementation.md`
-
-## Immediate next action
-
-Use isolated branch/worktree `wip/phase-2c-b-equipment-trainers` from
-`19f8c31284da80dc87cf5d44560d366e48427888`.
-
-The first checkpoint is deliberately RED: add tests for the six-slot contract,
-equipment rules/service, schema-v5 migration, remotes, trainer catalogues,
-trainer authorization and completion reward presentation. Build to TEMP and
-run the Base RED candidate in Studio. Production code begins only after those
-new tests are observed failing for the expected missing/old behaviour.
-
-No stage/commit/push/merge/publish is part of the RED bootstrap.
-## Current Phase 2C.B candidate
-
-The next evidence gate is the fresh Base/Dungeon Studio run plus the planned
-six-slot equipment and Fighter trainer visual/functional check. Do not commit,
-merge, push or publish before that evidence is reviewed.
-## Phase 2C.B GREEN handoff
-
-The complete Phase 2C.B Base and Dungeon Studio gate has passed.
-
-Verified functionality includes:
-- six persistent equipment slots;
-- Base-only server-authoritative equip/unequip;
-- Human/Elf race restrictions;
-- Fighter class equipment restrictions;
-- schema-v4 Phase 2C.A identity preservation into schema v5;
-- data-driven Fighter Trainer catalogue;
-- functional equipment/trainer UI;
-- Dungeon read-only equipment state;
-- Dungeon Completed Arc Slash Skill Book summary fix;
-- existing accepted combat/dungeon/progression regressions.
-
-Exact next action:
-obtain explicit project-owner acceptance of Phase 2C.B. Only after acceptance
-should an acceptance/checkpoint commit be prepared. Commit, merge, push and
-publish remain separate deliberate actions.
-## Phase 2C.B accepted checkpoint
-
-Phase 2C.B was explicitly accepted by the project owner on 9 September 2026.
-
-The acceptance checkpoint records the six-slot equipment foundation, Base-only
-equipment authority, Fighter trainer catalogue architecture, schema-v5
-migration safety, read-only Dungeon equipment state, functional Base UI and the
-Dungeon Completed Skill Book summary correction.
-
-Do not merge or push this branch automatically. The next integration action is
-a separate project-owner decision. The art branch/stash remains isolated.
-## Phase 2C.B local merge handoff
-
-The accepted Phase 2C.B checkpoint has been merged into local `main`.
-
-The merged gameplay/source tree remains identical to the accepted checkpoint.
-Only continuity documents differ to record the local merge state.
-
-Remote push has not occurred and remains a separate project-owner decision.
-## Phase 2C.B remote push complete
-
-Phase 2C.B is accepted, merged and pushed to `origin/main`.
-
-Accepted checkpoint:
-`fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`
-
-Gameplay merge:
-`0edc542fafccd4a05c13a0a8940718575e536ab2`
-
-The final continuity-doc closeout commit changes documentation only. The art
-branch remains isolated and untouched.
+The project owner explicitly approved the local Phase 2C.C commit. Create that
+commit from the exact 27-file boundary, then stop. Push, merge, Roblox publish,
+older dirty-worktree cleanup and art-branch actions remain unapproved.

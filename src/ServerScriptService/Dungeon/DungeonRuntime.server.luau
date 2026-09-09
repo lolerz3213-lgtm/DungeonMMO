@@ -55,6 +55,9 @@ local ReturnPortalService = require(Dungeon:WaitForChild("ReturnPortalService"))
 local DungeonMarauderFactory = require(
     Dungeon:WaitForChild("DungeonMarauderFactory")
 )
+local DungeonStudioEquipmentBootstrap = require(
+    Dungeon:WaitForChild("DungeonStudioEquipmentBootstrap")
+)
 
 local remotes = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Remotes")
 local dungeon_state = remotes:WaitForChild("DungeonStateChanged") :: RemoteEvent
@@ -946,6 +949,44 @@ local function admit_player(player: Player)
             )
 
             return
+        end
+    end
+
+    if RunService:IsStudio() then
+        local seeded = 0
+        local seeded_ok, seeded_error = profiles:mutate(
+            player.UserId,
+            function(profile: any)
+                local character = profile.Characters
+                    and profile.Characters.Slot1
+
+                seeded = DungeonStudioEquipmentBootstrap.seed(
+                    character
+                )
+            end
+        )
+
+        if not seeded_ok then
+            profiles:release(
+                player.UserId,
+                "DungeonAdmissionFailed"
+            )
+            player:Kick(
+                "Studio equipment bootstrap failed: "
+                    .. tostring(seeded_error)
+            )
+            return
+        end
+
+        if seeded > 0 then
+            print(
+                string.format(
+                    "[Dungeon Runtime] Studio-only equipment bootstrap: "
+                        .. "%d representative slots seeded for %s.",
+                    seeded,
+                    player.Name
+                )
+            )
         end
     end
 

@@ -1,12 +1,18 @@
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
-local shared_folder = ReplicatedStorage
+local core_shared = ReplicatedStorage
+    :WaitForChild("Core")
+    :WaitForChild("Shared")
+local combat_shared = ReplicatedStorage
     :WaitForChild("Combat")
     :WaitForChild("Shared")
 
+local EquipmentPresentationRules = require(
+    core_shared:WaitForChild("EquipmentPresentationRules")
+)
 local CombatConfig = require(
-    shared_folder:WaitForChild("CombatConfig")
+    combat_shared:WaitForChild("CombatConfig")
 )
 
 local ShieldConfig = CombatConfig.PROTOTYPE_SHIELD
@@ -21,12 +27,8 @@ Args:
 Returns:
     None.
 ]]
-local function remove_existing_shield(
-    character: Model
-)
-    local existing = character:FindFirstChild(
-        ShieldConfig.PART_NAME
-    )
+local function remove_existing_shield(character: Model)
+    local existing = character:FindFirstChild(ShieldConfig.PART_NAME)
 
     if existing then
         existing:Destroy()
@@ -34,7 +36,8 @@ local function remove_existing_shield(
 
     for _, descendant in character:GetDescendants() do
         if descendant.Name == ShieldConfig.GRIP_NAME
-            and descendant:IsA("Motor6D") then
+            and descendant:IsA("Motor6D")
+        then
             descendant:Destroy()
         end
     end
@@ -43,10 +46,6 @@ end
 
 --[[
 Builds the prototype shield's natural idle world transform.
-
-The shield face points mostly outward along the left forearm while its centre
-stays just outside the arm. This avoids depending on the local axis
-orientation of an R15 hand or forearm.
 
 Args:
     root_part (BasePart): Character root used for facing.
@@ -61,12 +60,9 @@ local function get_idle_shield_cframe(
 ): CFrame
     local root_cframe = root_part.CFrame
     local position = reference_part.Position
-        - root_cframe.RightVector
-            * ShieldConfig.IDLE_OUTWARD_STUDS
-        + root_cframe.LookVector
-            * ShieldConfig.IDLE_FORWARD_STUDS
-        - root_cframe.UpVector
-            * ShieldConfig.IDLE_DOWN_STUDS
+        - root_cframe.RightVector * ShieldConfig.IDLE_OUTWARD_STUDS
+        + root_cframe.LookVector * ShieldConfig.IDLE_FORWARD_STUDS
+        - root_cframe.UpVector * ShieldConfig.IDLE_DOWN_STUDS
 
     local outward = -root_cframe.RightVector
     local facing = (
@@ -84,11 +80,8 @@ end
 
 
 --[[
-Creates the prototype shield with a root-owned presentation grip.
-
-The root grip gives the client presentation layer enough freedom to place the
-shield naturally beside the forearm in idle and directly in front of the
-torso while blocking, without changing defensive hit logic.
+Creates the representative prototype shield with a root-owned presentation
+motor. Combat authority remains separate from this visual object.
 
 Args:
     character (Model): Spawned character receiving the shield.
@@ -108,8 +101,7 @@ local function equip_shield(character: Model)
         5
     )
 
-    if not attach_part
-        or not attach_part:IsA("BasePart") then
+    if not attach_part or not attach_part:IsA("BasePart") then
         warn(
             "[Combat Prototype] Could not equip shield: "
                 .. ShieldConfig.ATTACH_PART_NAME
@@ -118,8 +110,7 @@ local function equip_shield(character: Model)
         return
     end
 
-    if not idle_reference
-        or not idle_reference:IsA("BasePart") then
+    if not idle_reference or not idle_reference:IsA("BasePart") then
         warn(
             "[Combat Prototype] Could not equip shield: "
                 .. ShieldConfig.IDLE_REFERENCE_PART_NAME
@@ -154,32 +145,67 @@ local function equip_shield(character: Model)
     grip.Name = ShieldConfig.GRIP_NAME
     grip.Part0 = attach_part
     grip.Part1 = shield
-    grip.C0 = attach_part.CFrame:ToObjectSpace(
-        shield_cframe
-    )
+    grip.C0 = attach_part.CFrame:ToObjectSpace(shield_cframe)
     grip.C1 = CFrame.identity
     grip.Parent = attach_part
 
-    print(
-        "[Combat Prototype] Prototype shield equipped."
-    )
+    print("[Combat Prototype] Equipped equipment-aware prototype shield.")
 end
 
 
 --[[
-Registers shield setup for one player.
+Synchronizes shield presentation from the server-owned equipment attribute.
 
 Args:
-    player (Player): Player whose character spawns are observed.
+    player (Player): Player whose equipment state is observed.
+    character (Model): Current character model.
+
+Returns:
+    None.
+]]
+local function refresh_shield(
+    player: Player,
+    character: Model
+)
+    local item_id = player:GetAttribute(
+        EquipmentPresentationRules.OFFHAND_ITEM_ATTRIBUTE
+    )
+
+    if not EquipmentPresentationRules.show_shield(item_id) then
+        remove_existing_shield(character)
+        return
+    end
+
+    equip_shield(character)
+end
+
+
+--[[
+Registers equipment-aware shield setup for one player.
+
+Args:
+    player (Player): Player whose character and equipment changes are observed.
 
 Returns:
     None.
 ]]
 local function register_player(player: Player)
-    player.CharacterAdded:Connect(equip_shield)
+    player.CharacterAdded:Connect(function(character)
+        task.defer(refresh_shield, player, character)
+    end)
+
+    player:GetAttributeChangedSignal(
+        EquipmentPresentationRules.OFFHAND_ITEM_ATTRIBUTE
+    ):Connect(function()
+        local character = player.Character
+
+        if character then
+            refresh_shield(player, character)
+        end
+    end)
 
     if player.Character then
-        equip_shield(player.Character)
+        refresh_shield(player, player.Character)
     end
 end
 

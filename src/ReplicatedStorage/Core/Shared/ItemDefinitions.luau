@@ -14,6 +14,10 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        WeaponTags = table.freeze({"OneHandedSword"}),
+        CombatModifiers = table.freeze({
+            PhysicalDamageBonus = 0.10,
+        }),
     }),
 
     marauder_shield = table.freeze({
@@ -25,6 +29,9 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        CombatModifiers = table.freeze({
+            MaxHealthFlat = 8,
+        }),
     }),
 
     marauder_armor = table.freeze({
@@ -36,6 +43,9 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        CombatModifiers = table.freeze({
+            MaxHealthFlat = 10,
+        }),
     }),
 
     marauder_helmet = table.freeze({
@@ -47,6 +57,9 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        CombatModifiers = table.freeze({
+            MaxHealthFlat = 4,
+        }),
     }),
 
     marauder_gloves = table.freeze({
@@ -58,6 +71,10 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        CombatModifiers = table.freeze({
+            PhysicalDamageBonus = 0.03,
+            CriticalChanceBonus = 0.01,
+        }),
     }),
 
     marauder_boots = table.freeze({
@@ -69,6 +86,9 @@ local DEFINITIONS = table.freeze({
         AllowedBaseClasses = FIGHTER,
         Rarity = "Basic",
         Stackable = false,
+        CombatModifiers = table.freeze({
+            MaxHealthFlat = 3,
+        }),
     }),
 
     test_elf_helmet = table.freeze({
@@ -114,10 +134,28 @@ local DEFINITIONS = table.freeze({
     }),
 })
 
+--[[
+Returns one immutable item definition by stable item ID.
+
+Args:
+    item_id (string): Stable item identifier.
+
+Returns:
+    any?: Frozen item definition, or nil when the ID is unknown.
+]]
 function ItemDefinitions.get(item_id: string): any?
     return DEFINITIONS[item_id]
 end
 
+--[[
+Returns the complete immutable item-definition catalogue.
+
+Args:
+    None.
+
+Returns:
+    any: Frozen item-definition table keyed by stable item ID.
+]]
 function ItemDefinitions.all(): any
     return DEFINITIONS
 end
