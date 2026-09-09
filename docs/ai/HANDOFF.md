@@ -2,7 +2,7 @@
 
 **Date:** 9 September 2026
 **Active gate:** Phase 2C.C - Equipment Effects + Combat Integration
-**Status:** COMMIT APPROVED - VERIFIED PRE-PUSH CANDIDATE
+**Status:** ACCEPTED - MERGED / PUSHED
 
 ## Accepted gameplay boundary
 
@@ -15,7 +15,10 @@
   `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
 - Phase 2C.B gameplay merge:
   `0edc542fafccd4a05c13a0a8940718575e536ab2`.
-- Canonical GitHub server `main` baseline:
+- Phase 2C.C: ACCEPTED / merged / pushed.
+- Phase 2C.C accepted main checkpoint:
+  `4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
+- Phase 2C.C starting main baseline:
   `8587c1546aa1689b69606f860fb5c18a847de617`.
 - Canonical long-form roadmap: external Roadmap v1.31.
 
@@ -46,7 +49,7 @@ Approach A is approved:
 Working proof effects are limited to physical damage, flat MaxHealth and
 critical chance. They are not final balance.
 
-## Candidate changed responsibilities
+## Accepted Phase 2C.C responsibilities
 
 ### Shared Core
 
@@ -104,19 +107,32 @@ merge it, reset/clean it, apply its stash, or copy from it during gameplay work.
 
 ## Evidence state and exact next action
 
-Fresh real-Windows evidence is recorded for the accepted recovery worktree:
+Phase 2C.C is ACCEPTED / MERGED / PUSHED at
+`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
 
-- exact 27-file boundary verified;
-- `git diff --check` clean;
-- TEMP Base and Dungeon Rojo builds succeeded with repository-pinned
-  `7.7.0-rc.1`;
-- Base UI displayed the full representative set and expected aggregate effects;
-- the Base Equipment UI is accepted as a functional placeholder, with visual
-  overhaul deferred;
-- Dungeon manual play reported the requested equipment/combat flow working;
-- Arc Slash was not manually exercised because it was not unlocked/equipped,
-  and automated Roblox runtime GREEN was not separately captured.
+Accepted evidence retained:
 
-The project owner explicitly approved the local Phase 2C.C commit. Create that
-commit from the exact 27-file boundary, then stop. Push, merge, Roblox publish,
-older dirty-worktree cleanup and art-branch actions remain unapproved.
+- exact 27-file implementation boundary verified;
+- `git diff --check` clean before the gameplay commit;
+- TEMP Base and Dungeon Rojo builds succeeded;
+- Base Equipment UI showed the full representative set and expected aggregate
+  `+13% Physical Damage`, `+25 Max Health`, `+1% Critical Chance`;
+- the current Equipment UI is accepted as a functional placeholder, with the
+  large visual overhaul deferred;
+- Dungeon manual play reported the requested equipment-aware sword/shield and
+  normal combat/dungeon regression flow working;
+- Arc Slash was not manually exercised in the 2C.C acceptance run because it
+  was not unlocked/equipped; that limitation was explicitly accepted;
+- Roblox automated runtime GREEN was not separately captured and is not claimed;
+- no Roblox publish, PROD, Robux, monetisation or art-branch action occurred.
+
+GitHub `main` was independently confirmed at the accepted checkpoint after the
+fast-forward push.
+
+No later Phase 2C sub-gate is named in the tracked repository. Before new source
+work, read the canonical external Roadmap v1.31 and explicitly select/approve
+the next roadmap gate. Do not infer a Phase 2C.D from numbering alone.
+
+Preserve the older dirty recovery worktrees and the separate
+`art/dungeon-environment-prototype` worktree unless a later explicit cleanup
+decision says otherwise.

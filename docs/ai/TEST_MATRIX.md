@@ -125,11 +125,11 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** ACCEPTED - PHASE 2C.B MERGED / PUSHED
+**Status:** ACCEPTED - PHASE 2C.C MERGED / PUSHED
 
 Phase 2C.A is accepted, merged and pushed.
 
-Phase 2C.B - Equipment + Trainer Architecture is the active engineering gate.
+Phase 2C.C - Equipment Effects + Combat Integration is accepted, merged and pushed.
 
 ## Phase 2C.A - Race + Character Identity Foundation
 
@@ -444,7 +444,7 @@ feature branch. Merge and push remain separate deliberate actions.
 
 ## Phase 2C.C - Equipment Effects + Combat Integration
 
-**Status:** COMMIT APPROVED - BUILD/MANUAL EVIDENCE RECORDED; AUTOMATED RUNTIME GREEN NOT SEPARATELY OBSERVED
+**Status:** ACCEPTED - MERGED / PUSHED; MANUAL ARC SLASH + AUTOMATED RUNTIME QUALIFICATIONS RETAINED
 **Starting canonical GitHub server main:**
 `8587c1546aa1689b69606f860fb5c18a847de617`
 **Phase 2C.B accepted checkpoint:**
@@ -503,3 +503,41 @@ and manual evidence. Arc Slash was not manually exercised because it was not
 unlocked/equipped, and the authored Roblox automated runtime tests were not
 separately observed GREEN. Do not rewrite either limitation as a PASS.
 Push, merge and publish remain separate explicit approval gates.
+
+### Phase 2C.C acceptance close-out
+
+**Accepted / merged / pushed checkpoint:**
+`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`
+
+- [x] exact implementation boundary verified at 27 files.
+- [x] `git diff --check` clean before the gameplay commit.
+- [x] TEMP Base Rojo build succeeded.
+- [x] TEMP Dungeon Rojo build succeeded.
+- [x] Base Equipment Manager showed all six representative Marauder items.
+- [x] visible aggregate matched `+13% Physical Damage`, `+25 Max Health`,
+  `+1% Critical Chance`.
+- [x] current Equipment UI explicitly accepted as a functional placeholder.
+- [x] Dungeon equipment-aware sword/shield presentation accepted in manual play.
+- [x] normal requested Dungeon combat/regression flow accepted in manual play.
+- [ ] Arc Slash manually exercised during the Phase 2C.C acceptance run.
+- [ ] Roblox automated runtime GREEN separately captured for the new 2C.C tests.
+- [x] the two unchecked evidence limitations above were explicitly accepted and
+  are retained as qualifications rather than rewritten as PASS.
+- [x] project-owner Phase 2C.C acceptance received.
+- [x] gameplay/docs commit created at the checkpoint above.
+- [x] Phase 2C.C feature branch pushed.
+- [x] `main` fast-forwarded and pushed to the exact accepted checkpoint.
+- [x] GitHub `main` independently confirmed at the accepted checkpoint.
+- [x] no Roblox place was published.
+- [x] no PROD / Robux / monetisation action occurred.
+- [x] separate art worktree remained untouched.
+- [x] older dirty recovery worktrees were not cleaned or modified.
+
+Phase 2C.C is formally closed as ACCEPTED / MERGED / PUSHED with the two
+explicit runtime-evidence qualifications above. Those qualifications do not
+invalidate the accepted architecture or manual/build evidence, but they must
+remain visible in future handoffs.
+
+The tracked repository does not name a later Phase 2C sub-gate. The next
+engineering gate must be selected from the canonical external Roadmap v1.31
+before new source work; do not infer a Phase 2C.D from numbering alone.

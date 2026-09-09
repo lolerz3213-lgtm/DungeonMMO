@@ -4,7 +4,7 @@
 **Canonical long-form roadmap:** external DungeonMMO Roadmap v1.31
 **Current phase:** Phase 2C
 **Current gate:** Phase 2C.C - Equipment Effects + Combat Integration
-**Phase 2C.C status:** COMMIT APPROVED - VERIFIED PRE-PUSH CANDIDATE
+**Phase 2C.C status:** ACCEPTED - MERGED / PUSHED
 **Phase 2C.B status:** ACCEPTED - MERGED / PUSHED
 
 ## Canonical accepted baseline
@@ -18,7 +18,9 @@
   `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
 - Phase 2C.B gameplay merge:
   `0edc542fafccd4a05c13a0a8940718575e536ab2`.
-- GitHub server `main` was verified at:
+- Phase 2C.C accepted / merged / pushed main checkpoint:
+  `4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
+- Phase 2C.C started from accepted main:
   `8587c1546aa1689b69606f860fb5c18a847de617`.
 
 The real Windows repository was reverified on 9 September 2026 before the
@@ -68,7 +70,7 @@ Inventory but must not affect the active Dungeon run.
 
 No duplicate `RunEquipment` state is being added to `DungeonSessionService`.
 
-## Current implementation candidate
+## Accepted Phase 2C.C implementation
 
 The isolated pre-commit candidate contains:
 
@@ -86,8 +88,10 @@ The isolated pre-commit candidate contains:
   Dungeon visual evidence;
 - continuity/spec/plan updates for Phase 2C.C.
 
-The project owner approved the exact 27-file local feature-branch commit.
-Push, merge and Roblox publish remain separate unapproved gates.
+The project owner explicitly accepted Phase 2C.C. Commit
+`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8` was pushed on the feature branch,
+then `main` was fast-forwarded and pushed to that exact commit. Roblox publish
+was not performed.
 
 ## Evidence status
 
@@ -137,7 +141,16 @@ Phase 2C.C gameplay work.
 
 ## Exact next engineering action
 
-Create the project-owner-approved local commit from the exact 27-file boundary
-on `wip/phase-2c-c-equipment-effects-recovery-2`, then stop. Push, merge and
-Roblox publish remain separate explicit approval gates. Preserve the older
-dirty 2C.C worktrees and the separate art worktree untouched.
+Phase 2C.C is closed as ACCEPTED / MERGED / PUSHED at
+`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
+
+The tracked repository does not currently name a later Phase 2C sub-gate.
+Before new source work, read the canonical external DungeonMMO Roadmap v1.31
+and explicitly select/approve the next roadmap gate rather than inferring a
+Phase 2C.D.
+
+Retain the Phase 2C.C qualifications: the current Equipment UI is an accepted
+functional placeholder; Arc Slash was not manually exercised during the 2C.C
+acceptance run because it was not unlocked/equipped; Roblox automated runtime
+GREEN was not separately captured; no Roblox publish occurred; and the separate
+art worktree remains untouched.
