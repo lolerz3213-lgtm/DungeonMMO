@@ -44,8 +44,8 @@ local fresh_character = fresh_a.Characters.Slot1
 local fresh_progression = fresh_character.Progression
 
 check(
-    fresh_a.SchemaVersion == 4,
-    "Fresh profile must use schema version 4."
+    fresh_a.SchemaVersion == 5,
+    "Fresh profile must use schema version 5."
 )
 check(
     fresh_a.Account.SelectedCharacterSlot == 1,
@@ -112,8 +112,8 @@ local migrated_new_character =
     migrated_new.Characters.Slot1
 
 check(
-    migrated_new.SchemaVersion == 4,
-    "Nil storage must create schema v4."
+    migrated_new.SchemaVersion == 5,
+    "Nil storage must create schema v5."
 )
 check(
     migrated_new_character.Identity.CreationStage
@@ -153,8 +153,8 @@ check(
 local migrated_empty = ProfileMigration.migrate({})
 
 check(
-    migrated_empty.SchemaVersion == 4,
-    "Existing empty profile must migrate to v4."
+    migrated_empty.SchemaVersion == 5,
+    "Existing empty profile must migrate to v5."
 )
 check(
     migrated_empty.Characters.Slot1
@@ -258,6 +258,8 @@ check(
 -- race baselines below neutral 5 must survive future
 -- ProfileService mutation/migration passes.
 local v4_elf = ProfileSchema.create_default(789)
+
+v4_elf.SchemaVersion = 4
 
 v4_elf.Characters.Slot1.Identity.RaceId = "Elf"
 v4_elf.Characters.Slot1.Identity.CreationStage =

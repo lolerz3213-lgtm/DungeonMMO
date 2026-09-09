@@ -62,6 +62,7 @@ local revive_request = remotes:WaitForChild("ReviveRequest") :: RemoteEvent
 local revive_state = remotes:WaitForChild("ReviveStateChanged") :: RemoteEvent
 local profile_snapshot = remotes:WaitForChild("ProfileSnapshot") :: RemoteEvent
 local inventory_snapshot = remotes:WaitForChild("InventorySnapshot") :: RemoteEvent
+local equipment_snapshot = remotes:WaitForChild("EquipmentSnapshot") :: RemoteEvent
 local progression_snapshot = remotes:WaitForChild("ProgressionSnapshot") :: RemoteEvent
 local progression_action_result = remotes:WaitForChild("ProgressionActionResult") :: RemoteEvent
 local loadout_request = remotes:WaitForChild("LoadoutRequest") :: RemoteEvent
@@ -78,6 +79,7 @@ local attributes = runtime.AttributeService
 local loadout = runtime.LoadoutService
 local skills = runtime.SkillProgressionService
 local identity = runtime.IdentityService
+local equipment = runtime.EquipmentService
 
 local dungeon_root = Workspace:WaitForChild("DungeonRuntime", 10)
 assert(dungeon_root, "DungeonRuntime greybox was not created")
@@ -189,6 +191,10 @@ local function send_profile(player: Player)
     if not character then return end
     profile_snapshot:FireClient(player, {Slot = 1, Level = character.Level, XP = character.XP, Gold = character.Gold})
     inventory_snapshot:FireClient(player, character.Inventory)
+    equipment_snapshot:FireClient(
+        player,
+        equipment:build_snapshot(player.UserId)
+    )
     send_progression(player)
 end
 

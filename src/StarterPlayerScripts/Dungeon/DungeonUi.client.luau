@@ -16,6 +16,9 @@ local PresentationLayers = require(
     shared:WaitForChild("PresentationLayers")
 )
 local UiStateRules = require(shared:WaitForChild("UiStateRules"))
+local CompletionRewardPresentation = require(
+    shared:WaitForChild("CompletionRewardPresentation")
+)
 local remotes = core:WaitForChild("Remotes")
 local dungeon_state = remotes:WaitForChild(
     "DungeonStateChanged"
@@ -241,11 +244,8 @@ dungeon_state.OnClientEvent:Connect(function(payload)
             reward_label.Text = "No completion reward - you were not "
                 .. "Active/eligible when the Captain was defeated."
         elseif type(payload.completion) == "table" then
-            local item = payload.completion.item_id
-            reward_label.Text = string.format(
-                "Completion Gold: +%d\nPersonal loot: %s",
-                payload.completion.gold_granted or 0,
-                item or "Nothing"
+            reward_label.Text = CompletionRewardPresentation.text(
+                payload.completion
             )
         elseif payload.return_simulated == true then
             reward_label.Text = "Studio return simulated. Your "

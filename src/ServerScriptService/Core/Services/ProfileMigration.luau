@@ -34,6 +34,14 @@ local CharacterIdentityRules = require(
     shared:WaitForChild("CharacterIdentityRules")
 )
 
+local EquipmentSlots = require(
+    shared:WaitForChild("EquipmentSlots")
+)
+
+local ItemDefinitions = require(
+    shared:WaitForChild("ItemDefinitions")
+)
+
 local ProfileMigration = {}
 
 local IDENTITY_VERSION = 1
@@ -405,11 +413,13 @@ function ProfileMigration.migrate(raw: any): any
     -- Phase 2B-or-earlier character.
     local new_source = raw == nil
 
+    -- Schema v4 is the accepted Phase 2C.A identity schema.
+    -- Only pre-v4 data uses the one-time legacy race-selection path.
     local legacy_source = (
         raw_is_table
         and (
             type(raw_version) ~= "number"
-            or raw_version < ProfileSchema.VERSION
+            or raw_version < 4
         )
     )
 
@@ -468,6 +478,30 @@ function ProfileMigration.migrate(raw: any): any
     if type(slot1.Inventory) ~= "table" then
         slot1.Inventory = {}
     end
+
+    local equipment_source = if type(slot1.Equipment) == "table"
+        then slot1.Equipment
+        else {}
+
+    local sanitized_equipment = {}
+
+    for _, slot in ipairs(EquipmentSlots.ORDER) do
+        local item_id = equipment_source[slot]
+
+        if type(item_id) == "string" then
+            local definition = ItemDefinitions.get(item_id)
+
+            if (
+                definition
+                and definition.Kind == "Equipment"
+                and definition.Slot == slot
+            ) then
+                sanitized_equipment[slot] = item_id
+            end
+        end
+    end
+
+    slot1.Equipment = sanitized_equipment
 
     if type(slot1.DungeonProgress) ~= "table" then
         slot1.DungeonProgress = {}

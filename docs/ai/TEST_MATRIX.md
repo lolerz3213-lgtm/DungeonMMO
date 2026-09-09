@@ -125,13 +125,11 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** ACTIVE - PHASE 2C.A LOCAL GREEN
+**Status:** ACCEPTED - PHASE 2C.B MERGED LOCALLY / PUSH PENDING
 
-Phase 2C.A is the active race/base-class gate.
+Phase 2C.A is accepted, merged and pushed.
 
-Fresh local evidence exists for the Human/Elf Fighter identity foundation, but
-no Phase 2C.A acceptance may be claimed until the published TEST persistence
-gate passes and explicit user acceptance is received.
+Phase 2C.B - Equipment + Trainer Architecture is the active engineering gate.
 
 ## Phase 2C.A - Race + Character Identity Foundation
 
@@ -301,8 +299,134 @@ and is not being treated as a reward/persistence failure.
 - [x] Phase 2C.A acceptance evidence record created.
 - [x] explicit user acceptance received.
 - [x] Phase 2C.A marked ACCEPTED.
-- [ ] canonical roadmap updated.
-- [ ] acceptance documentation committed.
+- [x] canonical roadmap updated through external Roadmap v1.30.
+- [x] acceptance documentation committed at d3685be4a507f00e0b08bf8d948a41ecfa80b47.
 - [ ] merge to `main` deliberately approved/completed.
 
 Phase 2C.A was explicitly accepted by the project owner on 9 September 2026.
+
+## Phase 2C.B - Equipment + Trainer Architecture
+
+**Status:** DESIGN APPROVED - RED CONTRACT PREPARATION
+**Starting baseline:** `19f8c31284da80dc87cf5d44560d366e48427888`
+**Formal Phase 2C.A acceptance ancestor:** `ad3685be4a507f00e0b08bf8d948a41ecfa80b47`
+
+### Design lock
+
+- [x] user approved Phase 2C.B architecture.
+- [x] equipment slots locked: Weapon / OffHand / Helmet / Body / Gloves / Boots.
+- [x] Base-only server-authoritative equipment mutation locked.
+- [x] race/base-class/class restriction architecture locked.
+- [x] level/attribute restrictions deferred.
+- [x] unique item instances / random affixes / durability deferred.
+- [x] accepted combat sword/shield visual pipeline preserved.
+- [x] data-driven Fighter trainer catalogue required.
+- [x] Human Fighter trainer path required.
+- [x] Elf Fighter trainer path required.
+- [x] functional trainer UI required.
+- [x] functional six-slot equipment UI required.
+- [x] Dungeon Completed Arc Slash Skill Book summary presentation fix included.
+- [x] PROD/Robux/monetisation remain out of scope.
+- [x] art/dungeon-environment-prototype remains isolated.
+
+### TDD RED bootstrap
+
+The following checks are intentionally expected to fail before production
+implementation:
+
+- [x] Equipment Slots contract RED observed.
+- [x] Equipment Rules RED observed.
+- [x] Phase 2C.B schema-v5 equipment migration RED observed.
+- [x] Equipment Service RED observed.
+- [x] Phase 2C.B remote contract RED observed.
+- [x] Trainer Catalogues RED observed.
+- [x] Trainer authorization transport RED observed.
+- [x] Completion Reward Presentation RED observed.
+
+Do not mark any of these green merely because Rojo builds successfully.
+Actual Roblox Studio runtime output is required.
+
+### Critical migration guard
+
+When schema advances to v5, only pre-v4 data is legacy. Accepted schema-v4
+Phase 2C.A Human/Elf profiles must retain their identity and progression and
+receive an empty/sanitized Equipment table.
+
+### Acceptance status
+
+Phase 2C.B is NOT accepted and no implementation PASS is claimed at this
+checkpoint.
+### Phase 2C.B GREEN candidate gate
+
+- [x] Equipment Slots GREEN observed.
+- [x] Equipment Rules GREEN observed.
+- [x] schema-v5 equipment migration GREEN observed.
+- [x] Equipment Service GREEN observed.
+- [x] Phase 2C.B remote contract GREEN observed.
+- [x] Trainer Catalogues GREEN observed.
+- [x] Trainer authority GREEN observed.
+- [x] Completion Reward Presentation GREEN observed.
+- [x] accepted Base/Core regression families remain GREEN.
+- [x] Human Fighter six-slot equipment visual check passed.
+- [x] Human TEST Elven Helmet shows RaceRestricted.
+- [x] Human Fighter trainer catalogue check passed.
+- [x] Elf Fighter trainer catalogue check passed.
+- [x] Elf TEST Elven Helmet is eligible/equippable.
+- [x] Dungeon accepted regression families remain GREEN.
+- [x] Dungeon completion summary lists a newly awarded Arc Slash Skill Book.
+- [x] no PROD / Robux / monetisation action occurred.
+### Phase 2C.B observed GREEN evidence
+
+Date: 9 September 2026
+
+Base:
+- new 2C.B RED families all transitioned to PASS;
+- Equipment Slots PASS: 24 assertions;
+- Equipment Rules PASS: 9 assertions;
+- Equipment Migration PASS: 20 assertions;
+- Equipment Service PASS: 38 assertions;
+- Trainer Catalogues PASS: 10 assertions;
+- Trainer Authority PASS;
+- Remote Contract PASS;
+- Completion Reward Presentation PASS: 4 assertions;
+- Phase 2B / Phase 2C.A migration and identity regressions remained green;
+- Human/Fighter and Elf/Fighter equipment/trainer visual checks passed;
+- race-specific TEST helmet restriction behaved correctly.
+
+Dungeon:
+- accepted combat/dungeon/revive/reward/progression regression families passed;
+- Marauder Captain playthrough completed;
+- completion rewards committed successfully;
+- return window opened normally;
+- Arc Slash Skill Book appeared in the completion reward summary.
+
+Result:
+GREEN and ready for explicit Phase 2C.B acceptance.
+
+No commit, merge, push, Roblox publish, PROD or Robux action is part of this
+GREEN evidence record.
+### Phase 2C.B acceptance result
+
+- [x] Fresh Base GREEN evidence reviewed.
+- [x] Fresh Dungeon GREEN evidence reviewed.
+- [x] Human/Fighter equipment and Fighter Trainer functional check passed.
+- [x] Human TEST Elven Helmet correctly rejected.
+- [x] Elf/Fighter equipment and Fighter Trainer functional check passed.
+- [x] Elf TEST Elven Helmet eligible/equippable.
+- [x] Dungeon combat/revive/completion regression check passed.
+- [x] Arc Slash Skill Book appeared in the Dungeon Completed reward summary.
+- [x] Project owner explicitly accepted Phase 2C.B on 9 September 2026.
+- [x] No PROD, Robux, monetisation or art-branch action was used for acceptance.
+
+Result: ACCEPTED. This checkpoint may now be committed on the Phase 2C.B
+feature branch. Merge and push remain separate deliberate actions.
+### Phase 2C.B local merge verification
+
+- [x] Accepted checkpoint commit verified before merge.
+- [x] Local `main` and `origin/main` verified at accepted Phase 2C.A baseline.
+- [x] Deliberate no-ff merge used.
+- [x] Gameplay/source tree remains identical to accepted Phase 2C.B checkpoint.
+- [x] Base and Dungeon rebuilt from merged local `main`.
+- [x] Art worktree remains untouched.
+- [x] No Roblox publish, PROD, Robux or monetisation action occurred.
+- [ ] Push local `main` to `origin/main` only after separate explicit approval.

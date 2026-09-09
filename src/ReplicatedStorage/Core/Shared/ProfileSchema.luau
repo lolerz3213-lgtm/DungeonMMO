@@ -1,10 +1,10 @@
 --!strict
 -- Canonical persistent player-profile schema.
--- Phase 2C.A adds persistent race/class identity.
+-- Phase 2C.B adds persistent six-slot equipment.
 
 local ProfileSchema = {}
 
-ProfileSchema.VERSION = 4
+ProfileSchema.VERSION = 5
 
 local function deep_clone(
     value: any,
@@ -56,12 +56,8 @@ local function default_progression(): any
         },
         AttributePointEntitlement = 0,
         SkillPointEntitlement = 0,
-
-        -- Fighter starters are granted only after Fighter
-        -- selection commits. Fresh characters start empty.
         Skills = {},
         Loadout = {},
-
         RespecCounters = {
             Attributes = 0,
             Skills = 0,
@@ -73,9 +69,7 @@ local function default_progression(): any
     }
 end
 
-function ProfileSchema.create_default(
-    _user_id: number
-): any
+function ProfileSchema.create_default(_user_id: number): any
     return {
         SchemaVersion = ProfileSchema.VERSION,
         Account = {
@@ -87,6 +81,7 @@ function ProfileSchema.create_default(
                 XP = 0,
                 Gold = 0,
                 Inventory = {},
+                Equipment = {},
                 DungeonProgress = {},
                 RewardHistory = {
                     Completion = {},
