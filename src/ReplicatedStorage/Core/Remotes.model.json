@@ -18,6 +18,10 @@
       "ClassName": "RemoteEvent"
     },
     {
+      "Name": "IdentitySelectionRequest",
+      "ClassName": "RemoteEvent"
+    },
+    {
       "Name": "AttributeCommitRequest",
       "ClassName": "RemoteEvent"
     },

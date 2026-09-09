@@ -16,6 +16,9 @@ local CombatTypes = require(
 local StateRules = require(
     shared_folder:WaitForChild("StateRules")
 )
+local BasicAttackTimingRules = require(
+    shared_folder:WaitForChild("BasicAttackTimingRules")
+)
 local SkillDefinitions = require(
     shared_folder:WaitForChild("SkillDefinitions")
 )
@@ -43,6 +46,22 @@ local combo_expires_at = 0
 local sequence_id = 0
 
 local ClientCombatController = {}
+
+
+local function get_basic_attack_rate(): number
+    local character = player.Character
+
+    if not character then
+        return 1
+    end
+
+    return BasicAttackTimingRules
+        .get_safe_rate(
+            character:GetAttribute(
+                "DungeonMMOBasicAttackRate"
+            )
+        )
+end
 
 
 --[[
@@ -201,11 +220,19 @@ Returns:
     None.
 ]]
 start_predicted_attack = function(attack_id: string)
-    local attack_definition = BasicAttack.ATTACKS[attack_id]
+    local base_attack_definition =
+        BasicAttack.ATTACKS[attack_id]
 
-    if not attack_definition then
+    if not base_attack_definition then
         return
     end
+
+    local attack_definition =
+        BasicAttackTimingRules
+            .scale_definition(
+                base_attack_definition,
+                get_basic_attack_rate()
+            )
 
     sequence_id += 1
     current_attack_id = attack_id
@@ -281,16 +308,31 @@ function ClientCombatController.request_attack(): boolean
         return false
     end
 
-    local attack_definition = BasicAttack.ATTACKS[
-        current_attack_id
-    ]
-    local recovery_elapsed = os.clock() - state_started_at
+    local base_attack_definition =
+        BasicAttack.ATTACKS[
+            current_attack_id
+        ]
 
-    local buffer_open = StateRules.is_buffer_window_open(
-        recovery_elapsed,
-        attack_definition.RECOVERY_SECONDS,
-        BasicAttack.COMBO_BUFFER_SECONDS
-    )
+    if not base_attack_definition then
+        return false
+    end
+
+    local attack_definition =
+        BasicAttackTimingRules
+            .scale_definition(
+                base_attack_definition,
+                get_basic_attack_rate()
+            )
+
+    local recovery_elapsed =
+        os.clock() - state_started_at
+
+    local buffer_open =
+        StateRules.is_buffer_window_open(
+            recovery_elapsed,
+            attack_definition.RECOVERY_SECONDS,
+            BasicAttack.COMBO_BUFFER_SECONDS
+        )
 
     if not buffer_open then
         return false

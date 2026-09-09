@@ -18,6 +18,9 @@ local CombatConfig = require(
 local CombatTypes = require(
     shared_folder:WaitForChild("CombatTypes")
 )
+local BasicAttackTimingRules = require(
+    shared_folder:WaitForChild("BasicAttackTimingRules")
+)
 local PrototypeAnimationFactory = require(
     shared_folder:WaitForChild("PrototypeAnimationFactory")
 )
@@ -62,10 +65,27 @@ local state_connection: RBXScriptConnection? = nil
 local current_local_state = State.LOCOMOTION
 local procedural_attack_id = ""
 local procedural_attack_started_at = 0
+local procedural_attack_rate = 1
 local procedural_waist: Instance? = nil
 local procedural_right_shoulder: Instance? = nil
 local procedural_right_elbow: Instance? = nil
 local procedural_right_wrist: Instance? = nil
+
+
+local function get_basic_attack_rate(): number
+    local character = player.Character
+
+    if not character then
+        return 1
+    end
+
+    return BasicAttackTimingRules
+        .get_safe_rate(
+            character:GetAttribute(
+                "DungeonMMOBasicAttackRate"
+            )
+        )
+end
 
 
 --[[
@@ -179,6 +199,7 @@ local function clear_published_pose_joints()
     procedural_right_wrist = nil
     procedural_attack_id = ""
     procedural_attack_started_at = 0
+    procedural_attack_rate = 1
 end
 
 
@@ -227,11 +248,15 @@ local function render_published_sword(
         if definition then
             local elapsed =
                 os.clock() - procedural_attack_started_at
+
+            local animation_time =
+                elapsed * procedural_attack_rate
+
             local pose =
                 PrototypeAnimationFactory.sample_attack_pose(
                     procedural_attack_id,
                     definition,
-                    elapsed
+                    animation_time
                 )
 
             layer_presentation_joint(
@@ -251,10 +276,11 @@ local function render_published_sword(
                 pose.RightHand
             )
 
-            if elapsed
+            if animation_time
                 >= PrototypeAnimationFactory
                     .get_expected_duration(definition) then
                 procedural_attack_id = ""
+                procedural_attack_rate = 1
             end
 
             return
@@ -770,7 +796,12 @@ local function play_attack_animation(
     end
 
     current_attack_track = track
-    track:Play(0.03, 1, 1)
+
+    track:Play(
+        0.03,
+        1,
+        get_basic_attack_rate()
+    )
 end
 
 
@@ -817,6 +848,8 @@ local function on_local_state_changed(
         else
             procedural_attack_id = attack_id
             procedural_attack_started_at = os.clock()
+            procedural_attack_rate =
+                get_basic_attack_rate()
         end
     elseif (
         state_name == State.LOCOMOTION
@@ -834,6 +867,7 @@ local function on_local_state_changed(
         and state_name ~= State.ACTIVE
         and state_name ~= State.RECOVERY then
         procedural_attack_id = ""
+        procedural_attack_rate = 1
     end
 end
 

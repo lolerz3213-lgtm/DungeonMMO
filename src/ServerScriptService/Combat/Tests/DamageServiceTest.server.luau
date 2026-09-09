@@ -1,47 +1,38 @@
+--!strict
+
 local ReplicatedStorage = game:GetService(
     "ReplicatedStorage"
 )
+
 local ServerScriptService = game:GetService(
     "ServerScriptService"
 )
 
-local combat_folder = ServerScriptService
-    :WaitForChild("Combat")
-local shared_folder = ReplicatedStorage
-    :WaitForChild("Combat")
-    :WaitForChild("Shared")
+local combat_folder =
+    ServerScriptService
+        :WaitForChild("Combat")
+
+local shared_folder =
+    ReplicatedStorage
+        :WaitForChild("Combat")
+        :WaitForChild("Shared")
 
 local CombatConfig = require(
-    shared_folder:WaitForChild("CombatConfig")
-)
-
-local module_script = combat_folder:FindFirstChild(
-    "DamageService"
-)
-
-if not module_script then
-    error(
-        "[Damage Service Tests] RED: "
-            .. "DamageService module is missing."
+    shared_folder:WaitForChild(
+        "CombatConfig"
     )
-end
+)
 
-local DamageService = require(module_script)
+local DamageService = require(
+    combat_folder:WaitForChild(
+        "DamageService"
+    )
+)
 
 local assertion_count = 0
+
 local EPSILON = 1e-6
 
-
---[[
-Raises an error when a damage-service assertion fails.
-
-Args:
-    condition (boolean): Required test condition.
-    message (string): Failure explanation.
-
-Returns:
-    None.
-]]
 local function assert_true(
     condition: boolean,
     message: string
@@ -50,30 +41,22 @@ local function assert_true(
 
     if not condition then
         error(
-            "[Damage Service Tests] " .. message
+            "[Damage Service Tests] "
+                .. message,
+            2
         )
     end
 end
 
-
---[[
-Checks two numbers using a small floating-point tolerance.
-
-Args:
-    actual (number): Value returned by production code.
-    expected (number): Required value.
-    message (string): Failure explanation.
-
-Returns:
-    None.
-]]
 local function assert_number(
     actual: number,
     expected: number,
     message: string
 )
     assert_true(
-        math.abs(actual - expected) <= EPSILON,
+        math.abs(
+            actual - expected
+        ) <= EPSILON,
         string.format(
             "%s Expected %.3f, got %.3f.",
             message,
@@ -83,26 +66,18 @@ local function assert_number(
     )
 end
 
-
---[[
-Creates a simple damageable target with a Humanoid.
-
-Args:
-    name (string): Model name.
-    health (number): Initial and maximum health.
-
-Returns:
-    Model: Test target Model.
-]]
 local function create_target(
     name: string,
     health: number
 ): Model
-    local model = Instance.new("Model")
+    local model =
+        Instance.new("Model")
+
     model.Name = name
     model.Parent = workspace
 
-    local humanoid = Instance.new("Humanoid")
+    local humanoid =
+        Instance.new("Humanoid")
 
     humanoid.MaxHealth = health
     humanoid.Health = health
@@ -111,9 +86,15 @@ local function create_target(
     return model
 end
 
+-- ------------------------------------------------------------
+-- Accepted existing damage contract
+-- ------------------------------------------------------------
 
 assert_true(
-    CombatConfig.PROTOTYPE_WEAPON.BASE_DAMAGE ~= nil,
+    CombatConfig
+        .PROTOTYPE_WEAPON
+        .BASE_DAMAGE
+        ~= nil,
     "Prototype weapon must define BASE_DAMAGE."
 )
 
@@ -162,29 +143,33 @@ assert_number(
     "Negative multiplier must clamp final damage to zero."
 )
 
-local target = create_target(
-    "DamageServiceTarget",
-    100
-)
+local target =
+    create_target(
+        "DamageServiceTarget",
+        100
+    )
 
-local applied = DamageService.apply_damage({
-    attacker = nil,
-    attacker_character = nil,
-    target = target,
-    source_kind = "Melee",
-    source_id = "PrototypeSword",
-    attack_id = "Slash2",
-    base_damage = 10,
-    multiplier = 1.05,
-})
+local applied =
+    DamageService.apply_damage({
+        attacker = nil,
+        attacker_character = nil,
+        target = target,
+        source_kind = "Melee",
+        source_id = "PrototypeSword",
+        attack_id = "Slash2",
+        base_damage = 10,
+        multiplier = 1.05,
+    })
 
 local humanoid =
-    target:FindFirstChildOfClass("Humanoid")
+    target:FindFirstChildOfClass(
+        "Humanoid"
+    )
 
 assert_number(
     applied,
     10.5,
-    "apply_damage must return exact applied damage."
+    "old context without crit fields must preserve exact damage."
 )
 
 assert_true(
@@ -196,16 +181,129 @@ if humanoid then
     assert_number(
         humanoid.Health,
         89.5,
-        "Humanoid health must preserve decimal damage."
+        "old context must preserve decimal Humanoid damage."
     )
 end
 
-local dead_target = create_target(
-    "DamageServiceDeadTarget",
-    100
+-- ------------------------------------------------------------
+-- Deterministic critical damage
+-- ------------------------------------------------------------
+
+local critical_target =
+    create_target(
+        "DamageServiceCriticalTarget",
+        100
+    )
+
+local critical_damage =
+    DamageService.apply_damage({
+        attacker = nil,
+        attacker_character = nil,
+        target = critical_target,
+        source_kind = "Melee",
+        source_id = "PrototypeSword",
+        attack_id = "Slash1",
+        base_damage = 10,
+        multiplier = 1,
+        critical_chance = 1,
+        critical_damage_multiplier = 1.65,
+        critical_roll = 0,
+    })
+
+assert_number(
+    critical_damage,
+    16.5,
+    "guaranteed 1.65x critical hit must deal 16.5."
 )
+
+local critical_humanoid =
+    critical_target
+        :FindFirstChildOfClass(
+            "Humanoid"
+        )
+
+assert_true(
+    critical_humanoid ~= nil,
+    "Critical target Humanoid must exist."
+)
+
+if critical_humanoid then
+    assert_number(
+        critical_humanoid.Health,
+        83.5,
+        "critical damage must be applied to Humanoid."
+    )
+end
+
+local noncritical_target =
+    create_target(
+        "DamageServiceNonCriticalTarget",
+        100
+    )
+
+local noncritical_damage =
+    DamageService.apply_damage({
+        attacker = nil,
+        attacker_character = nil,
+        target = noncritical_target,
+        source_kind = "Melee",
+        source_id = "PrototypeSword",
+        attack_id = "Slash1",
+        base_damage = 10,
+        multiplier = 1,
+        critical_chance = 0,
+        critical_damage_multiplier = 1.65,
+        critical_roll = 0,
+    })
+
+assert_number(
+    noncritical_damage,
+    10,
+    "zero critical chance must preserve normal damage."
+)
+
+local missing_multiplier_target =
+    create_target(
+        "DamageServiceMissingCritMultiplierTarget",
+        100
+    )
+
+local missing_multiplier_damage =
+    DamageService.apply_damage({
+        attacker = nil,
+        attacker_character = nil,
+        target =
+            missing_multiplier_target,
+        source_kind = "Melee",
+        source_id = "PrototypeSword",
+        attack_id = "Slash1",
+        base_damage = 10,
+        multiplier = 1,
+        critical_chance = 1,
+        critical_roll = 0,
+    })
+
+assert_number(
+    missing_multiplier_damage,
+    10,
+    "partial crit context must fail safely to old damage behaviour."
+)
+
+-- ------------------------------------------------------------
+-- Dead-target regression
+-- ------------------------------------------------------------
+
+local dead_target =
+    create_target(
+        "DamageServiceDeadTarget",
+        100
+    )
+
 local dead_humanoid =
-    dead_target:FindFirstChildOfClass("Humanoid")
+    dead_target
+        :FindFirstChildOfClass(
+            "Humanoid"
+        )
 
 if dead_humanoid then
     dead_humanoid.Health = 0
@@ -230,6 +328,9 @@ assert_number(
 )
 
 target:Destroy()
+critical_target:Destroy()
+noncritical_target:Destroy()
+missing_multiplier_target:Destroy()
 dead_target:Destroy()
 
 print(

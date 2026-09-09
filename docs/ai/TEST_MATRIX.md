@@ -125,7 +125,184 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** NEXT / NOT STARTED
+**Status:** ACTIVE - PHASE 2C.A LOCAL GREEN
 
-No Phase 2C result may be claimed from Phase 2B evidence. Fresh RED/GREEN and
-runtime evidence must be gathered for the new race/base-class slice.
+Phase 2C.A is the active race/base-class gate.
+
+Fresh local evidence exists for the Human/Elf Fighter identity foundation, but
+no Phase 2C.A acceptance may be claimed until the published TEST persistence
+gate passes and explicit user acceptance is received.
+
+## Phase 2C.A - Race + Character Identity Foundation
+
+**Status:** ACCEPTED
+
+**Reviewed local-green checkpoint:**
+
+`d13c5b8f834ab9642b0fb3f629bf05f46616e543`
+
+### Task 12 local build and Studio regression
+
+- [x] `git diff --check` clean before full local regression.
+- [x] Base full Task 12 build succeeded.
+- [x] Dungeon full Task 12 build succeeded.
+- [x] Phase 2C.A Race Definitions PASS - 35 assertions.
+- [x] Profile Schema/Migration PASS - 43 assertions.
+- [x] Phase 2C.A Profile Migration PASS - 38 assertions.
+- [x] Phase 2C.A Identity Service PASS - 58 assertions.
+- [x] Attribute Config PASS - 14 assertions.
+- [x] Attribute Service PASS - 30 assertions.
+- [x] Progression Service PASS - 9 assertions.
+- [x] Phase 2B Progression Service PASS - 42 assertions.
+- [x] Progression Snapshot Builder PASS - 37 assertions.
+- [x] Base Progression Controller PASS - 25 assertions.
+- [x] Character Combat Stats PASS - 32 assertions.
+- [x] Race Presentation Service PASS - 51 assertions.
+- [x] Damage Service PASS - 15 assertions.
+- [x] Basic Attack Timing Rules PASS - 25 assertions.
+- [x] Critical Hit Rules PASS - 10 assertions.
+- [x] Shield Bash Integration PASS - 17 assertions.
+- [x] Arc Slash Integration PASS - 10 assertions.
+- [x] Mend Service PASS - 9 assertions.
+- [x] Defensive Combat Integration PASS - 42 assertions.
+- [x] Dodge Direction PASS - 45 assertions.
+- [x] Dodge Swept Clearance PASS - 8 assertions.
+- [x] accepted Core/Base/Dungeon/Phase 2A/Phase 2B regression families remained green.
+
+### Local manual Base/Dungeon regression
+
+- [x] mandatory unresolved race selection.
+- [x] incomplete identity blocks gated Base/Dungeon behaviour.
+- [x] Human -> Fighter.
+- [x] Human baseline 5/4/6/5/5.
+- [x] Human Resolve.
+- [x] Human Shield Bash + Mend.
+- [x] Elf -> Fighter.
+- [x] Elf baseline 5/6/4/5/5.
+- [x] Elven Grace.
+- [x] Elf Shield Bash + Mend.
+- [x] Elf ears.
+- [x] Elf ears survive respawn.
+- [x] race presentation remains idempotent.
+- [x] sword combo.
+- [x] attack buffering.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] Arc Slash.
+- [x] no red runtime exception observed.
+
+### Task 13 published TEST safety
+
+- [x] reviewed Task 12 local-green candidate identified.
+- [x] TEST environment confirmed.
+- [x] Universe ID `10765241947` confirmed.
+- [x] Starting Base Place ID `134132328219009` confirmed.
+- [x] Test Dungeon Place ID `117293035754309` confirmed.
+- [x] live paid revives remained disabled.
+- [x] no PROD profile/DataStore path used.
+- [x] no Robux spend.
+- [x] no Task 13 monetisation changes.
+
+### New Elf published persistence
+
+- [x] fresh TEST race selection.
+- [x] Elf -> Fighter.
+- [x] Level 1.
+- [x] baseline 5/6/4/5/5.
+- [x] Elven Grace.
+- [x] Shield Bash + Mend.
+- [x] Elf ears in Base.
+- [x] Base -> published Dungeon.
+- [x] Elf ears in Dungeon.
+- [x] normal sword/basic attack behaviour.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] normal Dungeon completion.
+- [x] Dungeon -> Base.
+- [x] Elf / Fighter preserved after return.
+- [x] ears preserved after return.
+- [x] leave Experience.
+- [x] rejoin Starting Base.
+- [x] Elf / Fighter persisted.
+- [x] baseline/passive persisted.
+- [x] ears persisted.
+- [x] skills/progression persisted.
+
+### New Human published persistence
+
+- [x] TEST profile reset to a fresh identity.
+- [x] Human -> Fighter.
+- [x] Level 1.
+- [x] baseline 5/4/6/5/5.
+- [x] Human Resolve.
+- [x] Shield Bash + Mend.
+- [x] Base -> published Dungeon.
+- [x] normal sword/basic attack behaviour.
+- [x] Block/parry.
+- [x] Dodge.
+- [x] Shield Bash.
+- [x] Mend.
+- [x] normal Dungeon completion.
+- [x] Dungeon -> Base.
+- [x] Human / Fighter preserved after return.
+- [x] leave Experience.
+- [x] rejoin Starting Base.
+- [x] Human / Fighter persisted.
+- [x] baseline/passive persisted.
+- [x] skills/progression persisted.
+
+### Published sensitive regressions
+
+- [x] one combat HUD/runtime presentation.
+- [x] published sword presentation.
+- [x] one Marauder Captain runtime.
+- [x] camera/view shield visible.
+- [x] shield arm remains behind shield during Block.
+- [x] shield arm remains behind shield during Shield Bash.
+- [x] swept Dodge does not place player under floor.
+- [x] swept Dodge does not place player inside monster.
+- [x] first free revive works.
+- [x] second death reaches normal defeated boundary.
+- [x] live paid revive remains disabled.
+- [x] Return to Base remains available.
+- [x] Arc Slash Skill Book awarded to Inventory.
+- [x] Arc Slash learning works.
+- [x] Arc Slash loadout works.
+- [x] Arc Slash knowledge/loadout persists after rejoin.
+
+### Legacy published migration qualification
+
+- [x] automated Profile Schema/Migration coverage green.
+- [x] automated Phase 2C.A Profile Migration coverage green.
+- [x] automated Identity Service coverage green.
+- [ ] LIVE LEGACY MIGRATION PROOF WAIVED FOR THIS PRE-PLAYER TEST GATE.
+
+The project owner deliberately waived the live legacy-character migration proof
+because there are no real players and the current TEST data is disposable
+developer/test data.
+
+A live legacy migration proof remains required before any future release that
+must migrate real existing player profiles.
+
+### Known deferred issue
+
+- [x] Skill Book reward is correctly granted to Inventory.
+- [ ] Skill Book is not listed in the Dungeon Completed reward summary.
+
+The completion-summary display issue is explicitly deferred to the next patch
+and is not being treated as a reward/persistence failure.
+
+### Acceptance close-out
+
+- [x] Phase 2C.A acceptance evidence record created.
+- [x] explicit user acceptance received.
+- [x] Phase 2C.A marked ACCEPTED.
+- [ ] canonical roadmap updated.
+- [ ] acceptance documentation committed.
+- [ ] merge to `main` deliberately approved/completed.
+
+Phase 2C.A was explicitly accepted by the project owner on 9 September 2026.

@@ -13,11 +13,20 @@ local Base = ServerScriptService:WaitForChild("Base")
 
 local RuntimeServices = require(Services:WaitForChild("RuntimeServices"))
 local ProgressionRuntimeState = require(Services:WaitForChild("ProgressionRuntimeState"))
+local RacePresentationService = require(
+    Services:WaitForChild("RacePresentationService")
+)
 local TeleportCoordinator = require(Services:WaitForChild("TeleportCoordinator"))
 local RobloxTeleportAdapter = require(Adapters:WaitForChild("RobloxTeleportAdapter"))
 local TestFailureSwitches = require(Core:WaitForChild("TestFailureSwitches"))
 local BaseReconnectRouting = require(Base:WaitForChild("BaseReconnectRouting"))
 local BaseReturnAdmissionRules = require(Base:WaitForChild("BaseReturnAdmissionRules"))
+local CharacterIdentityRules = require(
+    ReplicatedStorage
+        :WaitForChild("Core")
+        :WaitForChild("Shared")
+        :WaitForChild("CharacterIdentityRules")
+)
 local BaseProgressionController = require(Base:WaitForChild("BaseProgressionController"))
 
 local remotes = ReplicatedStorage:WaitForChild("Core"):WaitForChild("Remotes")
@@ -27,6 +36,7 @@ local profile_snapshot = remotes:WaitForChild("ProfileSnapshot") :: RemoteEvent
 local inventory_snapshot = remotes:WaitForChild("InventorySnapshot") :: RemoteEvent
 local progression_snapshot = remotes:WaitForChild("ProgressionSnapshot") :: RemoteEvent
 local progression_action_result = remotes:WaitForChild("ProgressionActionResult") :: RemoteEvent
+local identity_selection_request = remotes:WaitForChild("IdentitySelectionRequest") :: RemoteEvent
 local attribute_commit_request = remotes:WaitForChild("AttributeCommitRequest") :: RemoteEvent
 local skill_learn_request = remotes:WaitForChild("SkillLearnRequest") :: RemoteEvent
 local skill_rank_request = remotes:WaitForChild("SkillRankRequest") :: RemoteEvent
@@ -42,6 +52,7 @@ local inventory = runtime.InventoryService
 local attributes = runtime.AttributeService
 local loadout = runtime.LoadoutService
 local skills = runtime.SkillProgressionService
+local identity = runtime.IdentityService
 local progression_controller = BaseProgressionController.new({
     context = "Base",
     profiles = profiles,
@@ -95,6 +106,61 @@ local function send_profile(player: Player)
     inventory_snapshot:FireClient(player, character.Inventory)
     send_progression(player)
 end
+
+local function apply_race_presentation(
+    player: Player,
+    character_model: Model?
+)
+    local profile_character =
+        profiles:get_character(
+            player.UserId,
+            1
+        )
+
+    local race_id =
+        profile_character
+        and profile_character.Identity
+        and profile_character.Identity.RaceId
+        or nil
+
+    local target =
+        character_model
+        or player.Character
+
+    if not target then
+        warn(
+            "[Base Race Presentation] No character for "
+                .. player.Name
+        )
+        return
+    end
+
+    local result =
+        RacePresentationService.apply(
+            target,
+            race_id
+        )
+
+    if result.ok then
+        print(
+            string.format(
+                "[Base Race Presentation] Applied %s to %s (%d ears).",
+                tostring(race_id),
+                player.Name,
+                tonumber(result.ear_count) or 0
+            )
+        )
+    else
+        warn(
+            string.format(
+                "[Base Race Presentation] %s failed: %s",
+                player.Name,
+                tostring(result.reason)
+            )
+        )
+    end
+end
+
 
 local function send_entry_result(player: Player, result: any)
     entry_result:FireClient(player, {
@@ -187,8 +253,14 @@ local function load_player(player: Player)
 
     loaded_users[player.UserId] = true
     ProgressionRuntimeState.set_character(player.UserId, loaded.Characters.Slot1)
-    ProgressionRuntimeState.apply_max_health(player)
-    player.CharacterAdded:Connect(function() task.defer(ProgressionRuntimeState.apply_max_health, player) end)
+    ProgressionRuntimeState.apply_runtime_stats(player)
+    apply_race_presentation(player, player.Character)
+    player.CharacterAdded:Connect(function(character)
+        task.defer(function()
+            ProgressionRuntimeState.apply_runtime_stats(player)
+            apply_race_presentation(player, character)
+        end)
+    end)
     send_profile(player)
     print(string.format(
         "[Base Runtime] Slot1 loaded for %s (Level %d, XP %d, Gold %d).",
@@ -213,6 +285,28 @@ local function handle_entry(player: Player, dungeon_id: any)
         send_entry_result(player, {ok = false, reason = "ProfileNotReady"})
         return
     end
+
+    local character = profiles:get_character(
+        player.UserId,
+        1
+    )
+
+    if (
+        not character
+        or not CharacterIdentityRules
+            .is_complete(character)
+    ) then
+        send_entry_result(
+            player,
+            {
+                ok = false,
+                reason = "IdentityIncomplete",
+            }
+        )
+
+        return
+    end
+
     if coordinator:is_pending(player.UserId) then
         send_entry_result(player, {ok = false, reason = "TeleportAlreadyPending"})
         return
@@ -261,14 +355,112 @@ progression_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
     if action == "Request" and loaded_users[player.UserId] then send_progression(player) end
 end)
 
-local function finish_progression_action(player: Player, action: string, result: any)
-    local payload = {action = action, ok = result and result.ok == true, reason = result and result.reason or nil}
-    progression_action_result:FireClient(player, payload)
+local function refresh_runtime_character(player: Player)
+    local character = profiles:get_character(player.UserId)
+
+    if not character then
+        return
+    end
+
+    ProgressionRuntimeState.set_character(
+        player.UserId,
+        character
+    )
+
+    ProgressionRuntimeState.apply_runtime_stats(
+        player
+    )
+end
+
+local function finish_progression_action(
+    player: Player,
+    action: string,
+    result: any
+)
+    local payload = {
+        action = action,
+        ok = result and result.ok == true,
+        reason = result and result.reason or nil,
+    }
+
+    progression_action_result:FireClient(
+        player,
+        payload
+    )
+
     if payload.ok then
-        ProgressionRuntimeState.apply_max_health(player)
+        refresh_runtime_character(player)
         send_profile(player)
+        apply_race_presentation(player, player.Character)
     end
 end
+
+identity_selection_request.OnServerEvent:Connect(
+    function(
+        player: Player,
+        kind: any,
+        selection_id: any
+    )
+        if loaded_users[player.UserId] ~= true then
+            return
+        end
+
+        if type(selection_id) ~= "string" then
+            finish_progression_action(
+                player,
+                "IdentitySelection",
+                {
+                    ok = false,
+                    reason = "InvalidIdentitySelection",
+                }
+            )
+            return
+        end
+
+        local action: string
+        local result: any
+
+        if kind == "Race" then
+            action = "RaceSelection"
+
+            result = identity:select_race(
+                player.UserId,
+                selection_id
+            )
+        elseif kind == "Class" then
+            action = "ClassSelection"
+
+            result = identity:select_base_class(
+                player.UserId,
+                selection_id
+            )
+        else
+            action = "IdentitySelection"
+
+            result = {
+                ok = false,
+                reason = "InvalidIdentitySelection",
+            }
+        end
+
+        finish_progression_action(
+            player,
+            action,
+            result
+        )
+
+        if result and result.ok == true then
+            print(
+                string.format(
+                    "[Base Identity] %s completed %s -> %s.",
+                    player.Name,
+                    tostring(kind),
+                    tostring(selection_id)
+                )
+            )
+        end
+    end
+)
 
 attribute_commit_request.OnServerEvent:Connect(function(player: Player, desired: any)
     if not loaded_users[player.UserId] then return end

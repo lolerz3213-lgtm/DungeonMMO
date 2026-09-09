@@ -35,6 +35,8 @@ export type MeleeSwingContext = {
     attack_definition: any,
     base_damage: number,
     sequence_id: number?,
+    critical_chance: number?,
+    critical_damage_multiplier: number?,
     is_cancelled: (() -> boolean)?,
     on_target: ((Model) -> ())?,
     on_candidate_rejected: ((Model, string) -> ())?,
@@ -518,6 +520,9 @@ local function process_sample(
             base_damage = context.base_damage,
             multiplier = context.attack_definition.POWER_MULTIPLIER,
             sequence_id = context.sequence_id,
+            critical_chance = context.critical_chance,
+            critical_damage_multiplier =
+                context.critical_damage_multiplier,
         })
     end
 end
