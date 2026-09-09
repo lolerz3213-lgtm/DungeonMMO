@@ -1,6 +1,5 @@
 --!strict
--- Central runtime composition for Base/Dungeon Places. Studio uses deterministic in-memory
--- adapters by default; published TEST/PROD uses DataStore + shared MemoryStore namespaces.
+-- Central runtime composition for Base/Dungeon Places.
 local HttpService = game:GetService("HttpService")
 local RunService = game:GetService("RunService")
 local ServerScriptService = game:GetService("ServerScriptService")
@@ -25,16 +24,26 @@ local LoadoutService = require(Services:WaitForChild("LoadoutService"))
 local SkillProgressionService = require(Services:WaitForChild("SkillProgressionService"))
 local ProficiencyService = require(Services:WaitForChild("ProficiencyService"))
 local IdentityService = require(Services:WaitForChild("IdentityService"))
+local EquipmentService = require(Services:WaitForChild("EquipmentService"))
 
 local RuntimeServices = {}
 
 function RuntimeServices.new(place_kind: string): any
-    assert(place_kind == "Base" or place_kind == "Dungeon", "place_kind must be Base or Dungeon")
+    assert(
+        place_kind == "Base" or place_kind == "Dungeon",
+        "place_kind must be Base or Dungeon"
+    )
 
     local studio = RunService:IsStudio()
-    local profile_adapter = if studio then InMemoryProfileAdapter.new() else DataStoreProfileAdapter.new()
-    local lease_map = if studio then InMemoryMapAdapter.new() else MemoryStoreMapAdapter.new("ProfileLeases")
-    local session_map = if studio then InMemoryMapAdapter.new() else MemoryStoreMapAdapter.new("DungeonSessions")
+    local profile_adapter = if studio
+        then InMemoryProfileAdapter.new()
+        else DataStoreProfileAdapter.new()
+    local lease_map = if studio
+        then InMemoryMapAdapter.new()
+        else MemoryStoreMapAdapter.new("ProfileLeases")
+    local session_map = if studio
+        then InMemoryMapAdapter.new()
+        else MemoryStoreMapAdapter.new("DungeonSessions")
 
     local job_id = game.JobId
     local server_id = if type(job_id) == "string" and job_id ~= ""
@@ -54,6 +63,7 @@ function RuntimeServices.new(place_kind: string): any
     local proficiency = ProficiencyService.new(profiles)
     ProficiencyService.bind_default(proficiency)
     local identity = IdentityService.new(profiles)
+    local equipment = EquipmentService.new(profiles, place_kind)
 
     return {
         IsStudio = studio,
@@ -69,6 +79,7 @@ function RuntimeServices.new(place_kind: string): any
         SkillProgressionService = skills,
         ProficiencyService = proficiency,
         IdentityService = identity,
+        EquipmentService = equipment,
     }
 end
 

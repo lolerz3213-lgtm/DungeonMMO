@@ -43,6 +43,12 @@ local skill_rank_request = remotes:WaitForChild("SkillRankRequest") :: RemoteEve
 local attribute_respec_request = remotes:WaitForChild("AttributeRespecRequest") :: RemoteEvent
 local skill_respec_request = remotes:WaitForChild("SkillRespecRequest") :: RemoteEvent
 local loadout_request = remotes:WaitForChild("LoadoutRequest") :: RemoteEvent
+local equipment_snapshot = remotes:WaitForChild("EquipmentSnapshot") :: RemoteEvent
+local equipment_equip_request = remotes:WaitForChild("EquipmentEquipRequest") :: RemoteEvent
+local equipment_unequip_request = remotes:WaitForChild("EquipmentUnequipRequest") :: RemoteEvent
+local equipment_action_result = remotes:WaitForChild("EquipmentActionResult") :: RemoteEvent
+local trainer_snapshot = remotes:WaitForChild("TrainerSnapshot") :: RemoteEvent
+local trainer_snapshot_request = remotes:WaitForChild("TrainerSnapshotRequest") :: RemoteEvent
 
 local runtime = RuntimeServices.new("Base")
 local profiles = runtime.ProfileService
@@ -53,6 +59,7 @@ local attributes = runtime.AttributeService
 local loadout = runtime.LoadoutService
 local skills = runtime.SkillProgressionService
 local identity = runtime.IdentityService
+local equipment = runtime.EquipmentService
 local progression_controller = BaseProgressionController.new({
     context = "Base",
     profiles = profiles,
@@ -83,6 +90,60 @@ local ENTRY_RATE_LIMIT_SECONDS = 2
 local AUTOSAVE_SECONDS = 30
 local LEASE_RENEW_SECONDS = 15
 
+local STUDIO_EQUIPMENT_TEST_KIT = table.freeze({
+    "marauder_sword",
+    "marauder_shield",
+    "marauder_helmet",
+    "marauder_armor",
+    "marauder_gloves",
+    "marauder_boots",
+    "test_elf_helmet",
+})
+
+local function has_inventory_item(
+    character: any,
+    item_id: string
+): boolean
+    if type(character) ~= "table" or type(character.Inventory) ~= "table" then
+        return false
+    end
+
+    for _, entry in ipairs(character.Inventory) do
+        if (
+            type(entry) == "table"
+            and entry.ItemId == item_id
+            and (tonumber(entry.Quantity) or 0) > 0
+        ) then
+            return true
+        end
+    end
+
+    return false
+end
+
+local function grant_studio_equipment_test_kit(player: Player)
+    if not RunService:IsStudio() then
+        return
+    end
+
+    for _, item_id in ipairs(STUDIO_EQUIPMENT_TEST_KIT) do
+        local character = profiles:get_character(player.UserId, 1)
+
+        if not has_inventory_item(character, item_id) then
+            local granted = inventory:add_item(player.UserId, item_id, 1)
+
+            if not granted.ok then
+                warn(
+                    "[Phase 2C.B Studio Kit] "
+                        .. item_id
+                        .. " grant blocked: "
+                        .. tostring(granted.reason)
+                )
+            end
+        end
+    end
+end
+
 local function send_progression(player: Player)
     progression_snapshot:FireClient(player, progression_controller:build_snapshot(player.UserId))
 end
@@ -91,6 +152,26 @@ runtime.ProgressionService:set_change_callback(function(user_id: number)
     local player = Players:GetPlayerByUserId(user_id)
     if player and loaded_users[user_id] then send_progression(player) end
 end)
+
+local function send_equipment(player: Player)
+    equipment_snapshot:FireClient(
+        player,
+        equipment:build_snapshot(player.UserId)
+    )
+end
+
+local function send_trainer(
+    player: Player,
+    trainer_id: string
+)
+    trainer_snapshot:FireClient(
+        player,
+        progression_controller:build_trainer_snapshot(
+            player.UserId,
+            trainer_id
+        )
+    )
+end
 
 local function send_profile(player: Player)
     local character = profiles:get_character(player.UserId, 1)
@@ -104,6 +185,7 @@ local function send_profile(player: Player)
         Gold = character.Gold,
     })
     inventory_snapshot:FireClient(player, character.Inventory)
+    send_equipment(player)
     send_progression(player)
 end
 
@@ -252,7 +334,11 @@ local function load_player(player: Player)
     end
 
     loaded_users[player.UserId] = true
-    ProgressionRuntimeState.set_character(player.UserId, loaded.Characters.Slot1)
+    grant_studio_equipment_test_kit(player)
+    ProgressionRuntimeState.set_character(
+        player.UserId,
+        assert(profiles:get_character(player.UserId, 1))
+    )
     ProgressionRuntimeState.apply_runtime_stats(player)
     apply_race_presentation(player, player.Character)
     player.CharacterAdded:Connect(function(character)
@@ -355,6 +441,31 @@ progression_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
     if action == "Request" and loaded_users[player.UserId] then send_progression(player) end
 end)
 
+equipment_snapshot.OnServerEvent:Connect(function(player: Player, action: any)
+    if action == "Request" and loaded_users[player.UserId] then
+        send_equipment(player)
+    end
+end)
+
+trainer_snapshot_request.OnServerEvent:Connect(function(
+    player: Player,
+    trainer_id: any
+)
+    if not loaded_users[player.UserId] then
+        return
+    end
+
+    if type(trainer_id) ~= "string" then
+        trainer_snapshot:FireClient(player, {
+            ok = false,
+            reason = "InvalidTrainerRequest",
+        })
+        return
+    end
+
+    send_trainer(player, trainer_id)
+end)
+
 local function refresh_runtime_character(player: Player)
     local character = profiles:get_character(player.UserId)
 
@@ -394,6 +505,69 @@ local function finish_progression_action(
         apply_race_presentation(player, player.Character)
     end
 end
+
+local function finish_equipment_action(
+    player: Player,
+    action: string,
+    result: any
+)
+    equipment_action_result:FireClient(player, {
+        action = action,
+        ok = result and result.ok == true,
+        reason = result and result.reason or nil,
+        slot = result and result.slot or nil,
+        item_id = result and result.item_id or nil,
+    })
+
+    if result and result.ok == true then
+        send_profile(player)
+    end
+end
+
+equipment_equip_request.OnServerEvent:Connect(function(
+    player: Player,
+    item_id: any,
+    slot: any
+)
+    if not loaded_users[player.UserId] then
+        return
+    end
+
+    local result
+
+    if type(item_id) ~= "string" or type(slot) ~= "string" then
+        result = {
+            ok = false,
+            reason = "InvalidEquipmentRequest",
+        }
+    else
+        result = equipment:equip(player.UserId, item_id, slot)
+    end
+
+    finish_equipment_action(player, "Equip", result)
+end)
+
+equipment_unequip_request.OnServerEvent:Connect(function(
+    player: Player,
+    slot: any
+)
+    if not loaded_users[player.UserId] then
+        return
+    end
+
+    local result
+
+    if type(slot) ~= "string" then
+        result = {
+            ok = false,
+            reason = "InvalidEquipmentRequest",
+        }
+    else
+        result = equipment:unequip(player.UserId, slot)
+    end
+
+    finish_equipment_action(player, "Unequip", result)
+end)
 
 identity_selection_request.OnServerEvent:Connect(
     function(
@@ -466,13 +640,53 @@ attribute_commit_request.OnServerEvent:Connect(function(player: Player, desired:
     if not loaded_users[player.UserId] then return end
     finish_progression_action(player, "AttributeCommit", progression_controller:commit_attributes(player.UserId, desired))
 end)
-skill_learn_request.OnServerEvent:Connect(function(player: Player, skill_id: any)
-    if not loaded_users[player.UserId] or type(skill_id) ~= "string" then return end
-    finish_progression_action(player, "SkillLearn", progression_controller:learn_skill(player.UserId, skill_id))
+skill_learn_request.OnServerEvent:Connect(function(
+    player: Player,
+    trainer_id: any,
+    skill_id: any
+)
+    if not loaded_users[player.UserId] then return end
+
+    local result
+
+    if type(trainer_id) == "string" and type(skill_id) == "string" then
+        result = progression_controller:learn_skill(
+            player.UserId,
+            trainer_id,
+            skill_id
+        )
+    else
+        result = {
+            ok = false,
+            reason = "InvalidTrainerSkillRequest",
+        }
+    end
+
+    finish_progression_action(player, "SkillLearn", result)
 end)
-skill_rank_request.OnServerEvent:Connect(function(player: Player, skill_id: any)
-    if not loaded_users[player.UserId] or type(skill_id) ~= "string" then return end
-    finish_progression_action(player, "SkillRank", progression_controller:purchase_rank(player.UserId, skill_id))
+skill_rank_request.OnServerEvent:Connect(function(
+    player: Player,
+    trainer_id: any,
+    skill_id: any
+)
+    if not loaded_users[player.UserId] then return end
+
+    local result
+
+    if type(trainer_id) == "string" and type(skill_id) == "string" then
+        result = progression_controller:purchase_rank(
+            player.UserId,
+            trainer_id,
+            skill_id
+        )
+    else
+        result = {
+            ok = false,
+            reason = "InvalidTrainerSkillRequest",
+        }
+    end
+
+    finish_progression_action(player, "SkillRank", result)
 end)
 attribute_respec_request.OnServerEvent:Connect(function(player: Player)
     if not loaded_users[player.UserId] then return end

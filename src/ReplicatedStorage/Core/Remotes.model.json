@@ -1,77 +1,29 @@
 {
   "ClassName": "Folder",
   "Children": [
-    {
-      "Name": "ProfileSnapshot",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "InventorySnapshot",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ProgressionSnapshot",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ProgressionActionResult",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "IdentitySelectionRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "AttributeCommitRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "SkillLearnRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "SkillRankRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "AttributeRespecRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "SkillRespecRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "LoadoutRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "DungeonEntryRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "DungeonEntryResult",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "DungeonStateChanged",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ReviveRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ReviveStateChanged",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ReturnRequest",
-      "ClassName": "RemoteEvent"
-    },
-    {
-      "Name": "ProgressionDebugRequest",
-      "ClassName": "RemoteEvent"
-    }
+    {"Name": "ProfileSnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "InventorySnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "EquipmentSnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "EquipmentEquipRequest", "ClassName": "RemoteEvent"},
+    {"Name": "EquipmentUnequipRequest", "ClassName": "RemoteEvent"},
+    {"Name": "EquipmentActionResult", "ClassName": "RemoteEvent"},
+    {"Name": "ProgressionSnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "ProgressionActionResult", "ClassName": "RemoteEvent"},
+    {"Name": "TrainerSnapshot", "ClassName": "RemoteEvent"},
+    {"Name": "TrainerSnapshotRequest", "ClassName": "RemoteEvent"},
+    {"Name": "IdentitySelectionRequest", "ClassName": "RemoteEvent"},
+    {"Name": "AttributeCommitRequest", "ClassName": "RemoteEvent"},
+    {"Name": "SkillLearnRequest", "ClassName": "RemoteEvent"},
+    {"Name": "SkillRankRequest", "ClassName": "RemoteEvent"},
+    {"Name": "AttributeRespecRequest", "ClassName": "RemoteEvent"},
+    {"Name": "SkillRespecRequest", "ClassName": "RemoteEvent"},
+    {"Name": "LoadoutRequest", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonEntryRequest", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonEntryResult", "ClassName": "RemoteEvent"},
+    {"Name": "DungeonStateChanged", "ClassName": "RemoteEvent"},
+    {"Name": "ReviveRequest", "ClassName": "RemoteEvent"},
+    {"Name": "ReviveStateChanged", "ClassName": "RemoteEvent"},
+    {"Name": "ReturnRequest", "ClassName": "RemoteEvent"},
+    {"Name": "ProgressionDebugRequest", "ClassName": "RemoteEvent"}
   ]
 }
