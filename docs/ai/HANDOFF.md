@@ -2,7 +2,7 @@
 
 **Date:** 9 September 2026
 **Active gate:** Phase 2C.B - Equipment + Trainer Architecture
-**Status:** ACCEPTED - MERGED LOCALLY / PUSH PENDING
+**Status:** ACCEPTED - MERGED / PUSHED
 
 ## Canonical accepted gameplay boundary
 
@@ -131,3 +131,15 @@ The merged gameplay/source tree remains identical to the accepted checkpoint.
 Only continuity documents differ to record the local merge state.
 
 Remote push has not occurred and remains a separate project-owner decision.
+## Phase 2C.B remote push complete
+
+Phase 2C.B is accepted, merged and pushed to `origin/main`.
+
+Accepted checkpoint:
+`fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`
+
+Gameplay merge:
+`0edc542fafccd4a05c13a0a8940718575e536ab2`
+
+The final continuity-doc closeout commit changes documentation only. The art
+branch remains isolated and untouched.

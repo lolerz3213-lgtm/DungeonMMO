@@ -4,7 +4,7 @@
 **Canonical long-form roadmap:** external Roadmap v1.30
 **Current phase:** Phase 2C
 **Current gate:** Phase 2C.B - Equipment + Trainer Architecture
-**Phase 2C.B status:** ACCEPTED - MERGED LOCALLY / PUSH PENDING
+**Phase 2C.B status:** ACCEPTED - MERGED / PUSHED
 **Phase 2C.A status:** ACCEPTED / MERGED / PUSHED
 **Phase 2B status:** FUNCTIONALLY COMPLETE
 
@@ -195,3 +195,15 @@ checkpoint. Only continuity documents record the new local integration state.
 
 Push remains a separate explicit gate. No Roblox publish, PROD, Robux,
 monetisation or art-branch action is part of this local merge.
+## Phase 2C.B remote integration
+
+The accepted Phase 2C.B checkpoint
+`fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47` was merged through local merge
+commit `0edc542fafccd4a05c13a0a8940718575e536ab2` and pushed to `origin/main`
+on 9 September 2026.
+
+A final continuity-doc closeout commit records the pushed state. Gameplay/source
+content remains the accepted Phase 2C.B tree; the closeout commit changes only
+CURRENT_STATE.md, HANDOFF.md and TEST_MATRIX.md.
+
+No Roblox publish, PROD, Robux, monetisation or art-branch action occurred.

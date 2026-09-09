@@ -125,7 +125,7 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** ACCEPTED - PHASE 2C.B MERGED LOCALLY / PUSH PENDING
+**Status:** ACCEPTED - PHASE 2C.B MERGED / PUSHED
 
 Phase 2C.A is accepted, merged and pushed.
 
@@ -430,3 +430,14 @@ feature branch. Merge and push remain separate deliberate actions.
 - [x] Art worktree remains untouched.
 - [x] No Roblox publish, PROD, Robux or monetisation action occurred.
 - [ ] Push local `main` to `origin/main` only after separate explicit approval.
+### Phase 2C.B remote push verification
+
+- [x] Remote `origin/main` verified unchanged immediately before push.
+- [x] Server-side `refs/heads/main` verified unchanged immediately before push.
+- [x] Accepted Phase 2C.B merge pushed without force.
+- [x] Server-side main verified at the Phase 2C.B merge commit.
+- [x] Accepted Phase 2C.B checkpoint verified reachable from remote main.
+- [x] Final continuity-doc closeout changes only CURRENT_STATE/HANDOFF/TEST_MATRIX.
+- [x] Final local main, origin/main and server main verified equal.
+- [x] Final origin/main...main ahead/behind verified 0/0.
+- [x] No Roblox publish, PROD, Robux, monetisation or art-branch action occurred.
