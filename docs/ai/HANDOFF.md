@@ -1,8 +1,9 @@
 # DungeonMMO Development Handoff
 
-**Date:** 9 September 2026
-**Active gate:** Phase 2C.C - Equipment Effects + Combat Integration
-**Status:** ACCEPTED - MERGED / PUSHED
+**Date:** 10 September 2026
+**Active gate:** Phase 2C.D - Mage Base-Class + Support Foundation
+**Status:** ACCEPTED - GAMEPLAY MERGED / PUSHED
+**Canonical external roadmap:** DungeonMMO Roadmap v1.33
 
 ## Accepted gameplay boundary
 
@@ -11,128 +12,131 @@
 - Phase 2B.A/B/C: ACCEPTED; Phase 2B functionally complete.
 - Phase 2C.A: ACCEPTED / merged / pushed.
 - Phase 2C.B: ACCEPTED / merged / pushed.
-- Phase 2C.B acceptance:
-  `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
-- Phase 2C.B gameplay merge:
-  `0edc542fafccd4a05c13a0a8940718575e536ab2`.
 - Phase 2C.C: ACCEPTED / merged / pushed.
-- Phase 2C.C accepted main checkpoint:
-  `4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
-- Phase 2C.C starting main baseline:
-  `8587c1546aa1689b69606f860fb5c18a847de617`.
-- Canonical long-form roadmap: external Roadmap v1.31.
+- Phase 2C.D: ACCEPTED; gameplay merged/pushed.
+- Phase 2C.D accepted gameplay checkpoint:
+  `41ac374496f01a1685b62cfd6d6237d0a7e702ec`.
+- Phase 2C.D parent / prior canonical main:
+  `38feb4a3c15286c56a98ab686357b7cf30f2c693`.
 
-Windows repository verification is complete: local `main`, `origin/main` and
-GitHub server `main` matched
-`8587c1546aa1689b69606f860fb5c18a847de617`. The accepted candidate is in
-`DungeonMMO_Phase2CC_Recovery2` on
-`wip/phase-2c-c-equipment-effects-recovery-2`.
+GitHub `main` was independently confirmed at the 2C.D gameplay checkpoint after
+the approved fast-forward. No Roblox publish occurred.
 
-## Phase 2C.C locked architecture
+## Phase 2C.D locked player-facing behaviour
 
-Approach A is approved:
+Human and Elf can select Mage.
 
-1. Keep the Phase 2C.B six-slot persistent Equipment table.
-2. Put representative combat metadata in `ItemDefinitions`.
-3. Resolve it through one pure `EquipmentStatResolver`.
-4. Deep-clone Equipment into `ProgressionRuntimeState` and cache resolved
-   effects for the active authoritative runtime character.
-5. Keep existing combat consumers on runtime getters.
-6. Make runtime Equipment, not prototype Tools, authoritative for weapon tags.
-7. Keep Dungeon Equipment non-mutable and let the runtime snapshot lock the
-   gear brought into the run.
-8. Send server-computed Equipment effects/previews/deltas to the Base UI; the
-   client only formats them.
-9. Make the current sword/shield presentation Equipment-aware where practical,
-   without creating an armour-art system.
+Mage starts with:
 
-Working proof effects are limited to physical damage, flat MaxHealth and
-critical chance. They are not final balance.
+1. Apprentice Arcane Wand in persistent Weapon Equipment.
+2. Spirit Orb as the free ranged basic attack.
+3. Wind Strike in starter skill slot 1.
+4. Arcane Ward in starter skill slot 2.
+5. Mage Heal in starter skill slot 3.
 
-## Accepted Phase 2C.C responsibilities
+Spirit Orb uses the existing three-step combo timing internally but presents as
+Orb -> Orb -> larger AoE Orb for an authoritative ArcaneWand.
 
-### Shared Core
+Wand basic attacks movement-lock the Mage during WindUp/Active/Recovery.
+Block/Dodge can cancel them.
 
-- `ItemDefinitions`: representative combat metadata only.
-- `EquipmentStatResolver`: pure slot/item -> effect/tag resolution.
-- `EquipmentEffectPresentation`: display formatting only.
-- `EquipmentPresentationRules`: representative sword/shield display decisions.
+Wind Strike is a charged Intellect-scaled ranged spell. Prototype Rank 1 uses
+30 base damage, 25 Mana, 5 second cooldown and 1.0 second charge. Block/Dodge
+can cancel before release; cancelled charge fires nothing, spends no Mana and
+starts no Wind Strike cooldown.
 
-### Server Core
+Arcane Ward is a Spirit-scaled replace-not-stack absorption shield and exposes
+current/max shield values to the local Ward HUD.
 
-- `ProgressionRuntimeState`: authoritative Equipment snapshot, final gear-aware
-  combat getters and runtime weapon tags.
-- `EquipmentService`: sanitized item/current/preview/delta effect snapshots.
+Mage Heal is Spirit-scaled, supports injured aimed allies or injured self, and
+uses different Human/Elf immediate-vs-HoT delivery while preserving comparable
+baseline total.
 
-### Base
+Fighter Mend is self-only and costs 20 Stamina.
 
-- successful equip/unequip refreshes the runtime character before sending the
-  refreshed snapshot;
-- Equipment UI shows meaningful current effects and server-computed changes.
+The Marauder Captain prototype chase speed is 17.5 studs/second. Normal
+Marauder tuning is unchanged by this gate.
 
-### Dungeon combat presentation
+## Authority and persistence
 
-- prototype sword/shield scripts render according to server-owned equipped item
-  attributes;
-- the visual objects own no combat stats or skill eligibility;
-- standalone Studio testing uses a `RunService:IsStudio()`-guarded in-memory
-  representative-loadout bootstrap only so the visual gate can be exercised.
+Server authority owns:
 
-## Dungeon run-lock invariant
+- race/base-class runtime identity;
+- persistent Equipment and weapon tags;
+- Mana/Stamina spending and cooldowns;
+- Wand/offensive-cast movement lock;
+- projectile travel/collision/AoE;
+- target legality;
+- Intellect/Spirit scaling;
+- Ward absorption;
+- healing/HoT timing;
+- charged-cast cancellation and commit timing.
 
-After `ProgressionRuntimeState.set_character`, later mutation of the source
-Inventory or Equipment table cannot change active combat effects. Only a new
-authoritative runtime seed can change the active Equipment snapshot.
+Persistent Equipment, not client Tool presence, owns weapon-family authority.
 
-This is sufficient for Phase 2C.C because Dungeon equipment mutation is already
-rejected by the accepted Phase 2C.B EquipmentService boundary.
+Dungeon Equipment remains Base-selected, read-only and run-locked. Mage uses the
+accepted schema-v5 identity/progression/inventory/equipment structures with no
+new profile schema version.
 
-## Deferred scope
+## Accepted evidence
 
-Do not add Mage/Ranger, advanced classes/quests, crafting, trading/economy,
-unique item instances, random affixes, durability, enhancement, final gear
-balance, large equipment-content production, Race Change/Robux or environment
-art.
+Project-owner gameplay acceptance was received after the v6 Dungeon build was
+played successfully.
 
-## Migration qualification
+Observed/accepted behaviour included:
 
-The previous live legacy migration proof was waived only for this pre-player
-TEST project. It is not a PASS. A real live migration proof remains mandatory
-before a future release involving existing player profiles.
+- Spirit Orb projectile basic chain and damage;
+- larger third-hit AoE Orb;
+- attack movement lock and restoration;
+- Wind Strike charge/release/damage;
+- Block/Dodge cancellation of charged casting;
+- working Arcane Ward with remaining-shield display;
+- working Mage self-heal when injured;
+- Wand presentation;
+- faster Captain pursuit;
+- normal dungeon completion.
 
-## Art isolation
+The accepted gameplay commit changed exactly 49 files. Fresh Base and Dungeon
+Rojo builds succeeded before commit and again before the remote fast-forward.
+The gameplay worktree remained clean. No Roblox publish, PROD, Robux,
+monetisation or art-branch action occurred.
 
-`art/dungeon-environment-prototype` is strictly separate. Do not switch to it,
-merge it, reset/clean it, apply its stash, or copy from it during gameplay work.
+## Qualification that must remain visible
 
-## Evidence state and exact next action
+The acceptance Studio run showed one stale Mage identity test assertion still
+expecting the older Ward/Heal-only loadout. The test expectation was corrected
+afterward and Base/Dungeon rebuilt, but a fresh Studio runtime PASS for that
+corrected assertion was not separately captured. Do not report it as observed
+runtime GREEN.
 
-Phase 2C.C is ACCEPTED / MERGED / PUSHED at
-`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
+Carry the earlier 2C.C evidence qualifications as historical notes: Arc Slash
+was not manually exercised in the 2C.C acceptance run, and the newly authored
+2C.C automated Roblox runtime tests were not separately observed GREEN then.
 
-Accepted evidence retained:
+The pre-player legacy migration waiver is not a migration PASS and must be
+revalidated before a release involving real existing player profiles.
 
-- exact 27-file implementation boundary verified;
-- `git diff --check` clean before the gameplay commit;
-- TEMP Base and Dungeon Rojo builds succeeded;
-- Base Equipment UI showed the full representative set and expected aggregate
-  `+13% Physical Damage`, `+25 Max Health`, `+1% Critical Chance`;
-- the current Equipment UI is accepted as a functional placeholder, with the
-  large visual overhaul deferred;
-- Dungeon manual play reported the requested equipment-aware sword/shield and
-  normal combat/dungeon regression flow working;
-- Arc Slash was not manually exercised in the 2C.C acceptance run because it
-  was not unlocked/equipped; that limitation was explicitly accepted;
-- Roblox automated runtime GREEN was not separately captured and is not claimed;
-- no Roblox publish, PROD, Robux, monetisation or art-branch action occurred.
+## Safety / worktrees
 
-GitHub `main` was independently confirmed at the accepted checkpoint after the
-fast-forward push.
+Primary repository:
+`C:\Users\Remko\Documents\Roblox\DungeonMMO`
 
-No later Phase 2C sub-gate is named in the tracked repository. Before new source
-work, read the canonical external Roadmap v1.31 and explicitly select/approve
-the next roadmap gate. Do not infer a Phase 2C.D from numbering alone.
+Accepted 2C.D worktree:
+`C:\Users\Remko\Documents\Roblox\DungeonMMO_Phase2CD_v6`
 
-Preserve the older dirty recovery worktrees and the separate
-`art/dungeon-environment-prototype` worktree unless a later explicit cleanup
-decision says otherwise.
+Do not reset, clean, switch into, merge, copy from or otherwise disturb
+`art/dungeon-environment-prototype`.
+
+Preserve older dirty recovery worktrees unless a later explicit cleanup decision
+says otherwise.
+
+## Exact next action
+
+The external Roadmap v1.33 identifies Ranger as the remaining prototype
+starting archetype after Fighter and Mage.
+
+Next action: design the Ranger base-class foundation while preserving all
+accepted Fighter/Mage/race/progression/equipment/dungeon contracts.
+
+Do **not** start Ranger source implementation or assign a numbered Phase 2C.E
+gate until its design has been explicitly approved.

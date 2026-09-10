@@ -1,11 +1,11 @@
 # DungeonMMO Current Engineering State
 
-**State date:** 9 September 2026
-**Canonical long-form roadmap:** external DungeonMMO Roadmap v1.31
+**State date:** 10 September 2026
+**Canonical long-form roadmap:** external DungeonMMO Roadmap v1.33
 **Current phase:** Phase 2C
-**Current gate:** Phase 2C.C - Equipment Effects + Combat Integration
+**Current gate:** Phase 2C.D - Mage Base-Class + Support Foundation
+**Phase 2C.D status:** ACCEPTED - MERGED / PUSHED GAMEPLAY CHECKPOINT
 **Phase 2C.C status:** ACCEPTED - MERGED / PUSHED
-**Phase 2C.B status:** ACCEPTED - MERGED / PUSHED
 
 ## Canonical accepted baseline
 
@@ -14,26 +14,71 @@
 - Phase 2B.A/B/C: ACCEPTED; Phase 2B functionally complete.
 - Phase 2C.A Race + Character Identity Foundation: ACCEPTED / merged / pushed.
 - Phase 2C.B Equipment + Trainer Architecture: ACCEPTED / merged / pushed.
-- Phase 2C.B acceptance checkpoint:
-  `fd0d73df70b97efc4b3fb241e2fc6e5061a3ed47`.
-- Phase 2C.B gameplay merge:
-  `0edc542fafccd4a05c13a0a8940718575e536ab2`.
-- Phase 2C.C accepted / merged / pushed main checkpoint:
-  `4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
-- Phase 2C.C started from accepted main:
-  `8587c1546aa1689b69606f860fb5c18a847de617`.
+- Phase 2C.C Equipment Effects + Combat Integration: ACCEPTED / merged / pushed.
+- Phase 2C.D Mage Base-Class + Support Foundation: ACCEPTED; gameplay checkpoint merged/pushed.
+- Phase 2C.D accepted gameplay checkpoint:
+  `41ac374496f01a1685b62cfd6d6237d0a7e702ec`.
+- Phase 2C.D started from:
+  `38feb4a3c15286c56a98ab686357b7cf30f2c693`.
 
-The real Windows repository was reverified on 9 September 2026 before the
-commit gate: local `main`, `origin/main` and GitHub server `main` all matched
-`8587c1546aa1689b69606f860fb5c18a847de617`. The accepted candidate is isolated
-in `DungeonMMO_Phase2CC_Recovery2` on
-`wip/phase-2c-c-equipment-effects-recovery-2`.
+GitHub `main` was independently verified at
+`41ac374496f01a1685b62cfd6d6237d0a7e702ec` after the approved fast-forward.
+The feature branch `wip/phase-2c-d-mage-foundation-v6` was preserved at the
+same checkpoint. No Roblox publish occurred.
 
-## Approved Phase 2C.C architecture
+## Accepted Phase 2C.D gameplay architecture
 
-The project owner approved Approach A on 9 September 2026.
+Human and Elf can begin as Mage while Fighter remains supported.
 
-Phase 2C.C reuses the accepted Phase 2C.B six-slot Equipment table:
+Mage starts with:
+
+- free ranged Spirit Orb basic attacks;
+- Wind Strike as a charged magical damage skill;
+- Arcane Ward as a Spirit-scaled absorption shield;
+- Mage Heal as a Spirit-scaled self/ally heal;
+- one Apprentice Arcane Wand equipped in the persistent Weapon slot.
+
+Spirit Orb is a basic attack, not a hotbar skill or Mana spender. Its three-hit
+cadence is Orb -> Orb -> larger AoE Orb. Projectile travel, collision, legal
+targets and damage remain server-authoritative.
+
+Wind Strike establishes the charged-cast contract: 1.0 second charge, visible
+commitment, Intellect-scaled magical damage, 25 Mana and 5 second cooldown.
+Block or Dodge can cancel the charge before release; cancelled charge spends no
+Mana and starts no Wind Strike cooldown.
+
+Mage Wand basic attacks and offensive charged casts movement-lock the caster
+during their committed attack phases. Block/Dodge retain higher-priority
+cancellation. This is intentional anti-kiting combat pacing.
+
+The Marauder Captain prototype chase speed is 17.5 studs/second, slightly above
+ordinary 16-stud player movement, so sustained damage-while-running cannot
+kite the boss forever.
+
+## Mana and support foundation
+
+Mage runtime Mana uses the accepted effective-stat/diminishing-return
+architecture:
+
+- baseline Max Mana 100;
+- baseline regen 8/second;
+- 1 second post-spend regen delay;
+- Spirit primarily improves Max Mana, regen, healing and Ward;
+- Intellect primarily improves magical damage and secondarily Max Mana.
+
+Arcane Ward is replace-not-stack, consumes Ward HP before Humanoid Health and
+replicates current/max Ward values for the local Ward HUD.
+
+Mage Heal targets a valid injured aimed ally or falls back to injured self.
+Human and Elf use different immediate/HoT delivery profiles while retaining the
+same baseline total.
+
+Fighter Mend remains available but is self-only in this gate and costs
+20 Stamina.
+
+## Equipment and persistence invariants
+
+The accepted six-slot Equipment table remains authoritative:
 
 - Weapon
 - OffHand
@@ -42,115 +87,82 @@ Phase 2C.C reuses the accepted Phase 2C.B six-slot Equipment table:
 - Gloves
 - Boots
 
-One pure `EquipmentStatResolver` interprets representative item metadata. The
-existing `ProgressionRuntimeState` deep-clones Equipment when the authoritative
-character is seeded, resolves its effects once, and supplies final combat
-getters to existing combat code.
+Persistent Equipment, not Tool/model presence, owns weapon-family authority.
 
-Working proof modifier families are deliberately limited to:
+Dungeon Equipment remains run-locked and non-mutable. The Dungeon deep-clones
+the Equipment state brought into the run; newly looted or later-mutated source
+Equipment cannot alter the active run without a new authoritative seed.
 
-- `PhysicalDamageBonus`;
-- `MaxHealthFlat`;
-- `CriticalChanceBonus`.
+Mage identity, starter skills, loadout, Wand inventory/equipment and attributes
+reuse the accepted schema-v5 persistence architecture. No profile schema bump
+was introduced for 2C.D.
 
-These are working architecture values, not final gear balance.
+## Accepted evidence
 
-Persistent Equipment is authoritative for weapon tags. Prototype sword/shield
-objects are presentation only and must never grant combat authority merely by
-existing on the character.
+Phase 2C.D was accepted after manual Dungeon play confirmed the requested Mage
+combat behaviour:
 
-## Dungeon run-lock invariant
+- Spirit Orb basic attacks fired as projectiles and damaged enemies;
+- the third basic attack used the larger AoE Orb;
+- Wand basic attacks movement-locked the Mage during commitment;
+- normal movement returned after the attack;
+- Wind Strike visibly charged, fired and dealt damage;
+- Block/Dodge cancelled the charged cast;
+- Arcane Ward worked and exposed remaining shield;
+- Mage Heal worked on the injured caster;
+- the Apprentice Arcane Wand presentation was present;
+- the faster Captain could close distance and the dungeon completed normally;
+- TEMP Base and Dungeon Rojo builds succeeded before the accepted commit and
+  again before the fast-forward merge;
+- exact accepted gameplay boundary was 49 files;
+- worktree remained clean through commit/push/merge;
+- no Roblox place was published;
+- no PROD / Robux / monetisation action occurred;
+- the separate art worktree was not touched.
 
-Dungeon combat uses the Equipment brought into the run through the deep-cloned
-runtime character snapshot. Later source Inventory or Equipment mutation cannot
-change the active runtime effects until an explicit authoritative reseed.
+## Evidence qualification
 
-Equipment mutation remains Base-only. Newly looted equipment may enter
-Inventory but must not affect the active Dungeon run.
+The Studio run used for gameplay acceptance exposed a stale
+`MageIdentityServiceTest` expectation from the earlier two-skill Mage prototype.
+That expectation was corrected to the approved Wind Strike / Ward / Heal
+loadout and Base/Dungeon rebuilt successfully afterward.
 
-No duplicate `RunEquipment` state is being added to `DungeonSessionService`.
+A fresh Roblox Studio runtime PASS for that corrected assertion was not
+separately captured after the cleanup. Do not rewrite that qualification as a
+runtime GREEN result.
 
-## Accepted Phase 2C.C implementation
+The earlier Phase 2C.C qualifications also remain visible history: Arc Slash was
+not manually exercised during the 2C.C acceptance run, and the new 2C.C Roblox
+automated runtime family was not separately captured GREEN at that time.
 
-The isolated pre-commit candidate contains:
-
-- representative data-driven equipment combat metadata;
-- pure equipment stat resolution;
-- Equipment-aware `ProgressionRuntimeState` combat getters;
-- authoritative runtime weapon tags for Arc Slash requirements;
-- server-computed Equipment UI effect/preview/delta snapshots;
-- client-only effect formatting and a more informative Base Equipment panel;
-- equipment-aware prototype sword/shield presentation through server-owned
-  presentation attributes;
-- focused tests for resolver, runtime run-lock, weapon requirements, snapshot
-  effects, formatting and presentation decisions;
-- a strictly Studio-only representative-loadout bootstrap for standalone
-  Dungeon visual evidence;
-- continuity/spec/plan updates for Phase 2C.C.
-
-The project owner explicitly accepted Phase 2C.C. Commit
-`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8` was pushed on the feature branch,
-then `main` was fast-forwarded and pushed to that exact commit. Roblox publish
-was not performed.
-
-## Evidence status
-
-Fresh Windows evidence was recorded on 9 September 2026 from
-`DungeonMMO_Phase2CC_Recovery2`:
-
-- exact changed-file boundary: 27 expected files only;
-- `git diff --check`: clean;
-- repository-pinned Rojo reported `7.7.0-rc.1`;
-- TEMP Base build succeeded;
-- TEMP Dungeon build succeeded;
-- Base Equipment UI showed all six Marauder items equipped and the expected
-  aggregate `+13% Physical Damage`, `+25 Max Health`, `+1% Critical Chance`;
-- the current Equipment UI was accepted as a functional placeholder, with a
-  larger visual overhaul explicitly deferred;
-- Dungeon manual play reported the equipment-aware sword/shield presentation,
-  normal combat and requested dungeon regression flow working.
-
-Arc Slash was not manually exercised because it was not unlocked/equipped in
-the test character. The project owner accepted that limitation for this gate.
-The focused Arc Slash/equipment tests are authored, but Roblox automated
-runtime GREEN was not separately captured and must not be claimed.
-
-## Carried migration qualification
-
-The earlier live legacy migration proof was deliberately waived only for the
-pre-player TEST project. This waiver is NOT a PASS.
-
-A real live migration proof remains mandatory before any future release that
-must support existing player profiles.
+The pre-player live legacy migration proof waiver is still not a PASS. A real
+live migration proof remains mandatory before any release that must support real
+existing profiles.
 
 ## Environment and safety
 
 - Local primary repo:
   `C:\Users\Remko\Documents\Roblox\DungeonMMO`
+- Phase 2C.D gameplay worktree:
+  `C:\Users\Remko\Documents\Roblox\DungeonMMO_Phase2CD_v6`
 - `base.project.json` = Starting Base.
 - `default.project.json` = Test Dungeon.
 - Environment: TEST.
 - Live paid revives: disabled.
-- No PROD / Robux / monetisation action is authorized by Phase 2C.C.
-
-## Separate art work
-
-`art/dungeon-environment-prototype` remains isolated and untouched. Never
-switch to it, merge it, reset it, clean it, apply its stash, or copy it into
-Phase 2C.C gameplay work.
+- No PROD / Robux / monetisation action is authorized by this closeout.
+- `art/dungeon-environment-prototype` remains isolated and must not be mixed
+  into gameplay work.
 
 ## Exact next engineering action
 
-Phase 2C.C is closed as ACCEPTED / MERGED / PUSHED at
-`4f13a4c3868f9f36f09b7519f5e81ec947dbc9b8`.
+Phase 2C.D gameplay is closed at
+`41ac374496f01a1685b62cfd6d6237d0a7e702ec`.
 
-The tracked repository does not currently name a later Phase 2C sub-gate.
-Before new source work, read the canonical external DungeonMMO Roadmap v1.31
-and explicitly select/approve the next roadmap gate rather than inferring a
-Phase 2C.D.
+Roadmap v1.33 leaves Ranger as the remaining prototype starting archetype after
+Fighter and Mage. The next engineering action is therefore a **Ranger design
+gate**, not automatic source implementation. Do not infer or lock a numbered
+Phase 2C.E implementation until the Ranger design is explicitly approved.
 
-Retain the Phase 2C.C qualifications: the current Equipment UI is an accepted
-functional placeholder; Arc Slash was not manually exercised during the 2C.C
-acceptance run because it was not unlocked/equipped; Roblox automated runtime
-GREEN was not separately captured; no Roblox publish occurred; and the separate
-art worktree remains untouched.
+Preserve Fighter/Mage combat, race identity, equipment/run-lock,
+progression/loadout/proficiency, revive/completion, TEST/PROD and art-isolation
+contracts while designing Ranger.

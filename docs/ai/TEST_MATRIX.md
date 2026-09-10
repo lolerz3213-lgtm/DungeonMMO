@@ -125,7 +125,7 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** ACCEPTED - PHASE 2C.C MERGED / PUSHED
+**Status:** ACCEPTED - PHASE 2C.D GAMEPLAY MERGED / PUSHED
 
 Phase 2C.A is accepted, merged and pushed.
 
@@ -541,3 +541,95 @@ remain visible in future handoffs.
 The tracked repository does not name a later Phase 2C sub-gate. The next
 engineering gate must be selected from the canonical external Roadmap v1.31
 before new source work; do not infer a Phase 2C.D from numbering alone.
+## Phase 2C.D - Mage Base-Class + Support Foundation
+
+**Status:** ACCEPTED - GAMEPLAY MERGED / PUSHED
+**Accepted gameplay checkpoint:**
+`41ac374496f01a1685b62cfd6d6237d0a7e702ec`
+**Starting baseline:**
+`38feb4a3c15286c56a98ab686357b7cf30f2c693`
+
+### Locked design / implementation
+
+- [x] Human and Elf can begin as Mage.
+- [x] Apprentice Arcane Wand is the Mage starter Weapon.
+- [x] persistent Equipment owns ArcaneWand authority.
+- [x] Spirit Orb is the free ranged Mage basic attack.
+- [x] Spirit Orb combo is normal Orb -> normal Orb -> larger AoE Orb.
+- [x] projectile travel/collision/target legality/damage are server-authoritative.
+- [x] Intellect drives offensive magical scaling.
+- [x] Mage runtime Mana foundation implemented.
+- [x] Spirit drives Max Mana / regen / heal / Ward scaling.
+- [x] Wind Strike is the starter charged damage skill.
+- [x] Wind Strike charge may be cancelled by Block or Dodge before resource/cooldown commit.
+- [x] Wand basic attacks movement-lock the Mage during committed phases.
+- [x] Wind Strike movement-locks during charge/release/recovery.
+- [x] Arcane Ward uses replace-not-stack absorption before Humanoid Health.
+- [x] local Ward HUD exposes current/max shield.
+- [x] Mage Heal supports aimed injured ally or injured self.
+- [x] Human/Elf Mage Heal delivery differs between instant/HoT portions.
+- [x] Fighter Mend is self-only and costs 20 Stamina.
+- [x] Marauder Captain chase speed raised to 17.5 studs/second.
+- [x] normal Marauder tuning left unchanged.
+- [x] Dungeon Equipment remains run-locked and non-mutable.
+- [x] schema-v5 persistence reused; no profile schema bump.
+- [x] no mid-run Dungeon unequip control added.
+- [x] no Roblox publish / PROD / Robux / monetisation / art-branch action.
+
+### Package / build evidence
+
+- [x] accepted gameplay commit contains exactly 49 files.
+- [x] accepted gameplay commit parent is the Phase 2C.C closeout baseline.
+- [x] gameplay worktree clean at commit.
+- [x] feature branch pushed to the accepted gameplay checkpoint.
+- [x] GitHub `main` fast-forwarded to the exact accepted gameplay checkpoint.
+- [x] GitHub `main` independently verified after merge.
+- [x] fresh TEMP Base Rojo build succeeded before the approved merge.
+- [x] fresh TEMP Dungeon Rojo build succeeded before the approved merge.
+
+### Manual Dungeon gameplay acceptance
+
+- [x] Wand presentation visible.
+- [x] Spirit Orb basic projectiles fire.
+- [x] Spirit Orb damages enemies.
+- [x] third basic Orb is visibly larger / AoE.
+- [x] Mage cannot move through committed Wand basic attack phases.
+- [x] normal movement returns after the committed attack.
+- [x] Wind Strike visibly charges.
+- [x] Wind Strike fires and damages.
+- [x] Block/Dodge can interrupt the Wind Strike charge.
+- [x] Arcane Ward works.
+- [x] remaining Ward amount is visible.
+- [x] Mage Heal works on injured self.
+- [x] faster Captain pursuit prevents effortless permanent kiting.
+- [x] normal dungeon completion still succeeds.
+
+### Runtime-evidence qualification
+
+- [x] stale Mage identity test expectation was identified.
+- [x] stale expectation was updated to Wind Strike / Ward / Heal slots 1/2/3.
+- [x] Base rebuilt after the test cleanup.
+- [x] Dungeon rebuilt after the test cleanup.
+- [ ] fresh Roblox Studio runtime PASS for the corrected Mage identity assertion separately captured.
+
+The unchecked item above is an explicit evidence qualification, not a known
+gameplay failure. Do not rewrite it as runtime GREEN without a fresh Studio run.
+
+The earlier Phase 2C.C manual Arc Slash and automated-runtime evidence
+qualifications also remain historical qualifications.
+
+### Acceptance result
+
+- [x] project-owner gameplay acceptance received.
+- [x] local accepted gameplay commit created.
+- [x] feature branch push explicitly approved/completed.
+- [x] main fast-forward explicitly approved/completed.
+- [x] no Roblox publish occurred.
+- [x] gameplay feature worktree/branch preserved after merge.
+
+Result: Phase 2C.D gameplay is ACCEPTED / MERGED / PUSHED at
+`41ac374496f01a1685b62cfd6d6237d0a7e702ec`.
+
+The external Roadmap v1.33 leaves Ranger as the remaining prototype starting
+archetype. Ranger is the next **design** target; no numbered Phase 2C.E source
+gate is locked until that design is explicitly approved.
