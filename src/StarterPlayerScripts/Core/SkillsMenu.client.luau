@@ -35,7 +35,7 @@ close.Position=UDim2.fromOffset(560,10); close.Size=UDim2.fromOffset(44,38); clo
 local status=Instance.new("TextLabel")
 status.Position=UDim2.fromOffset(16,52); status.Size=UDim2.fromOffset(588,34); status.BackgroundTransparency=1; status.TextColor3=Color3.fromRGB(215,215,215); status.TextXAlignment=Enum.TextXAlignment.Left; status.Text="Select a learned skill, then choose a slot."; status.Parent=panel
 
-local skill_ids={"ShieldBash","Mend","ArcSlash"}
+local skill_ids={"ShieldBash","Mend","ArcSlash","WindStrike","ArcaneWard","MageHeal"}
 local skill_buttons:{[string]:TextButton}={}
 for index,skill_id in ipairs(skill_ids) do
     local button=Instance.new("TextButton")

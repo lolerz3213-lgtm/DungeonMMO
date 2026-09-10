@@ -55,6 +55,13 @@ function Bridge.award_heal(player:any,skill_id:string,target_player:any,effectiv
     return grant_capped(player,skill_id,math.min(10,effective_heal),"Heal")
 end
 
+function Bridge.award_support(player:any,skill_id:string,target_player:any,effective_amount:number):any
+    if not bound or effective_amount<=0 then return {ok=true,granted=0,reason="IneligibleContribution"} end
+    if not bound.encounter_service:is_member_active(player.UserId) then return {ok=true,granted=0,reason="IneligibleContribution"} end
+    if not target_player or not bound.encounter_service:is_member_active(target_player.UserId) then return {ok=true,granted=0,reason="IneligibleContribution"} end
+    return grant_capped(player,skill_id,math.min(10,effective_amount),"Support")
+end
+
 function Bridge.award_control(player:any,skill_id:string,target:any,_control_kind:string,meaningful:boolean):any
     if not meaningful or not bound or not eligible(player,target) then return {ok=true,granted=0,reason="IneligibleContribution"} end
     return grant_capped(player,skill_id,5,"Control")

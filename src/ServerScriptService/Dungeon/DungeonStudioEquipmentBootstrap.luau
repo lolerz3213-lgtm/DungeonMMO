@@ -3,7 +3,7 @@
 
 local DungeonStudioEquipmentBootstrap = {}
 
-local REPRESENTATIVE_LOADOUT = table.freeze({
+local FIGHTER_LOADOUT = table.freeze({
     Weapon = "marauder_sword",
     OffHand = "marauder_shield",
     Helmet = "marauder_helmet",
@@ -12,20 +12,27 @@ local REPRESENTATIVE_LOADOUT = table.freeze({
     Boots = "marauder_boots",
 })
 
---[[
-Seeds missing representative equipment into one in-memory Studio character.
+local MAGE_LOADOUT = table.freeze({
+    Weapon = "apprentice_arcane_wand",
+})
 
-Existing slot values are preserved so deliberate test setup can override the
-bootstrap. This helper is invoked only behind RunService:IsStudio() and never
-owns production equipment mutation.
+local function loadout_for(character: any): any
+    local class_id =
+        type(character) == "table"
+        and type(character.Identity) == "table"
+        and character.Identity.BaseClassId
+        or nil
 
-Args:
-    character (any): Loaded in-memory Studio character table.
+    if class_id == "Mage" then
+        return MAGE_LOADOUT
+    end
 
-Returns:
-    number: Number of previously empty slots populated.
-]]
-function DungeonStudioEquipmentBootstrap.seed(character: any): number
+    return FIGHTER_LOADOUT
+end
+
+function DungeonStudioEquipmentBootstrap.seed(
+    character: any
+): number
     if type(character) ~= "table" then
         return 0
     end
@@ -36,7 +43,9 @@ function DungeonStudioEquipmentBootstrap.seed(character: any): number
 
     local changed = 0
 
-    for slot, item_id in pairs(REPRESENTATIVE_LOADOUT) do
+    for slot, item_id in pairs(
+        loadout_for(character)
+    ) do
         if character.Equipment[slot] == nil then
             character.Equipment[slot] = item_id
             changed += 1
@@ -46,4 +55,6 @@ function DungeonStudioEquipmentBootstrap.seed(character: any): number
     return changed
 end
 
-return table.freeze(DungeonStudioEquipmentBootstrap)
+return table.freeze(
+    DungeonStudioEquipmentBootstrap
+)

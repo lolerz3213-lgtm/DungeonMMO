@@ -129,6 +129,19 @@ local CombatConfig = {
         GUARD_BREAK_REGEN_DELAY_SECONDS = 1.5,
     },
 
+    MANA = {
+        REGEN_DELAY_SECONDS = 1.0,
+    },
+
+    SPIRIT_ORB = {
+        BASE_DAMAGE = 10,
+        SPEED_STUDS_PER_SECOND = 70,
+        MAX_RANGE_STUDS = 50,
+        NORMAL_DIAMETER = 1.25,
+        FINISHER_DIAMETER = 2.5,
+        FINISHER_AOE_RADIUS = 6,
+    },
+
     DEFENSE = {
         REQUEST_ACTION_NAME = "CombatDefenseRequest",
         BLOCK_ACTION_NAME = "CombatBlock",

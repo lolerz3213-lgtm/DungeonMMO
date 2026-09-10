@@ -1,45 +1,43 @@
 --!strict
-
 local ClassProgressionDefinitions = {}
+
+local HUMAN_ELF = table.freeze({"Human", "Elf"})
 
 local DEFINITIONS = table.freeze({
     Fighter = table.freeze({
         Id = "Fighter",
+        AllowedRaces = HUMAN_ELF,
         StarterSkills = table.freeze({
             "ShieldBash",
             "Mend",
         }),
+        StarterEquipment = table.freeze({}),
         TeachableSkills = table.freeze({
             "ArcSlash",
         }),
     }),
+
+    Mage = table.freeze({
+        Id = "Mage",
+        AllowedRaces = HUMAN_ELF,
+        StarterSkills = table.freeze({
+            "WindStrike",
+            "ArcaneWard",
+            "MageHeal",
+        }),
+        StarterEquipment = table.freeze({
+            Weapon = "apprentice_arcane_wand",
+        }),
+        TeachableSkills = table.freeze({}),
+    }),
 })
 
---[[
-Returns one class progression definition.
-
-Args:
-    class_id (string): Stable class identifier.
-
-Returns:
-    any?: Frozen class definition, or nil when unknown.
-]]
 function ClassProgressionDefinitions.get(
     class_id: string
 ): any?
     return DEFINITIONS[class_id]
 end
 
---[[
-Checks whether a class may learn a particular teachable skill.
-
-Args:
-    class_id (string): Stable class identifier.
-    skill_id (string): Stable skill identifier.
-
-Returns:
-    boolean: True when the skill is teachable by the class.
-]]
 function ClassProgressionDefinitions.can_teach(
     class_id: string,
     skill_id: string
@@ -50,10 +48,10 @@ function ClassProgressionDefinitions.can_teach(
         return false
     end
 
-    for _, candidate in ipairs(
+    for _, allowed_skill in ipairs(
         definition.TeachableSkills
     ) do
-        if candidate == skill_id then
+        if allowed_skill == skill_id then
             return true
         end
     end
@@ -61,4 +59,6 @@ function ClassProgressionDefinitions.can_teach(
     return false
 end
 
-return table.freeze(ClassProgressionDefinitions)
+return table.freeze(
+    ClassProgressionDefinitions
+)

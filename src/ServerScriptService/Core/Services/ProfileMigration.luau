@@ -30,6 +30,10 @@ local RaceDefinitions = require(
     shared:WaitForChild("RaceDefinitions")
 )
 
+local ClassProgressionDefinitions = require(
+    shared:WaitForChild("ClassProgressionDefinitions")
+)
+
 local CharacterIdentityRules = require(
     shared:WaitForChild("CharacterIdentityRules")
 )
@@ -211,11 +215,27 @@ local function sanitize_v4_identity(value: any): any
 
     if stage == CharacterIdentityRules.Stages.Complete then
         local race_id = known_race_id(identity.RaceId)
+        local base_class_id = identity.BaseClassId
+        local class_id = identity.ClassId
+        local base_definition = if type(base_class_id) == "string"
+            then ClassProgressionDefinitions.get(base_class_id)
+            else nil
+        local race_allowed = false
+
+        if base_definition and type(base_definition.AllowedRaces) == "table" then
+            for _, allowed_race in ipairs(base_definition.AllowedRaces) do
+                if allowed_race == race_id then
+                    race_allowed = true
+                    break
+                end
+            end
+        end
 
         if (
             not race_id
-            or identity.BaseClassId ~= FIGHTER_ID
-            or identity.ClassId ~= FIGHTER_ID
+            or not base_definition
+            or class_id ~= base_class_id
+            or not race_allowed
         ) then
             return fresh_identity(identity)
         end
@@ -223,8 +243,8 @@ local function sanitize_v4_identity(value: any): any
         return set_identity(
             identity,
             race_id,
-            FIGHTER_ID,
-            FIGHTER_ID,
+            base_class_id,
+            class_id,
             CharacterIdentityRules.Stages.Complete
         )
     end

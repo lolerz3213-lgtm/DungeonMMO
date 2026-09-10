@@ -14,7 +14,7 @@ local PresentationService = require(Combat:WaitForChild("MarauderPresentationSer
 local Factory = require(Dungeon:WaitForChild("MarauderCaptainFactory"))
 
 local TAG = "DungeonMarauderCaptain"
-local CHASE_SPEED = 11.5
+local CHASE_SPEED = 17.5
 local STOP_RANGE = 6.2
 local THINK_INTERVAL = 0.05
 local ATTACK_ORDER = {"CaptainSlash", "CaptainHeavy", "CaptainShockwave"}

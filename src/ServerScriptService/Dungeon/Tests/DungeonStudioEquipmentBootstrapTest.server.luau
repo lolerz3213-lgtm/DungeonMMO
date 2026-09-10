@@ -1,59 +1,107 @@
 --!strict
-local ServerScriptService = game:GetService("ServerScriptService")
+local ServerScriptService =
+    game:GetService("ServerScriptService")
 
-local Dungeon = ServerScriptService:WaitForChild("Dungeon")
-local Bootstrap = require(
-    Dungeon:WaitForChild("DungeonStudioEquipmentBootstrap")
-)
+local Dungeon =
+    ServerScriptService:WaitForChild("Dungeon")
+local DungeonStudioEquipmentBootstrap =
+    require(
+        Dungeon:WaitForChild(
+            "DungeonStudioEquipmentBootstrap"
+        )
+    )
 
 local assertions = 0
 
-local function check(condition: boolean, message: string)
+local function check(
+    condition: boolean,
+    message: string
+)
     assertions += 1
 
     if not condition then
-        error("[Dungeon Studio Equipment Bootstrap Tests] " .. message, 2)
+        error(
+            "[Dungeon Studio Equipment Bootstrap Tests] "
+                .. message,
+            2
+        )
     end
 end
 
-local character = {
+local fighter = {
+    Identity = {
+        BaseClassId = "Fighter",
+    },
     Equipment = {},
 }
-local changed = Bootstrap.seed(character)
 
-check(changed == 6, "fresh Studio character must receive six slots")
+local fighter_changed =
+    DungeonStudioEquipmentBootstrap.seed(
+        fighter
+    )
+
 check(
-    character.Equipment.Weapon == "marauder_sword",
-    "Studio Weapon must be the representative sword"
+    fighter_changed == 6,
+    "Fighter Studio bootstrap must retain six representative slots."
 )
 check(
-    character.Equipment.OffHand == "marauder_shield",
-    "Studio OffHand must be the representative shield"
-)
-check(
-    character.Equipment.Helmet == "marauder_helmet",
-    "Studio Helmet must be representative"
-)
-check(
-    character.Equipment.Body == "marauder_armor",
-    "Studio Body must be representative"
-)
-check(
-    character.Equipment.Gloves == "marauder_gloves",
-    "Studio Gloves must be representative"
-)
-check(
-    character.Equipment.Boots == "marauder_boots",
-    "Studio Boots must be representative"
+    fighter.Equipment.Weapon
+        == "marauder_sword"
+        and fighter.Equipment.OffHand
+            == "marauder_shield",
+    "Fighter representative weapon/off-hand must remain unchanged."
 )
 
-character.Equipment.Weapon = "custom_test_weapon"
-local second_changed = Bootstrap.seed(character)
+local mage = {
+    Identity = {
+        BaseClassId = "Mage",
+    },
+    Equipment = {},
+}
 
-check(second_changed == 0, "filled slots must not be overwritten")
+local mage_changed =
+    DungeonStudioEquipmentBootstrap.seed(
+        mage
+    )
+
 check(
-    character.Equipment.Weapon == "custom_test_weapon",
-    "deliberate Studio setup must be preserved"
+    mage_changed == 1,
+    "Mage Studio bootstrap must only fill its Weapon slot."
+)
+check(
+    mage.Equipment.Weapon
+        == "apprentice_arcane_wand",
+    "Mage representative weapon must be the Apprentice Arcane Wand."
+)
+check(
+    mage.Equipment.OffHand == nil
+        and mage.Equipment.Helmet == nil
+        and mage.Equipment.Body == nil
+        and mage.Equipment.Gloves == nil
+        and mage.Equipment.Boots == nil,
+    "Mage bootstrap must not inject Fighter armour or shield equipment."
+)
+
+local deliberate = {
+    Identity = {
+        BaseClassId = "Mage",
+    },
+    Equipment = {
+        Weapon =
+            "deliberate_test_weapon",
+    },
+}
+
+local deliberate_changed =
+    DungeonStudioEquipmentBootstrap.seed(
+        deliberate
+    )
+
+check(
+    deliberate_changed == 0
+        and deliberate.Equipment.Weapon
+            == "deliberate_test_weapon",
+    "Existing deliberate Studio equipment must not be overwritten."
 )
 
 print(

@@ -2,6 +2,7 @@
 local ItemDefinitions = {}
 
 local FIGHTER = table.freeze({"Fighter"})
+local MAGE = table.freeze({"Mage"})
 local ELF = table.freeze({"Elf"})
 
 local DEFINITIONS = table.freeze({
@@ -18,6 +19,18 @@ local DEFINITIONS = table.freeze({
         CombatModifiers = table.freeze({
             PhysicalDamageBonus = 0.10,
         }),
+    }),
+
+    apprentice_arcane_wand = table.freeze({
+        Id = "apprentice_arcane_wand",
+        Name = "Apprentice Arcane Wand",
+        Kind = "Equipment",
+        Slot = "Weapon",
+        Category = "Wand",
+        AllowedBaseClasses = MAGE,
+        Rarity = "Basic",
+        Stackable = false,
+        WeaponTags = table.freeze({"ArcaneWand"}),
     }),
 
     marauder_shield = table.freeze({
@@ -134,28 +147,10 @@ local DEFINITIONS = table.freeze({
     }),
 })
 
---[[
-Returns one immutable item definition by stable item ID.
-
-Args:
-    item_id (string): Stable item identifier.
-
-Returns:
-    any?: Frozen item definition, or nil when the ID is unknown.
-]]
 function ItemDefinitions.get(item_id: string): any?
     return DEFINITIONS[item_id]
 end
 
---[[
-Returns the complete immutable item-definition catalogue.
-
-Args:
-    None.
-
-Returns:
-    any: Frozen item-definition table keyed by stable item ID.
-]]
 function ItemDefinitions.all(): any
     return DEFINITIONS
 end

@@ -3,9 +3,7 @@
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
-if Workspace:FindFirstChild("BasePrototype") then
-    return
-end
+if Workspace:FindFirstChild("BasePrototype") then return end
 
 local root = Instance.new("Folder")
 root.Name = "BasePrototype"
@@ -39,46 +37,49 @@ portal.Parent = root
 
 local prompt = Instance.new("ProximityPrompt")
 prompt.Name = "DungeonEntryPrompt"
-prompt.ActionText = if RunService:IsStudio()
-    then "Published teleport required"
-    else "Enter Dungeon"
+prompt.ActionText = if RunService:IsStudio() then "Published teleport required" else "Enter Dungeon"
 prompt.ObjectText = "Marauder Training Dungeon"
 prompt.HoldDuration = 0.35
 prompt.MaxActivationDistance = 12
 prompt.RequiresLineOfSight = false
 prompt.Parent = portal
 
-local trainer = Instance.new("Part")
-trainer.Name = "ProgressionTrainer"
-trainer.Size = Vector3.new(6, 7, 4)
-trainer.Anchored = true
-trainer.Position = Vector3.new(18, 3.5, 6)
-trainer.Material = Enum.Material.SmoothPlastic
-trainer:SetAttribute("TrainerId", "FighterTrainer")
-trainer.Parent = root
+local function create_trainer(name: string, trainer_id: string, label_text: string, position: Vector3)
+    local trainer = Instance.new("Part")
+    trainer.Name = name
+    trainer.Size = Vector3.new(6, 7, 4)
+    trainer.Anchored = true
+    trainer.Position = position
+    trainer.Material = Enum.Material.SmoothPlastic
+    trainer:SetAttribute("TrainerId", trainer_id)
+    trainer.Parent = root
 
-local trainer_prompt = Instance.new("ProximityPrompt")
-trainer_prompt.Name = "ProgressionTrainerPrompt"
-trainer_prompt.ActionText = "Train"
-trainer_prompt.ObjectText = "Fighter Trainer"
-trainer_prompt.HoldDuration = 0.15
-trainer_prompt.MaxActivationDistance = 10
-trainer_prompt.RequiresLineOfSight = false
-trainer_prompt.Parent = trainer
+    local trainer_prompt = Instance.new("ProximityPrompt")
+    trainer_prompt.Name = "ProgressionTrainerPrompt"
+    trainer_prompt.ActionText = "Train"
+    trainer_prompt.ObjectText = label_text
+    trainer_prompt.HoldDuration = 0.15
+    trainer_prompt.MaxActivationDistance = 10
+    trainer_prompt.RequiresLineOfSight = false
+    trainer_prompt.Parent = trainer
 
-local trainer_billboard = Instance.new("BillboardGui")
-trainer_billboard.Name = "TrainerLabel"
-trainer_billboard.Size = UDim2.fromOffset(220, 48)
-trainer_billboard.StudsOffset = Vector3.new(0, 5, 0)
-trainer_billboard.AlwaysOnTop = true
-trainer_billboard.Parent = trainer
+    local trainer_billboard = Instance.new("BillboardGui")
+    trainer_billboard.Name = "TrainerLabel"
+    trainer_billboard.Size = UDim2.fromOffset(220, 48)
+    trainer_billboard.StudsOffset = Vector3.new(0, 5, 0)
+    trainer_billboard.AlwaysOnTop = true
+    trainer_billboard.Parent = trainer
 
-local trainer_label = Instance.new("TextLabel")
-trainer_label.Size = UDim2.fromScale(1, 1)
-trainer_label.BackgroundTransparency = 0.25
-trainer_label.TextScaled = true
-trainer_label.Text = "FIGHTER TRAINER"
-trainer_label.Parent = trainer_billboard
+    local trainer_label = Instance.new("TextLabel")
+    trainer_label.Size = UDim2.fromScale(1, 1)
+    trainer_label.BackgroundTransparency = 0.25
+    trainer_label.TextScaled = true
+    trainer_label.Text = string.upper(label_text)
+    trainer_label.Parent = trainer_billboard
+end
+
+create_trainer("ProgressionTrainer", "FighterTrainer", "Fighter Trainer", Vector3.new(18, 3.5, 6))
+create_trainer("MageProgressionTrainer", "MageTrainer", "Mage Trainer", Vector3.new(18, 3.5, -6))
 
 local equipment_manager = Instance.new("Part")
 equipment_manager.Name = "EquipmentManager"
@@ -128,6 +129,4 @@ label.Text = if RunService:IsStudio()
     else "TEST DUNGEON\nMarauder Training Dungeon"
 label.Parent = billboard
 
-print(
-    "[Base Prototype] Functional Base shell created with Fighter Trainer and Equipment manager."
-)
+print("[Base Prototype] Functional Base shell created with Fighter/Mage Trainers and Equipment manager.")

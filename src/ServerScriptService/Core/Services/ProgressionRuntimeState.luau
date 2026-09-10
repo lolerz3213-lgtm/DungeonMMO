@@ -366,6 +366,51 @@ function ProgressionRuntimeState.get_heal_multiplier(
 end
 
 --[[
+Returns the Phase 2C.D Intellect-based magical-damage multiplier.
+]]
+function ProgressionRuntimeState.get_magical_multiplier(
+    user_id: number
+): number
+    return AttributeConfig.magical_multiplier(
+        ProgressionRuntimeState.get_attribute(user_id, "Intellect")
+    )
+end
+
+--[[
+Returns the Phase 2C.D Spirit-based non-healing support multiplier.
+]]
+function ProgressionRuntimeState.get_support_multiplier(
+    user_id: number
+): number
+    return AttributeConfig.support_multiplier(
+        ProgressionRuntimeState.get_attribute(user_id, "Spirit")
+    )
+end
+
+--[[
+Returns the authoritative runtime Max Mana derived from Intellect and Spirit.
+]]
+function ProgressionRuntimeState.get_max_mana(
+    user_id: number
+): number
+    return AttributeConfig.max_mana(
+        ProgressionRuntimeState.get_attribute(user_id, "Intellect"),
+        ProgressionRuntimeState.get_attribute(user_id, "Spirit")
+    )
+end
+
+--[[
+Returns the authoritative runtime Mana regeneration derived from Spirit.
+]]
+function ProgressionRuntimeState.get_mana_regen_per_second(
+    user_id: number
+): number
+    return AttributeConfig.mana_regen_per_second(
+        ProgressionRuntimeState.get_attribute(user_id, "Spirit")
+    )
+end
+
+--[[
 Returns race/attribute crit chance plus the approved Equipment crit bonus.
 
 Args:

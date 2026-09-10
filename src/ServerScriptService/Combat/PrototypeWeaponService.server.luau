@@ -1,3 +1,4 @@
+--!strict
 local Players = game:GetService("Players")
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
 
@@ -11,141 +12,135 @@ local EquipmentPresentationRules = require(
 local PrototypeWeaponFactory = require(
     script.Parent:WaitForChild("PrototypeWeaponFactory")
 )
+local PrototypeWandFactory = require(
+    script.Parent:WaitForChild("PrototypeWandFactory")
+)
 
-local TOOL_NAME = "PrototypeSword"
+local TOOL_NAMES = table.freeze({
+    "PrototypeSword",
+    "PrototypeArcaneWand",
+})
 
-
---[[
-Destroys existing prototype swords from a player and character.
-
-Args:
-    player (Player): Player whose old prototype weapons are removed.
-    character (Model): Current character model.
-
-Returns:
-    None.
-]]
 local function remove_existing_tools(
     player: Player,
     character: Model
 )
-    local backpack = player:FindFirstChildOfClass("Backpack")
+    local backpack =
+        player:FindFirstChildOfClass("Backpack")
 
-    if backpack then
-        local backpack_tool = backpack:FindFirstChild(TOOL_NAME)
-
-        if backpack_tool then
-            backpack_tool:Destroy()
+    for _, name in TOOL_NAMES do
+        if backpack then
+            local tool = backpack:FindFirstChild(name)
+            if tool then
+                tool:Destroy()
+            end
         end
-    end
 
-    local equipped_tool = character:FindFirstChild(TOOL_NAME)
+        local equipped =
+            character:FindFirstChild(name)
 
-    if equipped_tool then
-        equipped_tool:Destroy()
+        if equipped then
+            equipped:Destroy()
+        end
     end
 end
 
-
---[[
-Creates and equips the representative prototype sword.
-
-Args:
-    player (Player): Player receiving the prototype sword.
-    character (Model): Spawned character that will equip the Tool.
-
-Returns:
-    None.
-]]
-local function equip_prototype_sword(
+local function equip_tool(
     player: Player,
-    character: Model
+    character: Model,
+    tool: Tool
 )
-    local humanoid = character:WaitForChild("Humanoid", 5)
-
-    if not humanoid or not humanoid:IsA("Humanoid") then
-        warn(
-            "[Combat Prototype] Could not equip sword: Humanoid missing."
+    local humanoid =
+        character:WaitForChild(
+            "Humanoid",
+            5
         )
+    local backpack =
+        player:WaitForChild(
+            "Backpack",
+            5
+        )
+
+    if not humanoid
+        or not humanoid:IsA("Humanoid")
+        or not backpack
+        or not backpack:IsA("Backpack")
+    then
+        tool:Destroy()
         return
     end
-
-    local backpack = player:WaitForChild("Backpack", 5)
-
-    if not backpack or not backpack:IsA("Backpack") then
-        warn(
-            "[Combat Prototype] Could not equip sword: Backpack missing."
-        )
-        return
-    end
-
-    remove_existing_tools(player, character)
-
-    local tool = PrototypeWeaponFactory.create_tool()
 
     tool.Parent = backpack
     humanoid:EquipTool(tool)
-
-    print("[Combat Prototype] Equipped equipment-aware prototype sword.")
 end
 
-
---[[
-Synchronizes sword presentation from the server-owned equipment attribute.
-
-Args:
-    player (Player): Player whose equipment state is observed.
-    character (Model): Current character model.
-
-Returns:
-    None.
-]]
 local function refresh_weapon(
     player: Player,
     character: Model
 )
-    local item_id = player:GetAttribute(
-        EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+    local item_id =
+        player:GetAttribute(
+            EquipmentPresentationRules
+                .WEAPON_ITEM_ATTRIBUTE
+        )
+
+    remove_existing_tools(
+        player,
+        character
     )
 
-    if not EquipmentPresentationRules.show_sword(item_id) then
-        remove_existing_tools(player, character)
-        return
+    if EquipmentPresentationRules
+        .show_sword(item_id)
+    then
+        equip_tool(
+            player,
+            character,
+            PrototypeWeaponFactory.create_tool()
+        )
+    elseif EquipmentPresentationRules
+        .show_wand(item_id)
+    then
+        equip_tool(
+            player,
+            character,
+            PrototypeWandFactory.create_tool()
+        )
     end
-
-    equip_prototype_sword(player, character)
 end
 
-
---[[
-Connects equipment-aware prototype weapon setup to one Player.
-
-Args:
-    player (Player): Player whose character and equipment changes are observed.
-
-Returns:
-    None.
-]]
-local function register_player(player: Player)
-    player.CharacterAdded:Connect(function(character)
-        task.defer(refresh_weapon, player, character)
-    end)
+local function register_player(
+    player: Player
+)
+    player.CharacterAdded:Connect(
+        function(character)
+            task.defer(
+                refresh_weapon,
+                player,
+                character
+            )
+        end
+    )
 
     player:GetAttributeChangedSignal(
-        EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+        EquipmentPresentationRules
+            .WEAPON_ITEM_ATTRIBUTE
     ):Connect(function()
         local character = player.Character
-
         if character then
-            refresh_weapon(player, character)
+            refresh_weapon(
+                player,
+                character
+            )
         end
     end)
 
     if player.Character then
-        refresh_weapon(player, player.Character)
+        refresh_weapon(
+            player,
+            player.Character
+        )
     end
 end
-
 
 Players.PlayerAdded:Connect(register_player)
 

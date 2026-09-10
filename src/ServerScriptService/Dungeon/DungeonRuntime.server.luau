@@ -874,10 +874,21 @@ local function admit_player(player: Player)
                     .CreationStage
 
             if creation_stage == "ClassSelection" then
+                local requested_studio_class = Workspace:GetAttribute(
+                    "DungeonMMOStudioBaseClass"
+                )
+                local studio_class_id = "Mage"
+
+                if requested_studio_class == "Fighter" then
+                    studio_class_id = "Fighter"
+                elseif requested_studio_class == "Mage" then
+                    studio_class_id = "Mage"
+                end
+
                 local class_result =
                     identity:select_base_class(
                         player.UserId,
-                        "Fighter"
+                        studio_class_id
                     )
 
                 if not class_result.ok then

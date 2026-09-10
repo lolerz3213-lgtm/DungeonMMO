@@ -48,6 +48,21 @@ local StaggerService = require(
 local StaminaService = require(
     script.Parent:WaitForChild("StaminaService")
 )
+local ManaService = require(
+    script.Parent:WaitForChild("ManaService")
+)
+local SpiritOrbService = require(
+    script.Parent:WaitForChild("SpiritOrbService")
+)
+local WindStrikeService = require(
+    script.Parent:WaitForChild("WindStrikeService")
+)
+local WardService = require(
+    script.Parent:WaitForChild("WardService")
+)
+local MageHealService = require(
+    script.Parent:WaitForChild("MageHealService")
+)
 local DefenseService = require(
     script.Parent:WaitForChild("DefenseService")
 )
@@ -66,6 +81,32 @@ local ProgressionRuntimeState = require(
 local DungeonProgressionBridge = require(
     ServerScriptService:WaitForChild("Dungeon"):WaitForChild("DungeonProgressionBridge")
 )
+
+WardService.set_absorb_callback(function(
+    caster: Player,
+    target: Player,
+    absorbed: number
+)
+    DungeonProgressionBridge.award_support(
+        caster,
+        "ArcaneWard",
+        target,
+        absorbed
+    )
+end)
+
+MageHealService.set_heal_callback(function(
+    caster: Player,
+    target: Player,
+    healed: number
+)
+    DungeonProgressionBridge.award_heal(
+        caster,
+        "MageHeal",
+        target,
+        healed
+    )
+end)
 
 local attack_request = remotes_folder:WaitForChild(
     CombatConfig.REMOTES.ATTACK_REQUEST
@@ -149,6 +190,16 @@ local function create_player_state(base_walk_speed: number): PlayerCombatState
     }
 end
 
+
+local function clear_wind_strike_charge(player: Player)
+    local character = player.Character
+    if not character then
+        return
+    end
+
+    character:SetAttribute("WindStrikeCharging", false)
+    character:SetAttribute("WindStrikeChargeEndsAt", 0)
+end
 
 --[[Returns the current committed offensive/support action label.]]
 local function get_committed_action_label(
@@ -274,8 +325,20 @@ local function apply_movement_scale(
     end
 
     local scale = 1
+    local weapon_tags =
+        ProgressionRuntimeState.get_weapon_tags(
+            player.UserId
+        )
 
-    if record.state_name == State.DODGING
+    if record.current_attack_id
+        and weapon_tags.ArcaneWand == true
+        and (
+            record.state_name == State.WIND_UP
+            or record.state_name == State.ACTIVE
+            or record.state_name == State.RECOVERY
+        ) then
+        scale = 0
+    elseif record.state_name == State.DODGING
         or record.state_name == State.GUARD_BREAK
         or record.state_name == State.MENDING
         or record.state_name == State.DEAD then
@@ -306,11 +369,11 @@ local function apply_movement_scale(
 
     humanoid.WalkSpeed = record.base_walk_speed * scale
 
-    local mending = record.state_name == State.MENDING
+    local movement_locked = scale <= 0
     humanoid.Jump = false
     humanoid:SetStateEnabled(
         Enum.HumanoidStateType.Jumping,
-        not mending
+        not movement_locked
     )
 end
 
@@ -988,69 +1051,143 @@ local function enter_active(
         return
     end
 
-    apply_forward_step(
-        player,
-        attack_definition.FORWARD_STEP_STUDS,
-        attack_definition
-    )
-
     local character = player.Character
     local attack_id = record.current_attack_id
 
     if character and attack_id then
-        MeleeHitService.begin_active_window({
-            attacker = player,
-            character = character,
-            attack_id = attack_id,
-            attack_definition = attack_definition,
-            base_damage =
-                CombatConfig.PROTOTYPE_WEAPON.BASE_DAMAGE * ProgressionRuntimeState.get_physical_multiplier(player.UserId),
-            critical_chance =
-                ProgressionRuntimeState.get_critical_chance(
-                    player.UserId
-                ),
-            critical_damage_multiplier =
-                ProgressionRuntimeState
-                    .get_critical_damage_multiplier(
-                        player.UserId
-                    ),
-            sequence_id = sequence_id,
-            is_cancelled = function()
-                return not sequence_is_current(
-                    player,
-                    record,
-                    sequence_id,
-                    State.ACTIVE
+        local weapon_tags =
+            ProgressionRuntimeState.get_weapon_tags(
+                player.UserId
+            )
+
+        if weapon_tags.ArcaneWand == true then
+            local fired = SpiritOrbService.fire({
+                attacker = player,
+                character = character,
+                attack_id = attack_id,
+                attack_definition = attack_definition,
+                magical_multiplier =
+                    ProgressionRuntimeState
+                        .get_magical_multiplier(
+                            player.UserId
+                        ),
+                critical_chance =
+                    ProgressionRuntimeState
+                        .get_critical_chance(
+                            player.UserId
+                        ),
+                critical_damage_multiplier =
+                    ProgressionRuntimeState
+                        .get_critical_damage_multiplier(
+                            player.UserId
+                        ),
+                sequence_id = sequence_id,
+            })
+
+            CombatValidationService.emit(
+                player,
+                "SPIRIT_ORB",
+                if fired then "FIRED" else "REJECT",
+                attack_id,
+                sequence_id
+            )
+        else
+            local is_sword =
+                weapon_tags.OneHandedSword == true
+            local melee_definition = attack_definition
+            local base_damage =
+                CombatConfig.PROTOTYPE_WEAPON.BASE_DAMAGE
+                    * ProgressionRuntimeState
+                        .get_physical_multiplier(
+                            player.UserId
+                        )
+
+            if not is_sword then
+                melee_definition = {}
+
+                for key, value in pairs(attack_definition) do
+                    melee_definition[key] = value
+                end
+
+                melee_definition.FORWARD_STEP_STUDS = math.min(
+                    tonumber(attack_definition.FORWARD_STEP_STUDS) or 0,
+                    0.55
                 )
-            end,
-            on_candidate_rejected = function(target: Model, reason: string)
-                CombatValidationService.emit(
-                    player,
-                    "HIT",
-                    "REJECT",
-                    attack_id .. " " .. target.Name .. " " .. reason,
-                    sequence_id
-                )
-            end,
-            on_target_accepted = function(target: Model)
-                CombatValidationService.emit(
-                    player,
-                    "HIT",
-                    "CONFIRMED",
-                    attack_id .. " -> " .. target.Name,
-                    sequence_id
-                )
-            end,
-            on_window_cancelled = function()
-                CombatValidationService.emit(
-                    player,
-                    "HIT_WINDOW",
-                    "CANCELLED",
-                    attack_id,
-                    sequence_id
-                )
-            end,
-        })
+                melee_definition.REACH_STUDS = 4.0
+                melee_definition.ARC_DEGREES = 85
+                melee_definition.HITBOX = {
+                    SIZE = Vector3.new(7.0, 4.5, 4.0),
+                    FORWARD_OFFSET = 2.0,
+                    SAMPLE_COUNT = 3,
+                }
+                base_damage =
+                    4
+                    * ProgressionRuntimeState
+                        .get_physical_multiplier(
+                            player.UserId
+                        )
+            end
+
+            apply_forward_step(
+                player,
+                melee_definition.FORWARD_STEP_STUDS,
+                melee_definition
+            )
+
+            MeleeHitService.begin_active_window({
+                attacker = player,
+                character = character,
+                attack_id = attack_id,
+                attack_definition = melee_definition,
+                base_damage = base_damage,
+                critical_chance =
+                    ProgressionRuntimeState
+                        .get_critical_chance(
+                            player.UserId
+                        ),
+                critical_damage_multiplier =
+                    ProgressionRuntimeState
+                        .get_critical_damage_multiplier(
+                            player.UserId
+                        ),
+                sequence_id = sequence_id,
+                is_cancelled = function()
+                    return not sequence_is_current(
+                        player,
+                        record,
+                        sequence_id,
+                        State.ACTIVE
+                    )
+                end,
+                on_candidate_rejected = function(target: Model, reason: string)
+                    CombatValidationService.emit(
+                        player,
+                        "HIT",
+                        "REJECT",
+                        attack_id .. " " .. target.Name .. " " .. reason,
+                        sequence_id
+                    )
+                end,
+                on_target_accepted = function(target: Model)
+                    CombatValidationService.emit(
+                        player,
+                        "HIT",
+                        "CONFIRMED",
+                        attack_id .. " -> " .. target.Name,
+                        sequence_id
+                    )
+                end,
+                on_window_cancelled = function()
+                    CombatValidationService.emit(
+                        player,
+                        "HIT_WINDOW",
+                        "CANCELLED",
+                        attack_id,
+                        sequence_id
+                    )
+                end,
+            })
+        end
     end
 
     task.delay(attack_definition.ACTIVE_SECONDS, function()
@@ -1062,7 +1199,6 @@ local function enter_active(
         )
     end)
 end
-
 
 --[[
 Starts one authoritative basic attack and schedules its wind-up.
@@ -1412,19 +1548,47 @@ local function enter_skill_active(
         return
     end
 
+    local is_wind_strike = skill_definition.ID == "WindStrike"
+
+    if is_wind_strike then
+        if not ManaService.try_spend(
+            player,
+            skill_definition.MANA_COST
+        ) then
+            clear_wind_strike_charge(player)
+            record.current_skill_id = nil
+            set_state(player, record, State.LOCOMOTION)
+            CombatValidationService.emit(
+                player,
+                "SKILL",
+                "REJECT",
+                "ManaAtRelease",
+                sequence_id
+            )
+            return
+        end
+
+        SkillCooldownService.start(
+            player,
+            skill_definition.ID,
+            skill_definition.COOLDOWN_SECONDS
+        )
+        clear_wind_strike_charge(player)
+    end
+
     if not set_state(player, record, State.ACTIVE) then
         return
     end
 
-    apply_forward_step(
-        player,
-        skill_definition.FORWARD_STEP_STUDS,
-        skill_definition
-    )
-
     local character = player.Character
 
-    if character then
+    if character and skill_definition.KIND == "Melee" then
+        apply_forward_step(
+            player,
+            skill_definition.FORWARD_STEP_STUDS,
+            skill_definition
+        )
+
         MeleeHitService.begin_active_window({
             attacker = player,
             character = character,
@@ -1492,6 +1656,124 @@ local function enter_skill_active(
                 )
             end,
         })
+    elseif character and skill_definition.KIND == "MagicProjectile" then
+        local fired = WindStrikeService.fire({
+            attacker = player,
+            character = character,
+            skill_definition = skill_definition,
+            magical_multiplier =
+                ProgressionRuntimeState
+                    .get_magical_multiplier(player.UserId),
+            critical_chance =
+                ProgressionRuntimeState
+                    .get_critical_chance(player.UserId),
+            critical_damage_multiplier =
+                ProgressionRuntimeState
+                    .get_critical_damage_multiplier(player.UserId),
+            sequence_id = sequence_id,
+        })
+        CombatValidationService.emit(
+            player,
+            "WIND_STRIKE",
+            if fired then "FIRED" else "REJECT",
+            skill_definition.ID,
+            sequence_id
+        )
+    elseif character and skill_definition.KIND == "Ward" then
+        local target = WardService.find_target(
+            player,
+            skill_definition.RANGE_STUDS
+        )
+        local amount =
+            skill_definition.WARD_AMOUNT
+            * ProgressionRuntimeState
+                .get_support_multiplier(
+                    player.UserId
+                )
+
+        if target and WardService.apply_ward(
+            player,
+            target,
+            amount,
+            skill_definition.DURATION_SECONDS
+        ) then
+            CombatValidationService.emit(
+                player,
+                "WARD",
+                "APPLIED",
+                string.format(
+                    "%s -> %s %.1f",
+                    skill_definition.ID,
+                    target.Name,
+                    amount
+                ),
+                sequence_id
+            )
+        else
+            CombatValidationService.emit(
+                player,
+                "WARD",
+                "REJECT",
+                "TargetUnavailable",
+                sequence_id
+            )
+        end
+    elseif character and skill_definition.KIND == "MageHeal" then
+        local target = MageHealService.find_target(
+            player,
+            skill_definition.RANGE_STUDS
+        )
+        local total_heal =
+            skill_definition.TOTAL_HEAL
+            * ProgressionRuntimeState
+                .get_heal_multiplier(
+                    player.UserId
+                )
+
+        if target then
+            local cast_ok, immediate_heal =
+                MageHealService.cast(
+                    player,
+                    target,
+                    total_heal,
+                    ProgressionRuntimeState
+                        .get_race_id(
+                            player.UserId
+                        ),
+                    skill_definition
+                )
+
+            if cast_ok then
+                CombatValidationService.emit(
+                    player,
+                    "MAGE_HEAL",
+                    "APPLIED",
+                    string.format(
+                        "%s -> %s +%.1f initial",
+                        skill_definition.ID,
+                        target.Name,
+                        immediate_heal
+                    ),
+                    sequence_id
+                )
+            else
+                CombatValidationService.emit(
+                    player,
+                    "MAGE_HEAL",
+                    "REJECT",
+                    "TargetUnavailable",
+                    sequence_id
+                )
+            end
+        else
+            CombatValidationService.emit(
+                player,
+                "MAGE_HEAL",
+                "REJECT",
+                "NoInjuredTarget",
+                sequence_id
+            )
+        end
     end
 
     task.delay(skill_definition.ACTIVE_SECONDS, function()
@@ -1503,7 +1785,6 @@ local function enter_skill_active(
         )
     end)
 end
-
 
 --[[
 Starts one authoritative active-skill sequence after request validation.
@@ -1525,9 +1806,22 @@ local function start_skill(
     record.current_attack_id = nil
     record.current_skill_id = skill_definition.ID
 
+    if skill_definition.ID == "WindStrike" then
+        local character = player.Character
+        if character then
+            character:SetAttribute("WindStrikeCharging", true)
+            character:SetAttribute(
+                "WindStrikeChargeEndsAt",
+                Workspace:GetServerTimeNow()
+                    + skill_definition.WIND_UP_SECONDS
+            )
+        end
+    end
+
     local sequence_id = record.sequence_id
 
     if not set_state(player, record, State.WIND_UP) then
+        clear_wind_strike_charge(player)
         record.current_skill_id = nil
         update_character_attributes(player, record)
         return false
@@ -1747,7 +2041,13 @@ local function handle_skill_request(
     requested_skill_id: any
 )
     if type(requested_skill_id) ~= "string" then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "MalformedRequest", nil)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "MalformedRequest",
+            nil
+        )
         return
     end
 
@@ -1764,17 +2064,28 @@ local function handle_skill_request(
         return
     end
 
-    local base_definition = SkillDefinitions.get(requested_skill_id)
+    local base_definition = SkillDefinitions.get(
+        requested_skill_id
+    )
+
     if not base_definition then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "UnknownSkill", record.sequence_id)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "UnknownSkill",
+            record.sequence_id
+        )
         return
     end
 
-    local usable, unusable_reason = ProgressionRuntimeState.is_skill_usable(
-        player.UserId,
-        requested_skill_id,
-        get_equipped_weapon_tags(player)
-    )
+    local usable, unusable_reason =
+        ProgressionRuntimeState.is_skill_usable(
+            player.UserId,
+            requested_skill_id,
+            get_equipped_weapon_tags(player)
+        )
+
     if not usable then
         CombatValidationService.emit(
             player,
@@ -1786,17 +2097,36 @@ local function handle_skill_request(
         return
     end
 
-    local rank = ProgressionRuntimeState.get_skill_rank(player.UserId, requested_skill_id)
-    local skill_definition = SkillDefinitions.get_for_rank(requested_skill_id, rank)
+    local rank = ProgressionRuntimeState.get_skill_rank(
+        player.UserId,
+        requested_skill_id
+    )
+    local skill_definition = SkillDefinitions.get_for_rank(
+        requested_skill_id,
+        rank
+    )
+
     if not skill_definition then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "RankDefinitionMissing", record.sequence_id)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "RankDefinitionMissing",
+            record.sequence_id
+        )
         return
     end
 
     local humanoid = get_character_parts(player)
 
     if not humanoid or humanoid.Health <= 0 then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "Dead", record.sequence_id)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "Dead",
+            record.sequence_id
+        )
         return
     end
 
@@ -1804,12 +2134,25 @@ local function handle_skill_request(
         player,
         requested_skill_id
     ) then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "Cooldown", record.sequence_id)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "Cooldown",
+            record.sequence_id
+        )
         return
     end
 
     if skill_definition.KIND == "Support" then
         if skill_definition.ID ~= "Mend" then
+            CombatValidationService.emit(
+                player,
+                "SKILL",
+                "REJECT",
+                "UnsupportedSupportSkill",
+                record.sequence_id
+            )
             return
         end
 
@@ -1833,7 +2176,13 @@ local function handle_skill_request(
             player,
             skill_definition.STAMINA_COST
         ) then
-            CombatValidationService.emit(player, "SKILL", "REJECT", "Stamina", record.sequence_id)
+            CombatValidationService.emit(
+                player,
+                "SKILL",
+                "REJECT",
+                "Stamina",
+                record.sequence_id
+            )
             return
         end
 
@@ -1846,23 +2195,82 @@ local function handle_skill_request(
         return
     end
 
-    if not StaminaService.try_spend(
+    if skill_definition.KIND == "MageHeal" then
+        local target = MageHealService.find_target(
+            player,
+            skill_definition.RANGE_STUDS
+        )
+
+        if not target then
+            CombatValidationService.emit(
+                player,
+                "MAGE_HEAL",
+                "REJECT",
+                "NoInjuredTarget",
+                record.sequence_id
+            )
+            return
+        end
+    end
+
+    local mana_cost =
+        tonumber(skill_definition.MANA_COST) or 0
+    local stamina_cost =
+        tonumber(skill_definition.STAMINA_COST) or 0
+
+    if skill_definition.KIND == "MagicProjectile" then
+        if ManaService.get(player) < mana_cost then
+            CombatValidationService.emit(
+                player,
+                "SKILL",
+                "REJECT",
+                "Mana",
+                record.sequence_id
+            )
+            return
+        end
+    elseif mana_cost > 0 and not ManaService.try_spend(
         player,
-        skill_definition.STAMINA_COST
+        mana_cost
     ) then
-        CombatValidationService.emit(player, "SKILL", "REJECT", "Stamina", record.sequence_id)
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "Mana",
+            record.sequence_id
+        )
         return
     end
 
-    SkillCooldownService.start(
+    if stamina_cost > 0 and not StaminaService.try_spend(
         player,
-        requested_skill_id,
-        skill_definition.COOLDOWN_SECONDS
+        stamina_cost
+    ) then
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "Stamina",
+            record.sequence_id
+        )
+        return
+    end
+
+    if skill_definition.KIND ~= "MagicProjectile" then
+        SkillCooldownService.start(
+            player,
+            requested_skill_id,
+            skill_definition.COOLDOWN_SECONDS
+        )
+    end
+
+    start_skill(
+        player,
+        record,
+        skill_definition
     )
-
-    start_skill(player, record, skill_definition)
 end
-
 
 --[[
 Starts or ends authoritative defensive actions from client intent only.
@@ -1911,6 +2319,7 @@ local function handle_defense_request(
             return
         end
 
+        clear_wind_strike_charge(player)
         report_sequence_cancel(player, record, "Block")
 
         if record.state_name == State.MENDING then
@@ -2088,6 +2497,7 @@ local function handle_defense_request(
         view_locked
     )
 
+    clear_wind_strike_charge(player)
     report_sequence_cancel(player, record, "Dodge")
 
     if record.state_name == State.MENDING then
@@ -2287,7 +2697,10 @@ local function handle_character_death(
     record.next_attack_id = BasicAttack.ATTACK_ORDER[1]
     record.combo_expires_at = 0
 
+    clear_wind_strike_charge(player)
     MendService.cancel_channel(player)
+    WardService.cancel_player(player)
+    MageHealService.cancel_player(player)
     cancel_mends_targeting_player(player)
     stop_dodge_movement(player)
     stop_attack_step(player)
@@ -2368,6 +2781,7 @@ local function on_character_added(
     stop_dodge_movement(player)
     player_states[player] = record
     StaminaService.reset_player(player)
+    ManaService.reset_player(player)
     ProgressionRuntimeState.apply_max_health(player)
     SkillCooldownService.remove_owner(player)
     DefenseService.clear(player)
@@ -2395,6 +2809,7 @@ Returns:
 ]]
 local function on_player_added(player: Player)
     StaminaService.initialize_player(player)
+    ManaService.initialize_player(player)
 
     player.CharacterAdded:Connect(function(character)
         on_character_added(player, character)
@@ -2411,11 +2826,15 @@ defense_request.OnServerEvent:Connect(handle_defense_request)
 skill_request.OnServerEvent:Connect(handle_skill_request)
 Players.PlayerAdded:Connect(on_player_added)
 Players.PlayerRemoving:Connect(function(player)
+    clear_wind_strike_charge(player)
     MendService.cancel_channel(player)
+    WardService.cancel_player(player)
+    MageHealService.cancel_player(player)
     cancel_mends_targeting_player(player)
     stop_dodge_movement(player)
     DefenseService.clear(player)
     StaminaService.remove_player(player)
+    ManaService.remove_player(player)
     SkillCooldownService.remove_owner(player)
     player_states[player] = nil
     has_spawned_character[player] = nil

@@ -187,9 +187,13 @@ confirm_corner.Parent = confirm
 local current_snapshot: any = {}
 local current_stage = ""
 local selected_race: string? = nil
+local selected_class: string? = nil
 local request_pending = false
 
 local race_buttons: {
+    [string]: TextButton
+} = {}
+local class_buttons: {
     [string]: TextButton
 } = {}
 
@@ -201,6 +205,7 @@ local function clear_content()
     end
 
     table.clear(race_buttons)
+    table.clear(class_buttons)
 end
 
 local function style_card(
@@ -449,142 +454,127 @@ end
 
 local function show_class_selection()
     clear_content()
-
     title.Text = "Choose Your Class"
-
-    subtitle.Text =
-        "Your starting class determines your initial combat kit."
-
+    subtitle.Text = "Your starting class determines your initial combat kit."
     selected_race = nil
+    selected_class = nil
 
-    local card =
-        Instance.new("Frame")
-
-    card.AnchorPoint =
-        Vector2.new(0.5, 0)
-
-    card.Position =
-        UDim2.new(0.5, 0, 0, 0)
-
-    card.Size =
-        UDim2.new(0.70, 0, 1, 0)
-
-    card.BackgroundColor3 =
-        Color3.fromRGB(
-            39,
-            46,
-            59
+    local function make_class_card(
+        class_id: string,
+        heading: string,
+        body: string,
+        x_scale: number
+    )
+        local button = Instance.new("TextButton")
+        button.Name = class_id .. "Card"
+        button.Position = UDim2.new(
+            x_scale,
+            if x_scale == 0 then 0 else 10,
+            0,
+            0
         )
+        button.Size = UDim2.new(0.5, -10, 1, 0)
+        button.BackgroundColor3 = Color3.fromRGB(34, 39, 49)
+        button.Text = ""
+        button.AutoButtonColor = false
+        button.Parent = content
 
-    card.Parent = content
+        local corner = Instance.new("UICorner")
+        corner.CornerRadius = UDim.new(0, 12)
+        corner.Parent = button
 
-    local corner =
-        Instance.new("UICorner")
+        local stroke = Instance.new("UIStroke")
+        stroke.Thickness = 1
+        stroke.Transparency = 0.55
+        stroke.Color = Color3.fromRGB(168, 180, 205)
+        stroke.Parent = button
 
-    corner.CornerRadius =
-        UDim.new(0, 12)
+        local name_label = Instance.new("TextLabel")
+        name_label.Position = UDim2.new(0, 20, 0, 18)
+        name_label.Size = UDim2.new(1, -40, 0, 42)
+        name_label.BackgroundTransparency = 1
+        name_label.TextColor3 = Color3.fromRGB(250, 250, 250)
+        name_label.Font = Enum.Font.GothamBold
+        name_label.TextSize = 25
+        name_label.TextXAlignment = Enum.TextXAlignment.Left
+        name_label.Text = heading
+        name_label.Parent = button
 
-    corner.Parent = card
+        local body_label = Instance.new("TextLabel")
+        body_label.Position = UDim2.new(0, 20, 0, 70)
+        body_label.Size = UDim2.new(1, -40, 1, -90)
+        body_label.BackgroundTransparency = 1
+        body_label.TextColor3 = Color3.fromRGB(210, 216, 228)
+        body_label.Font = Enum.Font.Gotham
+        body_label.TextSize = 16
+        body_label.TextWrapped = true
+        body_label.TextXAlignment = Enum.TextXAlignment.Left
+        body_label.TextYAlignment = Enum.TextYAlignment.Top
+        body_label.Text = body
+        body_label.Parent = button
 
-    local stroke =
-        Instance.new("UIStroke")
+        class_buttons[class_id] = button
 
-    stroke.Thickness = 2
-    stroke.Transparency = 0.25
+        button.Activated:Connect(function()
+            if request_pending then
+                return
+            end
 
-    stroke.Color =
-        Color3.fromRGB(
-            170,
-            183,
-            210
-        )
+            selected_class = class_id
 
-    stroke.Parent = card
+            for id, card in pairs(class_buttons) do
+                style_card(card, id == class_id)
+            end
 
-    local class_title =
-        Instance.new("TextLabel")
+            status.Text =
+                class_id
+                .. " selected. Press Confirm to continue."
+        end)
+    end
 
-    class_title.Position =
-        UDim2.new(0, 24, 0, 20)
-
-    class_title.Size =
-        UDim2.new(1, -48, 0, 46)
-
-    class_title.BackgroundTransparency = 1
-
-    class_title.TextColor3 =
-        Color3.fromRGB(
-            250,
-            250,
-            250
-        )
-
-    class_title.Font =
-        Enum.Font.GothamBold
-
-    class_title.TextSize = 28
-
-    class_title.TextXAlignment =
-        Enum.TextXAlignment.Left
-
-    class_title.Text = "Fighter"
-    class_title.Parent = card
-
-    local class_body =
-        Instance.new("TextLabel")
-
-    class_body.Position =
-        UDim2.new(0, 24, 0, 78)
-
-    class_body.Size =
-        UDim2.new(1, -48, 1, -102)
-
-    class_body.BackgroundTransparency = 1
-
-    class_body.TextColor3 =
-        Color3.fromRGB(
-            215,
-            221,
-            232
-        )
-
-    class_body.Font =
-        Enum.Font.Gotham
-
-    class_body.TextSize = 18
-    class_body.TextWrapped = true
-
-    class_body.TextXAlignment =
-        Enum.TextXAlignment.Left
-
-    class_body.TextYAlignment =
-        Enum.TextYAlignment.Top
-
-    class_body.Text =
+    make_class_card(
+        "Fighter",
+        "Fighter",
         table.concat({
-            "A martial starter class built around deliberate melee combat.",
+            "Deliberate melee combat with defence and self-sustain.",
             "",
             "Starting Skills",
-            "• Shield Bash — defensive impact and control",
-            "• Mend — support healing",
+            "- Shield Bash",
+            "- Mend",
             "",
-            "Arc Slash is learned later through the existing skill-book path.",
-        }, "\n")
+            "Arc Slash is learned later through the existing skill-book path."
+        }, "\n"),
+        0
+    )
 
-    class_body.Parent = card
+    make_class_card(
+        "Mage",
+        "Mage",
+        table.concat({
+            "Ranged magic with protective and healing support.",
+            "",
+            "Basic Attack",
+            "- Spirit Orb: Orb, Orb, larger area Orb",
+            "",
+            "Starting Skills",
+            "- Arcane Ward: protective absorption shield",
+            "- Mage Heal: self or aimed ally",
+            "",
+            "Starts with an Apprentice Arcane Wand."
+        }, "\n"),
+        0.5
+    )
 
-    confirm.Text = "Confirm Fighter"
+    confirm.Text = "Confirm Class"
     confirm.Active = true
     confirm.AutoButtonColor = true
-
-    status.Text =
-        "Fighter is the available starting class."
+    status.Text = "Select Fighter or Mage."
 end
-
 local function hide_selection()
     blocker.Visible = false
     request_pending = false
     selected_race = nil
+    selected_class = nil
 end
 
 local function render(
@@ -705,16 +695,19 @@ confirm.Activated:Connect(
         end
 
         if stage == "ClassSelection" then
+            if not selected_class then
+                status.Text = "Select Fighter or Mage first."
+                return
+            end
+
             request_pending = true
             confirm.Active = false
             confirm.AutoButtonColor = false
-
             status.Text =
-                "Saving Fighter class..."
-
+                "Saving " .. selected_class .. " class..."
             identity_selection:FireServer(
                 "Class",
-                "Fighter"
+                selected_class
             )
         end
     end

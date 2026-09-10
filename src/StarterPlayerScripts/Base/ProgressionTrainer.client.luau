@@ -443,42 +443,63 @@ progression_result.OnClientEvent:Connect(function(payload)
             .. tostring(payload.reason or "Unknown")
 end)
 
+local connected_trainers: {[Instance]: boolean} = {}
+
+local function connect_trainer(trainer: Instance)
+    if connected_trainers[trainer] then
+        return
+    end
+
+    local prompt = trainer:FindFirstChild("ProgressionTrainerPrompt")
+
+    if not prompt or not prompt:IsA("ProximityPrompt") then
+        return
+    end
+
+    connected_trainers[trainer] = true
+
+    prompt.Triggered:Connect(function()
+        local snapshot = ProgressionClientState.get_snapshot()
+
+        if not identity_complete(snapshot) then
+            panel.Visible = false
+            progression_snapshot:FireServer("Request")
+            return
+        end
+
+        local trainer_id = trainer:GetAttribute("TrainerId")
+
+        if type(trainer_id) ~= "string" then
+            return
+        end
+
+        active_trainer_id = trainer_id
+        trainer_entries = {}
+        panel.Visible = true
+        status.Text = "Loading trainer catalogue..."
+        reset_preview(snapshot)
+        render(latest)
+        progression_snapshot:FireServer("Request")
+        trainer_request:FireServer(active_trainer_id)
+    end)
+end
+
 task.spawn(function()
     local root = Workspace:WaitForChild("BasePrototype", 15)
+
     if not root then
         return
     end
 
-    local trainer = root:WaitForChild("ProgressionTrainer", 10)
-    if not trainer then
-        return
-    end
+    root.ChildAdded:Connect(function(child)
+        if type(child:GetAttribute("TrainerId")) == "string" then
+            connect_trainer(child)
+        end
+    end)
 
-    local prompt = trainer:WaitForChild("ProgressionTrainerPrompt", 5)
-
-    if prompt and prompt:IsA("ProximityPrompt") then
-        prompt.Triggered:Connect(function()
-            local snapshot = ProgressionClientState.get_snapshot()
-
-            if not identity_complete(snapshot) then
-                panel.Visible = false
-                progression_snapshot:FireServer("Request")
-                return
-            end
-
-            local trainer_id = trainer:GetAttribute("TrainerId")
-            if type(trainer_id) ~= "string" then
-                trainer_id = "FighterTrainer"
-            end
-
-            active_trainer_id = trainer_id
-            trainer_entries = {}
-            panel.Visible = true
-            status.Text = "Loading trainer catalogue..."
-            reset_preview(snapshot)
-            render(latest)
-            progression_snapshot:FireServer("Request")
-            trainer_request:FireServer(active_trainer_id)
-        end)
+    for _, child in ipairs(root:GetChildren()) do
+        if type(child:GetAttribute("TrainerId")) == "string" then
+            connect_trainer(child)
+        end
     end
 end)

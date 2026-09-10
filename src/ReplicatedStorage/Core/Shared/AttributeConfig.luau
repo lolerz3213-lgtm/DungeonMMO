@@ -7,7 +7,15 @@ AttributeConfig.BASE_MAX_HEALTH = 100
 
 AttributeConfig.PHYSICAL_PER_EFFECTIVE_POINT = 0.02
 AttributeConfig.HEAL_PER_EFFECTIVE_POINT = 0.02
+AttributeConfig.MAGICAL_PER_EFFECTIVE_POINT = 0.02
+AttributeConfig.SUPPORT_PER_EFFECTIVE_POINT = 0.02
 AttributeConfig.HEALTH_PER_EFFECTIVE_POINT = 5
+
+AttributeConfig.BASE_MAX_MANA = 100
+AttributeConfig.MAX_MANA_PER_EFFECTIVE_SPIRIT = 6
+AttributeConfig.MAX_MANA_PER_EFFECTIVE_INTELLECT = 2
+AttributeConfig.BASE_MANA_REGEN_PER_SECOND = 8
+AttributeConfig.MANA_REGEN_PER_EFFECTIVE_SPIRIT = 0.5
 
 AttributeConfig.SOFT_CAP_INVESTED_POINTS = 15
 
@@ -74,6 +82,26 @@ function AttributeConfig.heal_multiplier(
         * AttributeConfig.HEAL_PER_EFFECTIVE_POINT
 end
 
+function AttributeConfig.magical_multiplier(
+    intellect: number
+): number
+    return 1
+        + AttributeConfig.signed_effective_delta(
+            intellect
+        )
+        * AttributeConfig.MAGICAL_PER_EFFECTIVE_POINT
+end
+
+function AttributeConfig.support_multiplier(
+    spirit: number
+): number
+    return 1
+        + AttributeConfig.signed_effective_delta(
+            spirit
+        )
+        * AttributeConfig.SUPPORT_PER_EFFECTIVE_POINT
+end
+
 function AttributeConfig.max_health(
     vitality: number
 ): number
@@ -82,6 +110,36 @@ function AttributeConfig.max_health(
             vitality
         )
         * AttributeConfig.HEALTH_PER_EFFECTIVE_POINT
+end
+
+function AttributeConfig.max_mana(
+    intellect: number,
+    spirit: number
+): number
+    local spirit_delta =
+        AttributeConfig.signed_effective_delta(spirit)
+    local intellect_delta =
+        AttributeConfig.signed_effective_delta(intellect)
+
+    return math.max(
+        25,
+        AttributeConfig.BASE_MAX_MANA
+            + spirit_delta
+                * AttributeConfig.MAX_MANA_PER_EFFECTIVE_SPIRIT
+            + intellect_delta
+                * AttributeConfig.MAX_MANA_PER_EFFECTIVE_INTELLECT
+    )
+end
+
+function AttributeConfig.mana_regen_per_second(
+    spirit: number
+): number
+    return math.max(
+        1,
+        AttributeConfig.BASE_MANA_REGEN_PER_SECOND
+            + AttributeConfig.signed_effective_delta(spirit)
+                * AttributeConfig.MANA_REGEN_PER_EFFECTIVE_SPIRIT
+    )
 end
 
 return table.freeze(AttributeConfig)

@@ -32,6 +32,26 @@ local DEFINITIONS = table.freeze({
             }),
         }),
     }),
+
+    MageTrainer = table.freeze({
+        Id = "MageTrainer",
+        DisplayName = "Mage Trainer",
+        AllowedBaseClasses = table.freeze({"Mage"}),
+        Skills = table.freeze({
+            table.freeze({
+                SkillId = "WindStrike",
+                Mode = "Rank",
+            }),
+            table.freeze({
+                SkillId = "ArcaneWard",
+                Mode = "Rank",
+            }),
+            table.freeze({
+                SkillId = "MageHeal",
+                Mode = "Rank",
+            }),
+        }),
+    }),
 })
 
 local TrainerCatalogues = {}
@@ -114,14 +134,14 @@ function TrainerCatalogues.resolve_for_character(
         return failure("TrainerRestricted")
     end
 
-    local trainer = copy_trainer(definition)
+    local trainer_copy = copy_trainer(definition)
 
     return {
         ok = true,
-        Trainer = trainer,
-        TrainerId = trainer.Id,
-        DisplayName = trainer.DisplayName,
-        Skills = trainer.Skills,
+        Trainer = trainer_copy,
+        TrainerId = trainer_copy.Id,
+        DisplayName = trainer_copy.DisplayName,
+        Skills = trainer_copy.Skills,
     }
 end
 

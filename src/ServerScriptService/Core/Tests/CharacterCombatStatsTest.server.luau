@@ -454,9 +454,16 @@ human_humanoid.MaxHealth = 100
 human_humanoid.Health = 100
 human_humanoid.Parent = human_model
 
+local fake_human_attributes: {[string]: any} = {}
 local fake_human_player: any = {
     UserId = human_user_id,
     Character = human_model,
+    SetAttribute = function(_self: any, key: string, value: any)
+        fake_human_attributes[key] = value
+    end,
+    GetAttribute = function(_self: any, key: string): any
+        return fake_human_attributes[key]
+    end,
 }
 
 ProgressionRuntimeState
@@ -548,9 +555,16 @@ elf_humanoid.MaxHealth = 100
 elf_humanoid.Health = 100
 elf_humanoid.Parent = elf_model
 
+local fake_elf_attributes: {[string]: any} = {}
 local fake_elf_player: any = {
     UserId = elf_user_id,
     Character = elf_model,
+    SetAttribute = function(_self: any, key: string, value: any)
+        fake_elf_attributes[key] = value
+    end,
+    GetAttribute = function(_self: any, key: string): any
+        return fake_elf_attributes[key]
+    end,
 }
 
 ProgressionRuntimeState

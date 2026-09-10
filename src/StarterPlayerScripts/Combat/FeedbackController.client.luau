@@ -27,6 +27,12 @@ local PrototypeAnimationFactory = require(
 local SkillDefinitions = require(
     shared_folder:WaitForChild("SkillDefinitions")
 )
+local EquipmentPresentationRules = require(
+    ReplicatedStorage
+        :WaitForChild("Core")
+        :WaitForChild("Shared")
+        :WaitForChild("EquipmentPresentationRules")
+)
 local ClientCombatController = require(
     script.Parent:WaitForChild("ClientCombatController")
 )
@@ -61,6 +67,14 @@ local current_carry_weight = 0
 
 local running_connection: RBXScriptConnection? = nil
 local state_connection: RBXScriptConnection? = nil
+
+local function show_sword_presentation(): boolean
+    return EquipmentPresentationRules.show_sword(
+        player:GetAttribute(
+            EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+        )
+    )
+end
 
 local current_local_state = State.LOCOMOTION
 local procedural_attack_id = ""
@@ -233,6 +247,12 @@ local function render_published_sword(
     _delta_time: number
 )
     if RunService:IsStudio() then
+        return
+    end
+
+    if not show_sword_presentation() then
+        procedural_attack_id = ""
+        procedural_attack_rate = 1
         return
     end
 
@@ -511,6 +531,10 @@ local function load_animation_tracks(
 )
     clear_animation_tracks()
 
+    if not show_sword_presentation() then
+        return
+    end
+
     if not RunService:IsStudio() then
         return
     end
@@ -640,6 +664,18 @@ Returns:
 local function find_weapon_trail(
     character: Model
 ): Trail?
+    local equipped_item = player:GetAttribute(
+        EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+    )
+
+    if EquipmentPresentationRules.show_wand(equipped_item) then
+        return nil
+    end
+
+    if not show_sword_presentation() then
+        return nil
+    end
+
     local tool = character:WaitForChild(
         WeaponConfig.TOOL_NAME,
         5
@@ -833,14 +869,17 @@ local function on_local_state_changed(
     end
 
     local is_active_skill = SkillDefinitions.is_valid(attack_id)
+    local sword_visible = show_sword_presentation()
 
     if blade_trail then
         blade_trail.Enabled =
-            state_name == State.ACTIVE
+            sword_visible
+            and state_name == State.ACTIVE
             and not is_active_skill
     end
 
-    if state_name == State.WIND_UP
+    if sword_visible
+        and state_name == State.WIND_UP
         and attack_id ~= ""
         and not is_active_skill then
         if RunService:IsStudio() then
@@ -965,6 +1004,21 @@ player.CharacterAdded:Connect(
 player.CharacterRemoving:Connect(
     on_character_removing
 )
+
+player:GetAttributeChangedSignal(
+    EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+):Connect(function()
+    local character = player.Character
+
+    if not character then
+        return
+    end
+
+    task.defer(function()
+        load_animation_tracks(character)
+        blade_trail = find_weapon_trail(character)
+    end)
+end)
 
 if player.Character then
     on_character_added(player.Character)
