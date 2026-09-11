@@ -1,8 +1,15 @@
 --!strict
--- Pure Phase 2C.C equipment-to-combat-stat resolver.
+-- Pure equipment-to-combat-stat resolver with generic slot reservations.
 
-local EquipmentSlots = require(script.Parent:WaitForChild("EquipmentSlots"))
-local ItemDefinitions = require(script.Parent:WaitForChild("ItemDefinitions"))
+local EquipmentReservationRules = require(
+    script.Parent:WaitForChild("EquipmentReservationRules")
+)
+local EquipmentSlots = require(
+    script.Parent:WaitForChild("EquipmentSlots")
+)
+local ItemDefinitions = require(
+    script.Parent:WaitForChild("ItemDefinitions")
+)
 
 local EquipmentStatResolver = {}
 
@@ -113,28 +120,34 @@ end
 --[[
 Resolves one six-slot Equipment table into authoritative combat effects.
 
-Malformed, unknown, wrong-slot and non-equipment entries are ignored so the
-runtime fails neutral rather than inventing authority.
+Valid equipped items may reserve other slots. A valid item occupying a
+reserved slot is ignored rather than granting both sets of combat effects.
+Malformed, unknown and wrong-slot entries continue to fail neutral.
 
 Args:
     equipment (any): Persistent or candidate Equipment table.
 
 Returns:
-    any: Frozen aggregate effects, weapon tags and representative item IDs.
+    any: Frozen aggregate effects, tags, reservations and presentation IDs.
 ]]
 function EquipmentStatResolver.resolve(equipment: any): any
+    local source = if type(equipment) == "table" then equipment else {}
+    local reservations = EquipmentReservationRules.resolve(source)
     local result = {
         PhysicalDamageBonus = 0,
         MaxHealthFlat = 0,
         CriticalChanceBonus = 0,
         WeaponTags = {},
+        Reservations = reservations,
         WeaponItemId = nil,
         OffHandItemId = nil,
     }
 
-    local source = if type(equipment) == "table" then equipment else {}
-
     for _, slot in ipairs(EquipmentSlots.ORDER) do
+        if reservations[slot] ~= nil then
+            continue
+        end
+
         local item_id = source[slot]
         local definition = valid_definition(slot, item_id)
 
@@ -151,6 +164,7 @@ function EquipmentStatResolver.resolve(equipment: any): any
     end
 
     result.WeaponTags = table.freeze(result.WeaponTags)
+    result.Reservations = table.freeze(result.Reservations)
     return table.freeze(result)
 end
 

@@ -15,10 +15,14 @@ local PrototypeWeaponFactory = require(
 local PrototypeWandFactory = require(
     script.Parent:WaitForChild("PrototypeWandFactory")
 )
+local PrototypeLongbowFactory = require(
+    script.Parent:WaitForChild("PrototypeLongbowFactory")
+)
 
 local TOOL_NAMES = table.freeze({
     "PrototypeSword",
     "PrototypeArcaneWand",
+    "PrototypeLongbow",
 })
 
 local function remove_existing_tools(
@@ -104,6 +108,14 @@ local function refresh_weapon(
             player,
             character,
             PrototypeWandFactory.create_tool()
+        )
+    elseif EquipmentPresentationRules
+        .show_longbow(item_id)
+    then
+        equip_tool(
+            player,
+            character,
+            PrototypeLongbowFactory.create_tool()
         )
     end
 end

@@ -6,6 +6,7 @@ AttributeConfig.BASE_VALUE = 5
 AttributeConfig.BASE_MAX_HEALTH = 100
 
 AttributeConfig.PHYSICAL_PER_EFFECTIVE_POINT = 0.02
+AttributeConfig.RANGED_PHYSICAL_PER_EFFECTIVE_POINT = 0.02
 AttributeConfig.HEAL_PER_EFFECTIVE_POINT = 0.02
 AttributeConfig.MAGICAL_PER_EFFECTIVE_POINT = 0.02
 AttributeConfig.SUPPORT_PER_EFFECTIVE_POINT = 0.02
@@ -70,6 +71,26 @@ function AttributeConfig.physical_multiplier(
             strength
         )
         * AttributeConfig.PHYSICAL_PER_EFFECTIVE_POINT
+end
+
+--[[
+Returns Dexterity-led physical ranged damage using the accepted effective
+investment curve.
+
+Args:
+    dexterity (number): Authoritative Dexterity attribute.
+
+Returns:
+    number: Non-negative ranged physical damage multiplier.
+]]
+function AttributeConfig.ranged_physical_multiplier(
+    dexterity: number
+): number
+    return 1
+        + AttributeConfig.signed_effective_delta(
+            dexterity
+        )
+        * AttributeConfig.RANGED_PHYSICAL_PER_EFFECTIVE_POINT
 end
 
 function AttributeConfig.heal_multiplier(

@@ -3,6 +3,7 @@ local ItemDefinitions = {}
 
 local FIGHTER = table.freeze({"Fighter"})
 local MAGE = table.freeze({"Mage"})
+local RANGER = table.freeze({"Ranger"})
 local ELF = table.freeze({"Elf"})
 
 local DEFINITIONS = table.freeze({
@@ -31,6 +32,20 @@ local DEFINITIONS = table.freeze({
         Rarity = "Basic",
         Stackable = false,
         WeaponTags = table.freeze({"ArcaneWand"}),
+    }),
+
+    apprentice_longbow = table.freeze({
+        Id = "apprentice_longbow",
+        Name = "Apprentice Longbow",
+        Kind = "Equipment",
+        Slot = "Weapon",
+        Category = "Longbow",
+        AllowedBaseClasses = RANGER,
+        Rarity = "Basic",
+        Stackable = false,
+        CanBlock = false,
+        WeaponTags = table.freeze({"Longbow"}),
+        ReservedSlots = table.freeze({"OffHand"}),
     }),
 
     marauder_shield = table.freeze({

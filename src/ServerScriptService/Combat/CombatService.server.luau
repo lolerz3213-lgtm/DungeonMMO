@@ -7,7 +7,13 @@ local Workspace = game:GetService("Workspace")
 local combat_folder = ReplicatedStorage:WaitForChild("Combat")
 local shared_folder = combat_folder:WaitForChild("Shared")
 local remotes_folder = combat_folder:WaitForChild("Remotes")
+local core_shared_folder = ReplicatedStorage
+    :WaitForChild("Core")
+    :WaitForChild("Shared")
 
+local EquipmentDefenseRules = require(
+    core_shared_folder:WaitForChild("EquipmentDefenseRules")
+)
 local CombatConfig = require(
     shared_folder:WaitForChild("CombatConfig")
 )
@@ -28,6 +34,9 @@ local HotbarConfig = require(
 )
 local SkillDefinitions = require(
     shared_folder:WaitForChild("SkillDefinitions")
+)
+local RangerDrawRules = require(
+    shared_folder:WaitForChild("RangerDrawRules")
 )
 
 local MeleeHitService = require(
@@ -62,6 +71,12 @@ local WardService = require(
 )
 local MageHealService = require(
     script.Parent:WaitForChild("MageHealService")
+)
+local RangerDrawService = require(
+    script.Parent:WaitForChild("RangerDrawService")
+)
+local RangerCombatService = require(
+    script.Parent:WaitForChild("RangerCombatService")
 )
 local DefenseService = require(
     script.Parent:WaitForChild("DefenseService")
@@ -134,6 +149,8 @@ type PlayerCombatState = {
     combo_expires_at: number,
     sequence_id: number,
     base_walk_speed: number,
+    ranger_draw_tier: any?,
+    skill_aim: Vector3?,
 }
 
 local player_states: {[Player]: PlayerCombatState} = {}
@@ -187,6 +204,8 @@ local function create_player_state(base_walk_speed: number): PlayerCombatState
         combo_expires_at = 0,
         sequence_id = 0,
         base_walk_speed = base_walk_speed,
+        ranger_draw_tier = nil,
+        skill_aim = nil,
     }
 end
 
@@ -330,7 +349,9 @@ local function apply_movement_scale(
             player.UserId
         )
 
-    if record.current_attack_id
+    if RangerDrawService.is_drawing(player) then
+        scale = RangerDrawRules.DRAW_MOVEMENT_SCALE
+    elseif record.current_attack_id
         and weapon_tags.ArcaneWand == true
         and (
             record.state_name == State.WIND_UP
@@ -338,6 +359,17 @@ local function apply_movement_scale(
             or record.state_name == State.RECOVERY
         ) then
         scale = 0
+    elseif record.current_attack_id == "RangerArrow"
+        and weapon_tags.Longbow == true
+        and (
+            record.state_name == State.WIND_UP
+            or record.state_name == State.ACTIVE
+            or record.state_name == State.RECOVERY
+        ) then
+        scale = StateRules.get_movement_scale(
+            record.state_name,
+            CombatConfig.RANGER_LONGBOW.RELEASE
+        )
     elseif record.state_name == State.DODGING
         or record.state_name == State.GUARD_BREAK
         or record.state_name == State.MENDING
@@ -961,6 +993,16 @@ local function finish_attack(
         return
     end
 
+    if current_attack_id == "RangerArrow" then
+        record.ranger_draw_tier = nil
+        record.next_attack_id = BasicAttack.ATTACK_ORDER[1]
+        record.combo_expires_at = 0
+        set_state(player, record, State.LOCOMOTION)
+        record.current_attack_id = nil
+        update_character_attributes(player, record)
+        return
+    end
+
     local next_attack_id = StateRules.get_next_attack_id(
         current_attack_id,
         BasicAttack.ATTACK_ORDER
@@ -1089,6 +1131,24 @@ local function enter_active(
                 "SPIRIT_ORB",
                 if fired then "FIRED" else "REJECT",
                 attack_id,
+                sequence_id
+            )
+        elseif weapon_tags.Longbow == true
+            and attack_id == "RangerArrow" then
+            local draw_tier = record.ranger_draw_tier
+                or RangerDrawRules.classify(0)
+            local fired = RangerCombatService.fire_basic(
+                player,
+                character,
+                draw_tier,
+                sequence_id
+            )
+
+            CombatValidationService.emit(
+                player,
+                "RANGER_ARROW",
+                if fired then "FIRED" else "REJECT",
+                tostring(draw_tier.Tier),
                 sequence_id
             )
         else
@@ -1268,6 +1328,168 @@ end
 
 
 --[[
+Starts one Longbow release using a server-classified draw tier.
+
+Only the short release/active/recovery definition is racial-rate scaled. The
+0.45/0.80-second draw thresholds were already measured before this point and
+remain identical for Human and Elf.
+
+Args:
+    player (Player): Ranger releasing the Longbow.
+    record (PlayerCombatState): Current authoritative combat record.
+    draw_tier (any): Server-classified draw tier.
+
+Returns:
+    None.
+]]
+local function start_ranger_release(
+    player: Player,
+    record: PlayerCombatState,
+    draw_tier: any
+)
+    local attack_rate =
+        ProgressionRuntimeState.get_basic_attack_rate(player.UserId)
+    local attack_definition = BasicAttackTimingRules.scale_definition(
+        CombatConfig.RANGER_LONGBOW.RELEASE,
+        attack_rate
+    )
+
+    record.sequence_id += 1
+    record.current_attack_id = "RangerArrow"
+    record.current_skill_id = nil
+    record.queued_attack = false
+    record.ranger_draw_tier = draw_tier
+
+    local sequence_id = record.sequence_id
+
+    if not set_state(player, record, State.WIND_UP) then
+        record.current_attack_id = nil
+        record.ranger_draw_tier = nil
+        update_character_attributes(player, record)
+        return
+    end
+
+    CombatValidationService.emit(
+        player,
+        "RANGER_DRAW",
+        "RELEASE",
+        tostring(draw_tier.Tier),
+        sequence_id
+    )
+
+    task.delay(attack_definition.WIND_UP_SECONDS, function()
+        enter_active(
+            player,
+            record,
+            sequence_id,
+            attack_definition
+        )
+    end)
+end
+
+--[[
+Handles one Longbow DrawStart/DrawRelease/DrawCancel request.
+
+Args:
+    player (Player): Ranger sending held basic-attack intent.
+    record (PlayerCombatState): Current authoritative combat record.
+    requested_action (any): Untrusted draw intent label.
+
+Returns:
+    None.
+]]
+local function handle_longbow_attack_request(
+    player: Player,
+    record: PlayerCombatState,
+    requested_action: any
+)
+    if requested_action == "DrawCancel" then
+        local cancelled = RangerDrawService.cancel(player)
+        apply_movement_scale(player, record)
+
+        CombatValidationService.emit(
+            player,
+            "RANGER_DRAW",
+            if cancelled then "CANCELLED" else "IGNORED",
+            "ClientCancel",
+            record.sequence_id
+        )
+        return
+    end
+
+    if record.state_name ~= State.LOCOMOTION then
+        CombatValidationService.emit(
+            player,
+            "RANGER_DRAW",
+            "REJECT",
+            "State=" .. record.state_name,
+            record.sequence_id
+        )
+        return
+    end
+
+    if requested_action == "DrawStart" then
+        local character = player.Character
+
+        if not character then
+            return
+        end
+
+        if not RangerDrawService.begin(player, character) then
+            CombatValidationService.emit(
+                player,
+                "RANGER_DRAW",
+                "REJECT",
+                "AlreadyDrawing",
+                record.sequence_id
+            )
+            return
+        end
+
+        apply_movement_scale(player, record)
+        CombatValidationService.emit(
+            player,
+            "RANGER_DRAW",
+            "START",
+            "ServerTimed",
+            record.sequence_id
+        )
+        return
+    end
+
+    if requested_action == "DrawRelease" then
+        local elapsed = RangerDrawService.release(player)
+
+        if elapsed == nil then
+            CombatValidationService.emit(
+                player,
+                "RANGER_DRAW",
+                "REJECT",
+                "NoActiveDraw",
+                record.sequence_id
+            )
+            return
+        end
+
+        apply_movement_scale(player, record)
+        start_ranger_release(
+            player,
+            record,
+            RangerDrawRules.classify(elapsed)
+        )
+        return
+    end
+
+    CombatValidationService.emit(
+        player,
+        "RANGER_DRAW",
+        "REJECT",
+        "MalformedRequest",
+        record.sequence_id
+    )
+end
+
+--[[
 Handles a validated basic-attack request without trusting client attack data.
 
 Args:
@@ -1276,10 +1498,25 @@ Args:
 Returns:
     None.
 ]]
-local function handle_attack_request(player: Player)
+local function handle_attack_request(
+    player: Player,
+    requested_action: any
+)
     local record = player_states[player]
 
     if not record then
+        return
+    end
+
+    local weapon_tags =
+        ProgressionRuntimeState.get_weapon_tags(player.UserId)
+
+    if weapon_tags.Longbow == true then
+        handle_longbow_attack_request(
+            player,
+            record,
+            requested_action
+        )
         return
     end
 
@@ -1480,6 +1717,7 @@ local function finish_skill(
     end
 
     record.current_skill_id = nil
+    record.skill_aim = nil
     set_state(player, record, State.LOCOMOTION)
 end
 
@@ -1718,6 +1956,43 @@ local function enter_skill_active(
                 sequence_id
             )
         end
+    elseif character and skill_definition.KIND == "RangerProjectile" then
+        local fired = RangerCombatService.fire_projectile_skill(
+            player,
+            character,
+            skill_definition,
+            sequence_id
+        )
+
+        CombatValidationService.emit(
+            player,
+            "RANGER_PROJECTILE",
+            if fired then "FIRED" else "REJECT",
+            skill_definition.ID,
+            sequence_id
+        )
+    elseif character and skill_definition.KIND == "RangerVolley" then
+        local center = record.skill_aim
+        record.skill_aim = nil
+        local cast = false
+
+        if center then
+            cast = RangerCombatService.cast_volley(
+                player,
+                character,
+                skill_definition,
+                center,
+                sequence_id
+            )
+        end
+
+        CombatValidationService.emit(
+            player,
+            "VOLLEY",
+            if cast then "CAST" else "REJECT",
+            skill_definition.ID,
+            sequence_id
+        )
     elseif character and skill_definition.KIND == "MageHeal" then
         local target = MageHealService.find_target(
             player,
@@ -1800,11 +2075,13 @@ Returns:
 local function start_skill(
     player: Player,
     record: PlayerCombatState,
-    skill_definition: any
+    skill_definition: any,
+    skill_aim: Vector3?
 ): boolean
     record.sequence_id += 1
     record.current_attack_id = nil
     record.current_skill_id = skill_definition.ID
+    record.skill_aim = skill_aim
 
     if skill_definition.ID == "WindStrike" then
         local character = player.Character
@@ -1823,6 +2100,7 @@ local function start_skill(
     if not set_state(player, record, State.WIND_UP) then
         clear_wind_strike_charge(player)
         record.current_skill_id = nil
+        record.skill_aim = nil
         update_character_attributes(player, record)
         return false
     end
@@ -2038,7 +2316,8 @@ Returns:
 ]]
 local function handle_skill_request(
     player: Player,
-    requested_skill_id: any
+    requested_skill_id: any,
+    aim_intent: any
 )
     if type(requested_skill_id) ~= "string" then
         CombatValidationService.emit(
@@ -2060,6 +2339,17 @@ local function handle_skill_request(
             "REJECT",
             record and ("State=" .. record.state_name) or "NoState",
             record and record.sequence_id or nil
+        )
+        return
+    end
+
+    if RangerDrawService.is_drawing(player) then
+        CombatValidationService.emit(
+            player,
+            "SKILL",
+            "REJECT",
+            "DrawActive",
+            record.sequence_id
         )
         return
     end
@@ -2142,6 +2432,33 @@ local function handle_skill_request(
             record.sequence_id
         )
         return
+    end
+
+    local resolved_skill_aim: Vector3? = nil
+
+    if skill_definition.KIND == "RangerVolley" then
+        local character = player.Character
+
+        if not character then
+            return
+        end
+
+        resolved_skill_aim = RangerCombatService.resolve_volley_ground(
+            character,
+            aim_intent,
+            skill_definition.AIM_RANGE_STUDS
+        )
+
+        if not resolved_skill_aim then
+            CombatValidationService.emit(
+                player,
+                "VOLLEY",
+                "REJECT",
+                "InvalidGroundAim",
+                record.sequence_id
+            )
+            return
+        end
     end
 
     if skill_definition.KIND == "Support" then
@@ -2268,7 +2585,8 @@ local function handle_skill_request(
     start_skill(
         player,
         record,
-        skill_definition
+        skill_definition,
+        resolved_skill_aim
     )
 end
 
@@ -2299,6 +2617,22 @@ local function handle_defense_request(
     end
 
     if action == "BlockStart" then
+        local equipment_effects =
+            ProgressionRuntimeState.get_equipment_effects(player.UserId)
+
+        if not EquipmentDefenseRules.can_block_with_weapon(
+            equipment_effects.WeaponItemId
+        ) then
+            CombatValidationService.emit(
+                player,
+                "BLOCK",
+                "REJECT",
+                "WeaponRestricted",
+                record.sequence_id
+            )
+            return
+        end
+
         if not StateRules.can_transition(
             record.state_name,
             State.BLOCKING
@@ -2320,6 +2654,9 @@ local function handle_defense_request(
         end
 
         clear_wind_strike_charge(player)
+        RangerDrawService.cancel(player)
+        record.ranger_draw_tier = nil
+        record.skill_aim = nil
         report_sequence_cancel(player, record, "Block")
 
         if record.state_name == State.MENDING then
@@ -2498,6 +2835,9 @@ local function handle_defense_request(
     )
 
     clear_wind_strike_charge(player)
+    RangerDrawService.cancel(player)
+    record.ranger_draw_tier = nil
+    record.skill_aim = nil
     report_sequence_cancel(player, record, "Dodge")
 
     if record.state_name == State.MENDING then
@@ -2696,8 +3036,11 @@ local function handle_character_death(
     record.queued_attack = false
     record.next_attack_id = BasicAttack.ATTACK_ORDER[1]
     record.combo_expires_at = 0
+    record.ranger_draw_tier = nil
+    record.skill_aim = nil
 
     clear_wind_strike_charge(player)
+    RangerDrawService.cancel(player)
     MendService.cancel_channel(player)
     WardService.cancel_player(player)
     MageHealService.cancel_player(player)
@@ -2780,6 +3123,7 @@ local function on_character_added(
 
     stop_dodge_movement(player)
     player_states[player] = record
+    RangerDrawService.reset_character(player, character)
     StaminaService.reset_player(player)
     ManaService.reset_player(player)
     ProgressionRuntimeState.apply_max_health(player)
@@ -2827,6 +3171,7 @@ skill_request.OnServerEvent:Connect(handle_skill_request)
 Players.PlayerAdded:Connect(on_player_added)
 Players.PlayerRemoving:Connect(function(player)
     clear_wind_strike_charge(player)
+    RangerDrawService.remove_player(player)
     MendService.cancel_channel(player)
     WardService.cancel_player(player)
     MageHealService.cancel_player(player)

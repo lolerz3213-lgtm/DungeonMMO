@@ -52,6 +52,26 @@ local DEFINITIONS = table.freeze({
             }),
         }),
     }),
+
+    RangerTrainer = table.freeze({
+        Id = "RangerTrainer",
+        DisplayName = "Ranger Trainer",
+        AllowedBaseClasses = table.freeze({"Ranger"}),
+        Skills = table.freeze({
+            table.freeze({
+                SkillId = "PiercingShot",
+                Mode = "Rank",
+            }),
+            table.freeze({
+                SkillId = "CripplingShot",
+                Mode = "Rank",
+            }),
+            table.freeze({
+                SkillId = "Volley",
+                Mode = "Rank",
+            }),
+        }),
+    }),
 })
 
 local TrainerCatalogues = {}

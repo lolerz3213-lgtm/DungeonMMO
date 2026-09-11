@@ -1,5 +1,6 @@
 --!strict
--- Functional Base shell. Final environment art stays on its separate art branch.
+-- Functional Base shell. Final environment art stays on its separate art
+-- branch.
 local RunService = game:GetService("RunService")
 local Workspace = game:GetService("Workspace")
 
@@ -37,14 +38,33 @@ portal.Parent = root
 
 local prompt = Instance.new("ProximityPrompt")
 prompt.Name = "DungeonEntryPrompt"
-prompt.ActionText = if RunService:IsStudio() then "Published teleport required" else "Enter Dungeon"
+prompt.ActionText = if RunService:IsStudio()
+    then "Published teleport required"
+    else "Enter Dungeon"
 prompt.ObjectText = "Marauder Training Dungeon"
 prompt.HoldDuration = 0.35
 prompt.MaxActivationDistance = 12
 prompt.RequiresLineOfSight = false
 prompt.Parent = portal
 
-local function create_trainer(name: string, trainer_id: string, label_text: string, position: Vector3)
+--[[
+Creates one temporary trainer interaction marker in the Base shell.
+
+Args:
+    name (string): Instance name for the trainer marker.
+    trainer_id (string): Server catalogue identifier.
+    label_text (string): Player-facing trainer name.
+    position (Vector3): World position for the marker.
+
+Returns:
+    None.
+]]
+local function create_trainer(
+    name: string,
+    trainer_id: string,
+    label_text: string,
+    position: Vector3
+)
     local trainer = Instance.new("Part")
     trainer.Name = name
     trainer.Size = Vector3.new(6, 7, 4)
@@ -78,8 +98,24 @@ local function create_trainer(name: string, trainer_id: string, label_text: stri
     trainer_label.Parent = trainer_billboard
 end
 
-create_trainer("ProgressionTrainer", "FighterTrainer", "Fighter Trainer", Vector3.new(18, 3.5, 6))
-create_trainer("MageProgressionTrainer", "MageTrainer", "Mage Trainer", Vector3.new(18, 3.5, -6))
+create_trainer(
+    "ProgressionTrainer",
+    "FighterTrainer",
+    "Fighter Trainer",
+    Vector3.new(18, 3.5, 8)
+)
+create_trainer(
+    "MageProgressionTrainer",
+    "MageTrainer",
+    "Mage Trainer",
+    Vector3.new(18, 3.5, 0)
+)
+create_trainer(
+    "RangerProgressionTrainer",
+    "RangerTrainer",
+    "Ranger Trainer",
+    Vector3.new(18, 3.5, -8)
+)
 
 local equipment_manager = Instance.new("Part")
 equipment_manager.Name = "EquipmentManager"
@@ -129,4 +165,7 @@ label.Text = if RunService:IsStudio()
     else "TEST DUNGEON\nMarauder Training Dungeon"
 label.Parent = billboard
 
-print("[Base Prototype] Functional Base shell created with Fighter/Mage Trainers and Equipment manager.")
+print(
+    "[Base Prototype] Functional Base shell created with "
+        .. "Fighter/Mage/Ranger Trainers and Equipment manager."
+)

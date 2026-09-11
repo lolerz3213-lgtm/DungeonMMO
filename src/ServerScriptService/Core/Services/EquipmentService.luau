@@ -13,6 +13,9 @@ local Services = ServerScriptService
 
 local EquipmentSlots = require(Shared:WaitForChild("EquipmentSlots"))
 local EquipmentRules = require(Shared:WaitForChild("EquipmentRules"))
+local EquipmentReservationRules = require(
+    Shared:WaitForChild("EquipmentReservationRules")
+)
 local EquipmentStatResolver = require(
     Shared:WaitForChild("EquipmentStatResolver")
 )
@@ -224,6 +227,23 @@ local function build_owned_entry(
         definition,
         definition.Slot
     )
+
+    if eligibility.ok == true then
+        local reservation_ok, reservation_reason =
+            EquipmentReservationRules.can_equip(
+                source_equipment,
+                definition,
+                definition.Slot
+            )
+
+        if not reservation_ok then
+            eligibility = {
+                ok = false,
+                reason = reservation_reason,
+            }
+        end
+    end
+
     local item_equipment = {
         [definition.Slot] = item_id,
     }
@@ -310,6 +330,17 @@ local function equip_mutation_reason(
         return validation.reason or "EquipmentRejected"
     end
 
+    local reservation_ok, reservation_reason =
+        EquipmentReservationRules.can_equip(
+            character.Equipment,
+            definition,
+            slot
+        )
+
+    if not reservation_ok then
+        return reservation_reason or "EquipmentRejected"
+    end
+
     if InventoryService.count_item(character, item_id) < 1 then
         return "ItemNotOwned"
     end
@@ -376,6 +407,7 @@ function EquipmentService:build_snapshot(user_id: number): any
             ok = false,
             reason = "ProfileNotLoaded",
             Slots = {},
+            Reservations = {},
             Owned = {},
             EquippedEffects = effect_summary(nil),
         }
@@ -384,9 +416,9 @@ function EquipmentService:build_snapshot(user_id: number): any
     local source_equipment = if type(character.Equipment) == "table"
         then character.Equipment
         else {}
-    local equipped_effects = effect_summary(
+    local resolved_equipment =
         EquipmentStatResolver.resolve(source_equipment)
-    )
+    local equipped_effects = effect_summary(resolved_equipment)
     local totals = collect_equipment_totals(character.Inventory)
     local owned = {}
 
@@ -411,6 +443,7 @@ function EquipmentService:build_snapshot(user_id: number): any
     return {
         ok = true,
         Slots = copy_slots(source_equipment),
+        Reservations = resolved_equipment.Reservations or {},
         Owned = owned,
         EquippedEffects = equipped_effects,
     }
@@ -462,6 +495,19 @@ function EquipmentService:equip(
 
     if not validation.ok then
         return validation
+    end
+
+    local reservation_ok, reservation_reason =
+        EquipmentReservationRules.can_equip(
+            current.Equipment,
+            definition,
+            slot
+        )
+
+    if not reservation_ok then
+        return rejected(
+            reservation_reason or "EquipmentRejected"
+        )
     end
 
     if InventoryService.count_item(current, item_id) < 1 then

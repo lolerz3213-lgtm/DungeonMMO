@@ -349,6 +349,29 @@ function ProgressionRuntimeState.get_physical_multiplier(
 end
 
 --[[
+Returns Dexterity-led physical ranged scaling for Ranger damage.
+
+Args:
+    user_id (number): Player user ID.
+
+Returns:
+    number: Non-negative authoritative ranged physical multiplier.
+]]
+function ProgressionRuntimeState.get_ranged_physical_multiplier(
+    user_id: number
+): number
+    return math.max(
+        0,
+        AttributeConfig.ranged_physical_multiplier(
+            ProgressionRuntimeState.get_attribute(
+                user_id,
+                "Dexterity"
+            )
+        )
+    )
+end
+
+--[[
 Returns the accepted Spirit-based healing multiplier unchanged by 2C.C gear.
 
 Args:

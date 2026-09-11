@@ -397,7 +397,7 @@ check(
 local unknown_class =
     fresh_identity:select_base_class(
         fresh_user_id,
-        "Ranger"
+        "UnimplementedTestClass"
     )
 
 check(

@@ -11,11 +11,28 @@ local shared_folder = combat_folder:WaitForChild("Shared")
 local CombatConfig = require(shared_folder:WaitForChild("CombatConfig"))
 local CombatTypes = require(shared_folder:WaitForChild("CombatTypes"))
 local HotbarConfig = require(shared_folder:WaitForChild("HotbarConfig"))
-local ProgressionClientState = require(script.Parent.Parent:WaitForChild("Core"):WaitForChild("ProgressionClientState"))
+local UserInputService = game:GetService("UserInputService")
+local core_shared = ReplicatedStorage
+    :WaitForChild("Core")
+    :WaitForChild("Shared")
+local EquipmentPresentationRules = require(
+    core_shared:WaitForChild("EquipmentPresentationRules")
+)
+local EquipmentDefenseRules = require(
+    core_shared:WaitForChild("EquipmentDefenseRules")
+)
+local ProgressionClientState = require(
+    script.Parent.Parent
+        :WaitForChild("Core")
+        :WaitForChild("ProgressionClientState")
+)
 local ClientCombatController = require(
     script.Parent:WaitForChild("ClientCombatController")
 )
 
+local attack_request = remotes_folder:WaitForChild(
+    CombatConfig.REMOTES.ATTACK_REQUEST
+) :: RemoteEvent
 local defense_request = remotes_folder:WaitForChild(
     CombatConfig.REMOTES.DEFENSE_REQUEST
 ) :: RemoteEvent
@@ -40,17 +57,125 @@ end
 
 
 --[[
-Requests the prototype basic attack through the existing prediction layer.
+Returns whether authoritative runtime presentation identifies a Longbow.
+
+Args:
+    None.
 
 Returns:
-    boolean: True when local prediction accepted or buffered the attack.
+    boolean: True when the run snapshot exposes the Apprentice Longbow.
+]]
+local function is_longbow_equipped(): boolean
+    local item_id = player:GetAttribute(
+        EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+    )
+
+    return EquipmentPresentationRules.show_longbow(item_id)
+end
+
+--[[
+Begins the primary basic-attack input.
+
+Longbow uses held Begin/End intent. Existing Fighter and Mage weapons retain
+accepted immediate prediction and request behaviour.
+
+Args:
+    None.
+
+Returns:
+    boolean: True when a basic-attack intent was sent or predicted.
+]]
+function CombatInputActions.begin_attack(): boolean
+    if not CombatInputActions.can_send_combat_input() then
+        return false
+    end
+
+    if is_longbow_equipped() then
+        attack_request:FireServer("DrawStart")
+        return true
+    end
+
+    return ClientCombatController.request_attack()
+end
+
+--[[
+Ends or cancels one held Longbow basic-attack input.
+
+Args:
+    cancelled (boolean): True to cancel without firing.
+
+Returns:
+    boolean: True when Longbow end intent was sent.
+]]
+function CombatInputActions.end_attack(cancelled: boolean): boolean
+    if not is_longbow_equipped() then
+        return false
+    end
+
+    attack_request:FireServer(
+        if cancelled then "DrawCancel" else "DrawRelease"
+    )
+    return true
+end
+
+--[[
+Compatibility tap request for legacy callers.
+
+Longbow falls back to a Normal shot; held-capable input controllers should use
+`begin_attack` and `end_attack` instead.
+
+Args:
+    None.
+
+Returns:
+    boolean: True when a basic-attack intent was sent or predicted.
 ]]
 function CombatInputActions.request_attack(): boolean
     if not CombatInputActions.can_send_combat_input() then
         return false
     end
 
+    if is_longbow_equipped() then
+        attack_request:FireServer("DrawStart")
+        attack_request:FireServer("DrawRelease")
+        return true
+    end
+
     return ClientCombatController.request_attack()
+end
+
+--[[
+Returns current client world aim intent for server validation.
+
+Args:
+    None.
+
+Returns:
+    Vector3?: Client world aim position when available.
+]]
+local function get_world_aim_intent(): Vector3?
+    local last_input = UserInputService:GetLastInputType()
+    local mouse_input = last_input == Enum.UserInputType.MouseMovement
+        or last_input == Enum.UserInputType.MouseButton1
+        or last_input == Enum.UserInputType.MouseButton2
+        or last_input == Enum.UserInputType.MouseButton3
+
+    if mouse_input then
+        local hit = player:GetMouse().Hit
+
+        if typeof(hit) == "CFrame" then
+            return hit.Position
+        end
+    end
+
+    local camera = Workspace.CurrentCamera
+
+    if camera then
+        return camera.CFrame.Position
+            + camera.CFrame.LookVector * 60
+    end
+
+    return nil
 end
 
 
@@ -78,13 +203,38 @@ function CombatInputActions.request_skill_slot(slot: number): boolean
         return false
     end
 
-    skill_request:FireServer(skill_id)
+    if skill_id == "Volley" then
+        skill_request:FireServer(
+            skill_id,
+            get_world_aim_intent()
+        )
+    else
+        skill_request:FireServer(skill_id)
+    end
+
     return true
 end
 
 
 --[[
-Starts or ends held Block intent.
+Returns whether the equipped weapon permits the Block action.
+
+Args:
+    None.
+
+Returns:
+    boolean: False when current weapon metadata disables Block.
+]]
+function CombatInputActions.can_block(): boolean
+    local item_id = player:GetAttribute(
+        EquipmentPresentationRules.WEAPON_ITEM_ATTRIBUTE
+    )
+
+    return EquipmentDefenseRules.can_block_with_weapon(item_id)
+end
+
+--[[
+Starts or ends held Block intent when the equipped weapon permits it.
 
 Args:
     active (boolean): True for BlockStart, false for BlockEnd.
@@ -94,6 +244,10 @@ Returns:
 ]]
 function CombatInputActions.set_block(active: boolean): boolean
     if active and not CombatInputActions.can_send_combat_input() then
+        return false
+    end
+
+    if not CombatInputActions.can_block() then
         return false
     end
 

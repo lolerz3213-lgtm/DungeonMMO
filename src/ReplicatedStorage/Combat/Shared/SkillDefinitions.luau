@@ -1,6 +1,8 @@
 --!strict
 local ReplicatedStorage = game:GetService("ReplicatedStorage")
-local shared_folder = ReplicatedStorage:WaitForChild("Combat"):WaitForChild("Shared")
+local shared_folder = ReplicatedStorage
+    :WaitForChild("Combat")
+    :WaitForChild("Shared")
 local CombatConfig = require(shared_folder:WaitForChild("CombatConfig"))
 
 export type MeleeSkillDefinition = {
@@ -52,11 +54,36 @@ export type WardSkillDefinition = {
     RANKS: {[number]: any}?,
 }
 
+export type RangerProjectileSkillDefinition = {
+    KIND: "RangerProjectile", ID: string, DISPLAY_NAME: string,
+    STAMINA_COST: number, COOLDOWN_SECONDS: number,
+    WIND_UP_SECONDS: number, ACTIVE_SECONDS: number, RECOVERY_SECONDS: number,
+    RANGE_STUDS: number, PROJECTILE_SPEED: number, BASE_DAMAGE: number,
+    MAX_TARGETS: number, DEFAULT_RETENTION: number, HUMAN_RETENTION: number,
+    HUMAN_SLOW_FRACTION: number?, HUMAN_SLOW_SECONDS: number?,
+    ELF_SLOW_FRACTION: number?, ELF_SLOW_SECONDS: number?,
+    MOVEMENT_SCALE: {WIND_UP: number, ACTIVE: number, RECOVERY: number},
+    RANKS: {[number]: any}?,
+}
+
+export type RangerVolleySkillDefinition = {
+    KIND: "RangerVolley", ID: string, DISPLAY_NAME: string,
+    STAMINA_COST: number, COOLDOWN_SECONDS: number,
+    WIND_UP_SECONDS: number, ACTIVE_SECONDS: number, RECOVERY_SECONDS: number,
+    AIM_RANGE_STUDS: number, RADIUS_STUDS: number,
+    INITIAL_DAMAGE: number, PULSE_DAMAGE: number,
+    PULSE_COUNT: number, PULSE_INTERVAL_SECONDS: number,
+    MOVEMENT_SCALE: {WIND_UP: number, ACTIVE: number, RECOVERY: number},
+    RANKS: {[number]: any}?,
+}
+
 export type SkillDefinition = MeleeSkillDefinition
     | SupportSkillDefinition
     | MageHealSkillDefinition
     | MagicProjectileSkillDefinition
     | WardSkillDefinition
+    | RangerProjectileSkillDefinition
+    | RangerVolleySkillDefinition
 
 local SHIELD_BASH: MeleeSkillDefinition = table.freeze({
     KIND = "Melee", ID = "ShieldBash", DISPLAY_NAME = "Shield Bash",
@@ -173,6 +200,91 @@ local MAGE_HEAL: MageHealSkillDefinition = table.freeze({
     }),
 })
 
+local PIERCING_SHOT: RangerProjectileSkillDefinition = table.freeze({
+    KIND = "RangerProjectile",
+    ID = "PiercingShot",
+    DISPLAY_NAME = "Piercing Shot",
+    STAMINA_COST = 20,
+    COOLDOWN_SECONDS = 6.0,
+    WIND_UP_SECONDS = 0.24,
+    ACTIVE_SECONDS = 0.06,
+    RECOVERY_SECONDS = 0.30,
+    RANGE_STUDS = 80,
+    PROJECTILE_SPEED = 125,
+    BASE_DAMAGE = 28,
+    MAX_TARGETS = 4,
+    DEFAULT_RETENTION = 0.70,
+    HUMAN_RETENTION = 0.80,
+    MOVEMENT_SCALE = table.freeze({
+        WIND_UP = 0.55,
+        ACTIVE = 0.45,
+        RECOVERY = 0.80,
+    }),
+    RANKS = table.freeze({
+        [1] = table.freeze({BASE_DAMAGE = 28}),
+        [2] = table.freeze({BASE_DAMAGE = 33}),
+        [3] = table.freeze({BASE_DAMAGE = 38}),
+    }),
+})
+
+local CRIPPLING_SHOT: RangerProjectileSkillDefinition = table.freeze({
+    KIND = "RangerProjectile",
+    ID = "CripplingShot",
+    DISPLAY_NAME = "Crippling Shot",
+    STAMINA_COST = 20,
+    COOLDOWN_SECONDS = 7.0,
+    WIND_UP_SECONDS = 0.20,
+    ACTIVE_SECONDS = 0.06,
+    RECOVERY_SECONDS = 0.30,
+    RANGE_STUDS = 75,
+    PROJECTILE_SPEED = 115,
+    BASE_DAMAGE = 18,
+    MAX_TARGETS = 1,
+    DEFAULT_RETENTION = 1.00,
+    HUMAN_RETENTION = 1.00,
+    HUMAN_SLOW_FRACTION = 0.30,
+    HUMAN_SLOW_SECONDS = 3.0,
+    ELF_SLOW_FRACTION = 0.40,
+    ELF_SLOW_SECONDS = 4.0,
+    MOVEMENT_SCALE = table.freeze({
+        WIND_UP = 0.60,
+        ACTIVE = 0.45,
+        RECOVERY = 0.82,
+    }),
+    RANKS = table.freeze({
+        [1] = table.freeze({BASE_DAMAGE = 18}),
+        [2] = table.freeze({BASE_DAMAGE = 22}),
+        [3] = table.freeze({BASE_DAMAGE = 26}),
+    }),
+})
+
+local VOLLEY: RangerVolleySkillDefinition = table.freeze({
+    KIND = "RangerVolley",
+    ID = "Volley",
+    DISPLAY_NAME = "Volley",
+    STAMINA_COST = 30,
+    COOLDOWN_SECONDS = 10.0,
+    WIND_UP_SECONDS = 0.28,
+    ACTIVE_SECONDS = 0.06,
+    RECOVERY_SECONDS = 0.36,
+    AIM_RANGE_STUDS = 60,
+    RADIUS_STUDS = 10,
+    INITIAL_DAMAGE = 14,
+    PULSE_DAMAGE = 7,
+    PULSE_COUNT = 4,
+    PULSE_INTERVAL_SECONDS = 0.5,
+    MOVEMENT_SCALE = table.freeze({
+        WIND_UP = 0.45,
+        ACTIVE = 0.35,
+        RECOVERY = 0.75,
+    }),
+    RANKS = table.freeze({
+        [1] = table.freeze({INITIAL_DAMAGE = 14, PULSE_DAMAGE = 7}),
+        [2] = table.freeze({INITIAL_DAMAGE = 16, PULSE_DAMAGE = 8}),
+        [3] = table.freeze({INITIAL_DAMAGE = 18, PULSE_DAMAGE = 9}),
+    }),
+})
+
 local DEFINITIONS: {[string]: SkillDefinition} = table.freeze({
     ShieldBash = SHIELD_BASH,
     Mend = MEND,
@@ -180,6 +292,9 @@ local DEFINITIONS: {[string]: SkillDefinition} = table.freeze({
     WindStrike = WIND_STRIKE,
     ArcaneWard = ARCANE_WARD,
     MageHeal = MAGE_HEAL,
+    PiercingShot = PIERCING_SHOT,
+    CripplingShot = CRIPPLING_SHOT,
+    Volley = VOLLEY,
 })
 
 local SkillDefinitions = {}
@@ -204,7 +319,10 @@ local function validate_timed(definition: any)
     assert(definition.WIND_UP_SECONDS >= 0, "Wind-up cannot be negative.")
     assert(definition.ACTIVE_SECONDS > 0, "Active window must be positive.")
     assert(definition.RECOVERY_SECONDS >= 0, "Recovery cannot be negative.")
-    assert(definition.MOVEMENT_SCALE ~= nil, "Timed skill needs movement scale.")
+    assert(
+        definition.MOVEMENT_SCALE ~= nil,
+        "Timed skill needs movement scale."
+    )
 end
 
 local function validate_melee(definition: MeleeSkillDefinition)
@@ -256,15 +374,29 @@ local function validate_mage_heal(definition: MageHealSkillDefinition)
             and definition.ELF_INSTANT_FRACTION <= 1,
         "Elf heal split must be normalized."
     )
-    assert(definition.HOT_TICK_SECONDS > 0, "Heal-over-time tick must be positive.")
+    assert(
+        definition.HOT_TICK_SECONDS > 0,
+        "Heal-over-time tick must be positive."
+    )
 end
 
-local function validate_magic_projectile(definition: MagicProjectileSkillDefinition)
+local function validate_magic_projectile(
+    definition: MagicProjectileSkillDefinition
+)
     validate_timed(definition)
     assert(definition.MANA_COST > 0, "Magic projectile must cost Mana.")
-    assert(definition.RANGE_STUDS > 0, "Magic projectile range must be positive.")
-    assert(definition.PROJECTILE_SPEED > 0, "Magic projectile speed must be positive.")
-    assert(definition.BASE_DAMAGE > 0, "Magic projectile damage must be positive.")
+    assert(
+        definition.RANGE_STUDS > 0,
+        "Magic projectile range must be positive."
+    )
+    assert(
+        definition.PROJECTILE_SPEED > 0,
+        "Magic projectile speed must be positive."
+    )
+    assert(
+        definition.BASE_DAMAGE > 0,
+        "Magic projectile damage must be positive."
+    )
 end
 
 local function validate_ward(definition: WardSkillDefinition)
@@ -273,6 +405,64 @@ local function validate_ward(definition: WardSkillDefinition)
     assert(definition.RANGE_STUDS > 0, "Ward range must be positive.")
     assert(definition.WARD_AMOUNT > 0, "Ward amount must be positive.")
     assert(definition.DURATION_SECONDS > 0, "Ward duration must be positive.")
+end
+
+local function validate_ranger_projectile(
+    definition: RangerProjectileSkillDefinition
+)
+    validate_timed(definition)
+    assert(definition.STAMINA_COST > 0, "Ranger projectile must cost Stamina.")
+    assert(
+        definition.RANGE_STUDS > 0,
+        "Ranger projectile range must be positive."
+    )
+    assert(
+        definition.PROJECTILE_SPEED > 0,
+        "Ranger projectile speed must be positive."
+    )
+    assert(
+        definition.BASE_DAMAGE > 0,
+        "Ranger projectile damage must be positive."
+    )
+    assert(definition.MAX_TARGETS >= 1, "Ranger projectile needs a target.")
+    assert(
+        definition.DEFAULT_RETENTION >= 0
+            and definition.DEFAULT_RETENTION <= 1,
+        "Ranger projectile retention must be normalized."
+    )
+    assert(
+        definition.HUMAN_RETENTION >= 0
+            and definition.HUMAN_RETENTION <= 1,
+        "Human Ranger projectile retention must be normalized."
+    )
+end
+
+local function validate_ranger_volley(
+    definition: RangerVolleySkillDefinition
+)
+    validate_timed(definition)
+    assert(definition.STAMINA_COST > 0, "Volley must cost Stamina.")
+    assert(
+        definition.AIM_RANGE_STUDS > 0,
+        "Volley aim range must be positive."
+    )
+    assert(definition.RADIUS_STUDS > 0, "Volley radius must be positive.")
+    assert(
+        definition.INITIAL_DAMAGE > 0,
+        "Volley initial damage must be positive."
+    )
+    assert(
+        definition.PULSE_DAMAGE > 0,
+        "Volley pulse damage must be positive."
+    )
+    assert(
+        definition.PULSE_COUNT == 4,
+        "Volley must contain initial plus three pulses."
+    )
+    assert(
+        definition.PULSE_INTERVAL_SECONDS > 0,
+        "Volley pulse interval must be positive."
+    )
 end
 
 for _, definition in DEFINITIONS do
@@ -287,6 +477,14 @@ for _, definition in DEFINITIONS do
         validate_magic_projectile(definition :: MagicProjectileSkillDefinition)
     elseif definition.KIND == "Ward" then
         validate_ward(definition :: WardSkillDefinition)
+    elseif definition.KIND == "RangerProjectile" then
+        validate_ranger_projectile(
+            definition :: RangerProjectileSkillDefinition
+        )
+    elseif definition.KIND == "RangerVolley" then
+        validate_ranger_volley(
+            definition :: RangerVolleySkillDefinition
+        )
     else
         error("Unknown skill kind: " .. tostring((definition :: any).KIND))
     end

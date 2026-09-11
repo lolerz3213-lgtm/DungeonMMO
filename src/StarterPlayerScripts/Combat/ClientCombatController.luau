@@ -413,6 +413,12 @@ state_changed_remote.OnClientEvent:Connect(function(
             or server_state_name == State.RECOVERY
             or server_state_name == State.MENDING
         )
+    local server_is_ranger_attack = server_attack_id == "RangerArrow"
+        and (
+            server_state_name == State.WIND_UP
+            or server_state_name == State.ACTIVE
+            or server_state_name == State.RECOVERY
+        )
 
     if server_state_name == State.DEAD then
         sequence_id += 1
@@ -427,6 +433,18 @@ state_changed_remote.OnClientEvent:Connect(function(
         local_state_changed:Fire(
             state_name,
             ""
+        )
+    elseif server_is_ranger_attack then
+        sequence_id += 1
+        state_name = server_state_name
+        state_started_at = os.clock()
+        current_attack_id = server_attack_id
+        current_skill_id = nil
+        queued_attack = false
+
+        local_state_changed:Fire(
+            state_name,
+            current_attack_id
         )
     elseif server_is_skill_state then
         sequence_id += 1
@@ -456,6 +474,7 @@ state_changed_remote.OnClientEvent:Connect(function(
         and (
             local_is_defending
             or current_skill_id ~= nil
+            or current_attack_id == "RangerArrow"
             or state_name == State.DEAD
         ) then
         sequence_id += 1

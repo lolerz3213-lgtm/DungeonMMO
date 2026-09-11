@@ -170,6 +170,7 @@ status.Parent = panel
 
 local latest = {
     Slots = {},
+    Reservations = {},
     Owned = {},
     EquippedEffects = {},
 }
@@ -314,11 +315,20 @@ Returns:
     None.
 ]]
 local function render_slots(slots: any)
+    local reservations = if type(latest.Reservations) == "table"
+        then latest.Reservations
+        else {}
+
     for _, slot in ipairs(EquipmentSlots.ORDER) do
+        local reserver = reservations[slot]
+        local value = if type(reserver) == "string"
+            then "Reserved by " .. item_name(reserver)
+            else item_name(slots[slot])
+
         slot_buttons[slot].Text = string.format(
             "  %s: %s%s",
             slot,
-            item_name(slots[slot]),
+            value,
             if slot == selected_slot then "   <" else ""
         )
     end

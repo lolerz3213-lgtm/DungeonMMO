@@ -35,6 +35,7 @@ local Mobile = InputMappingConfig.MOBILE
 
 local skill_buttons: {[number]: TextButton} = {}
 local cooldown_ends: {[number]: number} = {}
+local attack_held = false
 local block_held = false
 
 
@@ -151,8 +152,26 @@ for slot = 1, Mobile.SKILL_SLOT_COUNT do
 end
 
 
-action_buttons.Attack.Activated:Connect(function()
-    CombatInputActions.request_attack()
+local function is_primary_touch(input: InputObject): boolean
+    return input.UserInputType == Enum.UserInputType.Touch
+        or input.UserInputType == Enum.UserInputType.MouseButton1
+end
+
+action_buttons.Attack.InputBegan:Connect(function(input: InputObject)
+    if not is_primary_touch(input) or attack_held then
+        return
+    end
+
+    attack_held = CombatInputActions.begin_attack()
+end)
+
+action_buttons.Attack.InputEnded:Connect(function(input: InputObject)
+    if not is_primary_touch(input) or not attack_held then
+        return
+    end
+
+    attack_held = false
+    CombatInputActions.end_attack(false)
 end)
 
 action_buttons.Dodge.Activated:Connect(function()
@@ -162,11 +181,6 @@ end)
 action_buttons.ViewLock.Activated:Connect(function()
     CombatInputActions.toggle_view_lock()
 end)
-
-local function is_primary_touch(input: InputObject): boolean
-    return input.UserInputType == Enum.UserInputType.Touch
-        or input.UserInputType == Enum.UserInputType.MouseButton1
-end
 
 action_buttons.Block.InputBegan:Connect(function(input: InputObject)
     if not is_primary_touch(input) or block_held then
@@ -214,7 +228,10 @@ local function refresh_controls()
     )
     style_button(
         action_buttons.Block,
-        not dead and state ~= State.DODGING and not guard_broken
+        not dead
+            and state ~= State.DODGING
+            and not guard_broken
+            and CombatInputActions.can_block()
     )
     style_button(
         action_buttons.Dodge,
@@ -265,6 +282,11 @@ local function refresh_controls()
     action_buttons.ViewLock.Text = CombatInputActions.is_view_lock_enabled()
         and "LOCK\nON"
         or "LOCK"
+
+    if attack_held and not action_buttons.Attack.Active then
+        attack_held = false
+        CombatInputActions.end_attack(true)
+    end
 
     if block_held and not action_buttons.Block.Active then
         block_held = false

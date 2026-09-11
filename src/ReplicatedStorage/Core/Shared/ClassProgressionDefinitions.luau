@@ -30,6 +30,20 @@ local DEFINITIONS = table.freeze({
         }),
         TeachableSkills = table.freeze({}),
     }),
+
+    Ranger = table.freeze({
+        Id = "Ranger",
+        AllowedRaces = HUMAN_ELF,
+        StarterSkills = table.freeze({
+            "PiercingShot",
+            "CripplingShot",
+            "Volley",
+        }),
+        StarterEquipment = table.freeze({
+            Weapon = "apprentice_longbow",
+        }),
+        TeachableSkills = table.freeze({}),
+    }),
 })
 
 function ClassProgressionDefinitions.get(

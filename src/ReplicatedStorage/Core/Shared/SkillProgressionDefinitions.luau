@@ -57,6 +57,36 @@ local DEFINITIONS = table.freeze({
             "ArcaneWand",
         }),
     }),
+
+    PiercingShot = table.freeze({
+        Id = "PiercingShot",
+        Tier = "Common",
+        MaxRank = 3,
+        Kind = "Physical",
+        WeaponTags = table.freeze({
+            "Longbow",
+        }),
+    }),
+
+    CripplingShot = table.freeze({
+        Id = "CripplingShot",
+        Tier = "Common",
+        MaxRank = 3,
+        Kind = "Control",
+        WeaponTags = table.freeze({
+            "Longbow",
+        }),
+    }),
+
+    Volley = table.freeze({
+        Id = "Volley",
+        Tier = "Common",
+        MaxRank = 3,
+        Kind = "Physical",
+        WeaponTags = table.freeze({
+            "Longbow",
+        }),
+    }),
 })
 
 function SkillProgressionDefinitions.get(

@@ -25,7 +25,11 @@ local function on_basic_attack(
     _input_object: InputObject
 ): Enum.ContextActionResult
     if input_state == Enum.UserInputState.Begin then
-        CombatInputActions.request_attack()
+        CombatInputActions.begin_attack()
+    elseif input_state == Enum.UserInputState.End then
+        CombatInputActions.end_attack(false)
+    elseif input_state == Enum.UserInputState.Cancel then
+        CombatInputActions.end_attack(true)
     end
 
     return Enum.ContextActionResult.Sink

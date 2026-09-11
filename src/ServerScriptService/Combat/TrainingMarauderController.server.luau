@@ -29,6 +29,9 @@ local MarauderSpacingRules = require(
     script.Parent:WaitForChild("MarauderSpacingRules")
 )
 local StaggerService = require(script.Parent:WaitForChild("StaggerService"))
+local RangerSlowService = require(
+    script.Parent:WaitForChild("RangerSlowService")
+)
 
 local MarauderConfig = CombatConfig.TRAINING_MARAUDER
 local DEBUG = CombatConfig.DEBUG
@@ -350,7 +353,8 @@ local function chase_target(
     local offset = get_planar_offset(runtime.root.Position, context.root.Position)
     local movement_distance = MarauderBehaviorRules.get_chase_step(
         context.distance,
-        delta_seconds
+        delta_seconds,
+        RangerSlowService.get_multiplier(runtime.model)
     )
 
     if movement_distance <= 0 or offset.Magnitude <= 1e-6 then

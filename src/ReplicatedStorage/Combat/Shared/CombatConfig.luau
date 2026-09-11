@@ -142,6 +142,22 @@ local CombatConfig = {
         FINISHER_AOE_RADIUS = 6,
     },
 
+    RANGER_LONGBOW = {
+        BASE_DAMAGE = 16,
+        PROJECTILE_SPEED = 110,
+        MAX_RANGE_STUDS = 80,
+        RELEASE = {
+            WIND_UP_SECONDS = 0.08,
+            ACTIVE_SECONDS = 0.04,
+            RECOVERY_SECONDS = 0.28,
+            MOVEMENT_SCALE = {
+                WIND_UP = 0.60,
+                ACTIVE = 0.50,
+                RECOVERY = 0.80,
+            },
+        },
+    },
+
     DEFENSE = {
         REQUEST_ACTION_NAME = "CombatDefenseRequest",
         BLOCK_ACTION_NAME = "CombatBlock",

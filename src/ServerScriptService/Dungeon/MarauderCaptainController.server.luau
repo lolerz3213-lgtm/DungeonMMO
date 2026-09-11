@@ -10,6 +10,7 @@ local Dungeon = ServerScriptService:WaitForChild("Dungeon")
 local DamageService = require(Combat:WaitForChild("DamageService"))
 local DefenseService = require(Combat:WaitForChild("DefenseService"))
 local StaggerService = require(Combat:WaitForChild("StaggerService"))
+local RangerSlowService = require(Combat:WaitForChild("RangerSlowService"))
 local PresentationService = require(Combat:WaitForChild("MarauderPresentationService"))
 local Factory = require(Dungeon:WaitForChild("MarauderCaptainFactory"))
 
@@ -224,7 +225,12 @@ RunService.Heartbeat:Connect(function(dt)
             elseif distance > STOP_RANGE then
                 model:SetAttribute("MarauderAIState", "Chasing")
                 local offset = Vector3.new(target_root.Position.X - runtime.root.Position.X, 0, target_root.Position.Z - runtime.root.Position.Z)
-                local move = math.min(math.max(0, distance - STOP_RANGE), CHASE_SPEED * step)
+                local move = math.min(
+                    math.max(0, distance - STOP_RANGE),
+                    CHASE_SPEED
+                        * RangerSlowService.get_multiplier(model)
+                        * step
+                )
                 if offset.Magnitude > 0.01 and move > 0 then
                     local next_position = runtime.root.Position + offset.Unit * move
                     model:PivotTo(CFrame.lookAt(next_position, Vector3.new(target_root.Position.X, next_position.Y, target_root.Position.Z)))

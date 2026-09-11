@@ -7,7 +7,13 @@ local player = Players.LocalPlayer
 local shared_folder = ReplicatedStorage
     :WaitForChild("Combat")
     :WaitForChild("Shared")
+local core_shared = ReplicatedStorage
+    :WaitForChild("Core")
+    :WaitForChild("Shared")
 
+local EquipmentPresentationRules = require(
+    core_shared:WaitForChild("EquipmentPresentationRules")
+)
 local CombatConfig = require(
     shared_folder:WaitForChild("CombatConfig")
 )
@@ -56,6 +62,24 @@ local current_dodge_style = DodgeStyle.FORWARD_ROLL
 local current_dodge_view_locked = false
 local dodge_style_is_latched = false
 local unlocked_turn_start_rotation: CFrame? = nil
+
+
+--[[
+Returns whether persistent OffHand presentation contains the real shield.
+
+Args:
+    None.
+
+Returns:
+    boolean: True only while the Marauder Shield is equipped.
+]]
+local function should_show_shield(): boolean
+    local item_id = player:GetAttribute(
+        EquipmentPresentationRules.OFFHAND_ITEM_ATTRIBUTE
+    )
+
+    return EquipmentPresentationRules.show_shield(item_id)
+end
 
 
 --[[
@@ -1052,32 +1076,43 @@ local function on_character_added(character: Model)
             {"RightKnee"}
         )
 
-        local visual, binding_source =
-            ShieldPresentationBinding.ensure_visual(
+        destroy_block_ik()
+
+        if should_show_shield() then
+            local visual, binding_source =
+                ShieldPresentationBinding.ensure_visual(
+                    character,
+                    ShieldConfig,
+                    shield_visual,
+                    5
+                )
+
+            if visual then
+                shield_visual = visual
+
+                print(
+                    "[Combat Prototype] Shield client visual bound ("
+                        .. binding_source
+                        .. ")."
+                )
+            else
+                warn(
+                    "[Combat Prototype] Shield client visual unavailable: "
+                        .. binding_source
+                        .. "."
+                )
+            end
+
+            create_block_ik(character)
+        else
+            ShieldPresentationBinding.release_visual(
                 character,
                 ShieldConfig,
-                shield_visual,
-                5
+                shield_visual
             )
-
-        if visual then
-            shield_visual = visual
-
-            print(
-                "[Combat Prototype] Shield client visual bound ("
-                    .. binding_source
-                    .. ")."
-            )
-        else
-            warn(
-                "[Combat Prototype] Shield client visual unavailable: "
-                    .. binding_source
-                    .. "."
-            )
+            shield_visual = nil
         end
 
-        destroy_block_ik()
-        create_block_ik(character)
         reset_pose()
     end)
 end
@@ -1393,6 +1428,24 @@ Returns:
 local function ensure_shield_visual()
     if not current_character then
         return
+    end
+
+    if not should_show_shield() then
+        destroy_block_ik()
+
+        if shield_visual then
+            ShieldPresentationBinding.release_visual(
+                current_character,
+                ShieldConfig,
+                shield_visual
+            )
+            shield_visual = nil
+        end
+        return
+    end
+
+    if not block_ik then
+        create_block_ik(current_character)
     end
 
     local visual, source =

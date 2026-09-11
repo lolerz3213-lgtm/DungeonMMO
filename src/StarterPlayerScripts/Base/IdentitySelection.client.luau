@@ -469,11 +469,11 @@ local function show_class_selection()
         button.Name = class_id .. "Card"
         button.Position = UDim2.new(
             x_scale,
-            if x_scale == 0 then 0 else 10,
+            if x_scale == 0 then 0 else 8,
             0,
             0
         )
-        button.Size = UDim2.new(0.5, -10, 1, 0)
+        button.Size = UDim2.new(1 / 3, -8, 1, 0)
         button.BackgroundColor3 = Color3.fromRGB(34, 39, 49)
         button.Text = ""
         button.AutoButtonColor = false
@@ -562,13 +562,32 @@ local function show_class_selection()
             "",
             "Starts with an Apprentice Arcane Wand."
         }, "\n"),
-        0.5
+        1 / 3
+    )
+
+    make_class_card(
+        "Ranger",
+        "Ranger",
+        table.concat({
+            "Mobile marksman-hunter using physical ranged pressure.",
+            "",
+            "Basic Attack",
+            "- Hold and release Longbow shots for stronger draw tiers",
+            "",
+            "Starting Skills",
+            "- Piercing Shot: line penetration",
+            "- Crippling Shot: damage plus movement slow",
+            "- Volley: short ground-targeted arrow rain",
+            "",
+            "Starts with an Apprentice Longbow."
+        }, "\n"),
+        2 / 3
     )
 
     confirm.Text = "Confirm Class"
     confirm.Active = true
     confirm.AutoButtonColor = true
-    status.Text = "Select Fighter or Mage."
+    status.Text = "Select Fighter, Mage or Ranger."
 end
 local function hide_selection()
     blocker.Visible = false
@@ -696,7 +715,7 @@ confirm.Activated:Connect(
 
         if stage == "ClassSelection" then
             if not selected_class then
-                status.Text = "Select Fighter or Mage first."
+                status.Text = "Select Fighter, Mage or Ranger first."
                 return
             end
 

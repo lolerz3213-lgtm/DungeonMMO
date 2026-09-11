@@ -16,6 +16,10 @@ local MAGE_LOADOUT = table.freeze({
     Weapon = "apprentice_arcane_wand",
 })
 
+local RANGER_LOADOUT = table.freeze({
+    Weapon = "apprentice_longbow",
+})
+
 local function loadout_for(character: any): any
     local class_id =
         type(character) == "table"
@@ -25,6 +29,8 @@ local function loadout_for(character: any): any
 
     if class_id == "Mage" then
         return MAGE_LOADOUT
+    elseif class_id == "Ranger" then
+        return RANGER_LOADOUT
     end
 
     return FIGHTER_LOADOUT
