@@ -1,9 +1,10 @@
 # DungeonMMO Development Handoff
 
-**Date:** 10 September 2026
-**Active gate:** Phase 2C.D - Mage Base-Class + Support Foundation
-**Status:** ACCEPTED - GAMEPLAY MERGED / PUSHED
-**Canonical external roadmap:** DungeonMMO Roadmap v1.33
+**Date:** 11 September 2026
+**Active workstream:** Phase 2 - Vertical Slice
+**Phase 2C status:** FUNCTIONALLY COMPLETE
+**Phase 2C.E status:** ACCEPTED - GAMEPLAY MERGED / PUSHED
+**Canonical external roadmap:** DungeonMMO Roadmap v1.34
 
 ## Accepted gameplay boundary
 
@@ -13,105 +14,100 @@
 - Phase 2C.A: ACCEPTED / merged / pushed.
 - Phase 2C.B: ACCEPTED / merged / pushed.
 - Phase 2C.C: ACCEPTED / merged / pushed.
-- Phase 2C.D: ACCEPTED; gameplay merged/pushed.
-- Phase 2C.D accepted gameplay checkpoint:
-  `41ac374496f01a1685b62cfd6d6237d0a7e702ec`.
-- Phase 2C.D parent / prior canonical main:
-  `38feb4a3c15286c56a98ab686357b7cf30f2c693`.
+- Phase 2C.D Mage: ACCEPTED / merged / pushed.
+- Phase 2C.E Ranger: ACCEPTED / merged / pushed.
+- Phase 2C.E accepted gameplay checkpoint:
+  `6fe47a178987dc51a75212692201651eb0167326`.
+- Ranger parent / prior canonical main:
+  `86d27228977dd6c98bd404f12086e93ad94fbe9a`.
 
-GitHub `main` was independently confirmed at the 2C.D gameplay checkpoint after
-the approved fast-forward. No Roblox publish occurred.
+The docs closeout commit containing this handoff is the new canonical `main`.
+Its SHA is recorded in the closeout receipt and Roadmap v1.34. No Roblox publish
+occurred.
 
-## Phase 2C.D locked player-facing behaviour
+## Phase 2C.E locked player-facing behaviour
 
-Human and Elf can select Mage.
+Human and Elf can select Ranger.
 
-Mage starts with:
+Ranger starts with:
 
-1. Apprentice Arcane Wand in persistent Weapon Equipment.
-2. Spirit Orb as the free ranged basic attack.
-3. Wind Strike in starter skill slot 1.
-4. Arcane Ward in starter skill slot 2.
-5. Mage Heal in starter skill slot 3.
+1. Apprentice Longbow in persistent Weapon Equipment.
+2. Normal / Precision / Full Draw as the free basic-attack draw tiers.
+3. Piercing Shot in starter skill slot 1.
+4. Crippling Shot in starter skill slot 2.
+5. Volley in starter skill slot 3.
 
-Spirit Orb uses the existing three-step combo timing internally but presents as
-Orb -> Orb -> larger AoE Orb for an authoritative ArcaneWand.
+The Longbow is two-handed. It reserves OffHand, cannot present a shield and
+cannot use Block while equipped. This reservation is server-owned Equipment
+state, not dependent on the visible bow model.
 
-Wand basic attacks movement-lock the Mage during WindUp/Active/Recovery.
-Block/Dodge can cancel them.
+Normal/Precision/Full Draw thresholds are server-timed. Precision begins at
+approximately 0.45 seconds and Full Draw at approximately 0.80 seconds. Drawing
+reduces movement without rooting the Ranger. Dodge cancels an active draw.
+Precision/Full Draw reward timing with increased damage and critical chance.
 
-Wind Strike is a charged Intellect-scaled ranged spell. Prototype Rank 1 uses
-30 base damage, 25 Mana, 5 second cooldown and 1.0 second charge. Block/Dodge
-can cancel before release; cancelled charge fires nothing, spends no Mana and
-starts no Wind Strike cooldown.
+Piercing Shot costs 20 Stamina and loses damage across successive penetrations;
+Human Ranger keeps more penetration damage. Crippling Shot costs 20 Stamina and
+applies a non-stacking slow; Elf Ranger receives stronger/slightly longer
+control. Volley costs 30 Stamina and uses ground-targeted initial impact plus a
+short arrow-rain pulse sequence.
 
-Arcane Ward is a Spirit-scaled replace-not-stack absorption shield and exposes
-current/max shield values to the local Ward HUD.
-
-Mage Heal is Spirit-scaled, supports injured aimed allies or injured self, and
-uses different Human/Elf immediate-vs-HoT delivery while preserving comparable
-baseline total.
-
-Fighter Mend is self-only and costs 20 Stamina.
-
-The Marauder Captain prototype chase speed is 17.5 studs/second. Normal
-Marauder tuning is unchanged by this gate.
+Dexterity is the Ranger's primary ranged-damage scaling attribute. Basic arrows
+do not consume ammunition in this foundation gate.
 
 ## Authority and persistence
 
 Server authority owns:
 
 - race/base-class runtime identity;
-- persistent Equipment and weapon tags;
-- Mana/Stamina spending and cooldowns;
-- Wand/offensive-cast movement lock;
-- projectile travel/collision/AoE;
-- target legality;
-- Intellect/Spirit scaling;
-- Ward absorption;
-- healing/HoT timing;
-- charged-cast cancellation and commit timing.
+- persistent Equipment and Longbow weapon tags;
+- two-handed OffHand reservation;
+- draw start/release elapsed timing and tier resolution;
+- ranged damage and critical rolls;
+- Stamina spending and cooldowns;
+- projectile travel/collision and penetration;
+- Crippling Shot slow state;
+- Volley ground placement/range and damage pulses;
+- target legality and race-specific Ranger behaviour.
 
-Persistent Equipment, not client Tool presence, owns weapon-family authority.
-
-Dungeon Equipment remains Base-selected, read-only and run-locked. Mage uses the
-accepted schema-v5 identity/progression/inventory/equipment structures with no
-new profile schema version.
+Persistent Equipment, not Tool/model presence, owns weapon-family authority.
+Dungeon Equipment remains Base-selected, read-only and run-locked. Ranger uses
+the accepted schema-v5 identity/progression/inventory/equipment structures with
+no new profile schema version.
 
 ## Accepted evidence
 
-Project-owner gameplay acceptance was received after the v6 Dungeon build was
-played successfully.
+Project-owner Studio acceptance was received after the Ranger Base/Dungeon
+candidate and functional hotfix were tested.
 
 Observed/accepted behaviour included:
 
-- Spirit Orb projectile basic chain and damage;
-- larger third-hit AoE Orb;
-- attack movement lock and restoration;
-- Wind Strike charge/release/damage;
-- Block/Dodge cancellation of charged casting;
-- working Arcane Ward with remaining-shield display;
-- working Mage self-heal when injured;
-- Wand presentation;
-- faster Captain pursuit;
-- normal dungeon completion.
+- Ranger identity and starter Longbow flow;
+- Longbow OffHand reservation;
+- Normal, Precision and Full Draw attacks;
+- movement reduction while drawing;
+- Dodge cancellation of a held draw;
+- Piercing Shot, Crippling Shot and Volley;
+- Crippling control against normal Marauders and the Captain;
+- normal enemy/Captain behaviour;
+- successful full Dungeon completion and rewards;
+- Ranger automated definition/identity/draw/slow test families reporting PASS;
+- follow-up retest confirming the Ranger has no fallback shield and cannot
+  Block with Longbow equipped;
+- stale Base-only test issues corrected and retested successfully;
+- no reported red Ranger runtime error after the accepted hotfix;
+- no Roblox publish, PROD, Robux, monetisation or art-branch action.
 
-The accepted gameplay commit changed exactly 49 files. Fresh Base and Dungeon
-Rojo builds succeeded before commit and again before the remote fast-forward.
-The gameplay worktree remained clean. No Roblox publish, PROD, Robux,
-monetisation or art-branch action occurred.
+Animation/VFX quality is still prototype-level and intentionally deferred.
 
-## Qualification that must remain visible
+## Qualifications that must remain visible
 
-The acceptance Studio run showed one stale Mage identity test assertion still
-expecting the older Ward/Heal-only loadout. The test expectation was corrected
-afterward and Base/Dungeon rebuilt, but a fresh Studio runtime PASS for that
-corrected assertion was not separately captured. Do not report it as observed
-runtime GREEN.
+The historical Phase 2C.D Mage corrected-test qualification remains visible;
+do not rewrite it as a separately observed Studio PASS.
 
-Carry the earlier 2C.C evidence qualifications as historical notes: Arc Slash
-was not manually exercised in the 2C.C acceptance run, and the newly authored
-2C.C automated Roblox runtime tests were not separately observed GREEN then.
+Carry the earlier Phase 2C.C evidence qualifications as historical notes: Arc
+Slash was not manually exercised in that acceptance run and its newly authored
+runtime test family was not separately observed GREEN then.
 
 The pre-player legacy migration waiver is not a migration PASS and must be
 revalidated before a release involving real existing player profiles.
@@ -121,22 +117,24 @@ revalidated before a release involving real existing player profiles.
 Primary repository:
 `C:\Users\Remko\Documents\Roblox\DungeonMMO`
 
-Accepted 2C.D worktree:
-`C:\Users\Remko\Documents\Roblox\DungeonMMO_Phase2CD_v6`
+Accepted Ranger worktree:
+`C:\Users\Remko\Documents\Roblox\DungeonMMO_Phase2CE_Ranger_v1`
 
 Do not reset, clean, switch into, merge, copy from or otherwise disturb
+`C:\Users\Remko\Documents\Roblox\DungeonMMO_Art` or
 `art/dungeon-environment-prototype`.
 
-Preserve older dirty recovery worktrees unless a later explicit cleanup decision
-says otherwise.
+Preserve older/recovery worktrees unless an explicit cleanup decision says
+otherwise.
 
 ## Exact next action
 
-The external Roadmap v1.33 identifies Ranger as the remaining prototype
-starting archetype after Fighter and Mage.
+Phase 2C is functionally complete. Do not infer a numbered Phase 2D from the
+sequence alone.
 
-Next action: design the Ranger base-class foundation while preserving all
-accepted Fighter/Mage/race/progression/equipment/dungeon contracts.
-
-Do **not** start Ranger source implementation or assign a numbered Phase 2C.E
-gate until its design has been explicitly approved.
+Read Roadmap v1.34 and select the next remaining Phase 2 vertical-slice gate
+before implementation. The next gate should continue toward a polished,
+repeatable Starting Base/dungeon experience or the next modular dungeon/rare
+state proof while preserving the accepted Fighter/Mage/Ranger, equipment,
+persistence, progression and Dungeon contracts. Secondary-class advancement
+remains Phase 3.

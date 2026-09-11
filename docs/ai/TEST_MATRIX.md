@@ -125,7 +125,7 @@ Detailed evidence is recorded in
 
 ## Phase 2C - Race/base-class definitions and class-specific trainer catalogues
 
-**Status:** ACCEPTED - PHASE 2C.D GAMEPLAY MERGED / PUSHED
+**Status:** FUNCTIONALLY COMPLETE - PHASE 2C.E RANGER ACCEPTED / MERGED / PUSHED
 
 Phase 2C.A is accepted, merged and pushed.
 
@@ -633,3 +633,79 @@ Result: Phase 2C.D gameplay is ACCEPTED / MERGED / PUSHED at
 The external Roadmap v1.33 leaves Ranger as the remaining prototype starting
 archetype. Ranger is the next **design** target; no numbered Phase 2C.E source
 gate is locked until that design is explicitly approved.
+
+## Phase 2C.E - Ranger Marksman-Hunter Foundation
+
+**Status:** ACCEPTED - GAMEPLAY MERGED / PUSHED
+**Accepted gameplay checkpoint:** `6fe47a178987dc51a75212692201651eb0167326`
+**Starting baseline:** `86d27228977dd6c98bd404f12086e93ad94fbe9a`
+
+### Design / architecture lock
+
+- [x] Human and Elf Ranger use one shared data-driven Ranger class foundation.
+- [x] Apprentice Longbow is the defining two-handed starter Weapon.
+- [x] Longbow reserves OffHand without changing schema-v5 Equipment shape.
+- [x] Longbow cannot use Block and does not receive fallback shield presentation.
+- [x] Normal / Precision (~0.45 s) / Full Draw (~0.80 s) are free server-timed basics.
+- [x] draw permits reduced movement rather than rooting the Ranger.
+- [x] Dodge cancels an active draw without firing.
+- [x] Precision/Full Draw add damage and critical-chance reward.
+- [x] Dexterity leads Ranger ranged damage scaling.
+- [x] Piercing Shot costs 20 Stamina and uses diminishing multi-target penetration.
+- [x] Human Ranger retains more damage through Piercing Shot penetrations.
+- [x] Crippling Shot costs 20 Stamina and applies non-stacking movement slow.
+- [x] Elf Ranger receives stronger/slightly longer Crippling control.
+- [x] Volley costs 30 Stamina and uses ground-targeted initial impact + short pulses.
+- [x] normal arrows do not consume ammunition in this foundation gate.
+- [x] persistent Equipment remains weapon authority; Dungeon Equipment stays run-locked.
+- [x] special arrows/quivers/poisons/traps/pets and secondary classes remain deferred.
+
+### Automated/runtime evidence observed during acceptance
+
+- [x] Ranger Identity Tests PASS - 30 assertions observed.
+- [x] RangerDefinitionsTest PASS observed.
+- [x] RangerDrawRulesTest PASS observed.
+- [x] RangerSlowServiceTest PASS observed.
+- [x] Ranger Marauder slow movement rules PASS observed.
+- [x] Equipment reservation contract PASS observed.
+- [x] accepted Core/Progression/Equipment/Combat/Dungeon regression families remained green in the captured runs.
+- [x] post-hotfix Base/Dungeon retest was reported fully passing by the project owner.
+
+### Manual Base/Dungeon acceptance
+
+- [x] Ranger appears and completes Human/Elf identity flow.
+- [x] Apprentice Longbow is granted/equipped persistently.
+- [x] OffHand is reserved for the two-handed Longbow.
+- [x] Normal bow release works.
+- [x] Precision release works.
+- [x] Full Draw release works.
+- [x] movement is reduced while drawing and restored afterward.
+- [x] Dodge cancels a held draw and fires no arrow.
+- [x] Piercing Shot works, including multi-target penetration/falloff.
+- [x] Crippling Shot works on ordinary Marauders and the Marauder Captain.
+- [x] Volley works as ground-targeted area damage.
+- [x] normal Marauder and Captain pursuit/combat continue functioning.
+- [x] full Dungeon clear and completion rewards succeeded.
+- [x] follow-up functional hotfix removes Ranger fallback shield.
+- [x] follow-up functional hotfix prevents accepted Block while Longbow is equipped.
+- [x] stale Ranger-as-unknown identity assertion corrected.
+- [x] Mage/Ranger definition tests no longer wait for a Combat tree in Base.
+- [x] no PROD / Robux / monetisation action occurred.
+- [x] no Roblox place was published.
+- [x] art/dungeon-environment-prototype remained isolated.
+
+### Deferred presentation
+
+- [ ] final Ranger bow/draw/skill animations are intentionally deferred.
+- [ ] final Ranger projectile/VFX/audio polish is intentionally deferred.
+
+These are presentation-polish follow-ups, not failures of the accepted Ranger
+combat/authority architecture.
+
+### Carry-forward qualification
+
+The pre-player live legacy migration proof waiver remains **not a PASS** and
+must be replaced by real migration evidence before a release that must support
+real existing player profiles.
+
+**Phase 2C status:** FUNCTIONALLY COMPLETE after accepted Phase 2C.A-E.
